@@ -131,8 +131,13 @@ export class FileWatcher {
     }
 
     const debouncedEmit = this.debounce(
-      (eventType: string, filePath: string) => {
-        this.eventEmitter.emit(eventType, { filePath, timestamp: Date.now() });
+      (eventType: unknown, filePath: unknown) => {
+        if (typeof eventType === 'string' && typeof filePath === 'string') {
+          this.eventEmitter.emit(eventType, {
+            filePath,
+            timestamp: Date.now(),
+          });
+        }
       },
       500, // Fixed debounce delay
     );

@@ -506,10 +506,19 @@ export class DevServerManager {
 
       // Emit to Studio if enabled
       if (this.studio) {
-        this.studio.emitBuildStatus(
-          false,
-          event.data?.errors?.[0]?.message || 'Build failed',
-        );
+        const errorMessage =
+          event.data &&
+          typeof event.data === 'object' &&
+          'errors' in event.data &&
+          Array.isArray(event.data.errors) &&
+          event.data.errors.length > 0 &&
+          event.data.errors[0] &&
+          typeof event.data.errors[0] === 'object' &&
+          'message' in event.data.errors[0]
+            ? String(event.data.errors[0].message)
+            : 'Build failed';
+
+        this.studio.emitBuildStatus(false, errorMessage);
         // Send updated statistics
         this.sendStatisticsToStudio();
       }

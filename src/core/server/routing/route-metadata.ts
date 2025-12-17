@@ -29,10 +29,13 @@ export class RouteMetadataManager {
    */
   async getRouteMetadata(route: Route): Promise<Metadata | undefined> {
     try {
-      return await this.routeImporter.getRouteMetadata(route);
+      const module = await this.routeImporter.importRoute(route);
+      return module.metadata;
     } catch (error) {
       this.lithia.logger.warn(
-        `Failed to get metadata for route ${route.path}: ${error.message}`,
+        `Failed to get metadata for route ${route.path}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
       return undefined;
     }
