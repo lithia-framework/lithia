@@ -38,9 +38,9 @@ jobs:
           npm ci
 
           if [[ "${{ github.ref_name }}" == *"canary"* ]]; then
-            npm publish --provenance --access public --tag canary --no-git-checks
+            npm publish --access public --tag canary --no-git-checks
           else
-            npm publish --provenance --access public --no-git-checks
+            npm publish --access public --no-git-checks
           fi
 
       - name: Create GitHub Release
