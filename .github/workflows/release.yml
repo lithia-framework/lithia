@@ -32,9 +32,6 @@ jobs:
 
       - name: Publish to npm
         run: |
-          unset NODE_AUTH_TOKEN
-          rm -f ~/.npmrc
-
           npm ci
 
           if [[ "${{ github.ref_name }}" == *"canary"* ]]; then
