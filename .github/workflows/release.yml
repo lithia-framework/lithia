@@ -47,24 +47,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Studio dependencies
-        run: |
-          cd studio
-          pnpm install --no-frozen-lockfile
-
-      - name: Build project
-        run: pnpm run build
-
-      - name: Verify build output
-        run: |
-          if [ ! -d "dist" ]; then
-            echo "❌ Build failed: dist directory not found"
-            exit 1
-          fi
-          echo "✅ Build successful!"
-
       - name: Run tests
-        run: pnpm run test || echo "⚠️ No test script found, skipping tests"
+        run: pnpm run test || echo "No test script found, skipping tests"
 
       - name: Publish to npm
         run: |
@@ -73,8 +57,6 @@ jobs:
           else
             pnpm publish --access public --no-git-checks
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

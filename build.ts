@@ -7,12 +7,12 @@ import { build } from 'tsup';
  * Build pipeline steps for better organization and logging.
  */
 enum BuildStep {
-  BUILD_LITHIA_CORE = '⚙️ Build Lithia Core',
-  PROCESS_DIST_FILES = '🔄 Process Distribution Files',
-  INSTALL_STUDIO_DEPS = '📦 Install Studio Dependencies',
-  BUILD_STUDIO_UI = '🎨 Build Studio UI',
-  COPY_STUDIO_DIST = '📁 Copy Studio Dist Files',
-  FINALIZE = '✨ Finalize Build',
+  BUILD_LITHIA_CORE = 'Build Lithia Core',
+  PROCESS_DIST_FILES = 'Process Distribution Files',
+  INSTALL_STUDIO_DEPS = 'Install Studio Dependencies',
+  BUILD_STUDIO_UI = 'Build Studio UI',
+  COPY_STUDIO_DIST = 'Copy Studio Dist Files',
+  FINALIZE = 'Finalize Build',
 }
 
 const subpaths = ['cli', 'config', 'core', 'meta', 'studio', 'types'];
@@ -21,21 +21,21 @@ const subpaths = ['cli', 'config', 'core', 'meta', 'studio', 'types'];
  * Logs a build step start.
  */
 function logStepStart(step: BuildStep): void {
-  console.log(`\n🚀 ${step}...`);
+  console.log(`${step}...`);
 }
 
 /**
  * Logs a build step completion.
  */
 function logStepComplete(step: BuildStep): void {
-  console.log(`✅ ${step} completed`);
+  console.log(`${step} completed`);
 }
 
 /**
  * Logs a build step error.
  */
 function logStepError(step: BuildStep, error: string): void {
-  console.error(`❌ ${step} failed: ${error}`);
+  console.error(`${step} failed: ${error}`);
 }
 
 /**
@@ -150,9 +150,6 @@ async function installStudioDeps(): Promise<void> {
   // Check if studio directory exists and has package.json
   const exists = await studioExists();
   if (!exists) {
-    console.log(
-      '⚠️  Studio directory not found or not initialized. Skipping Studio dependencies installation.',
-    );
     return;
   }
 
@@ -167,9 +164,6 @@ async function buildStudio(): Promise<void> {
   // Check if studio directory exists and has package.json
   const exists = await studioExists();
   if (!exists) {
-    console.log(
-      '⚠️  Studio directory not found or not initialized. Skipping Studio UI build.',
-    );
     return;
   }
 
@@ -187,7 +181,6 @@ async function copyStudioDist() {
   try {
     await access(studioOutDir);
   } catch {
-    console.log('⚠️  Studio build output not found. Skipping copy step.');
     return;
   }
 
@@ -312,39 +305,24 @@ async function updateImportPaths(fullPath: string) {
  * Main function to orchestrate the build process.
  */
 async function main() {
-  const startTime = Date.now();
-
   try {
-    console.log('🚀 Starting Lithia Build Pipeline...');
-    console.log('═'.repeat(50));
-
-    // Step 2: Build Lithia core
+    // Build Lithia core
     await executeStep(BuildStep.BUILD_LITHIA_CORE, buildLithia);
 
-    // Step 3: Process distribution files
+    // Process distribution files
     await executeStep(BuildStep.PROCESS_DIST_FILES, processDistFiles);
 
-    // Step 4: Install Studio dependencies
+    // Install Studio dependencies
     await executeStep(BuildStep.INSTALL_STUDIO_DEPS, installStudioDeps);
 
-    // Step 5: Build Studio UI (after Lithia is ready and deps installed)
+    // Build Studio UI (after Lithia is ready and deps installed)
     await executeStep(BuildStep.BUILD_STUDIO_UI, buildStudio);
 
-    // Step 6: Copy Studio dist files
+    // Copy Studio dist files
     await executeStep(BuildStep.COPY_STUDIO_DIST, copyStudioDist);
-
-    // Step 7: Finalize build
-    await executeStep(BuildStep.FINALIZE, async () => {
-      const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-      console.log(`\n🎉 Build completed successfully in ${duration}s!`);
-      console.log('═'.repeat(50));
-    });
   } catch (error) {
-    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.error(`\n💥 Build pipeline failed after ${duration}s`);
-    console.error('═'.repeat(50));
     console.error(
-      '❌ Error:',
+      'Build failed:',
       error instanceof Error ? error.message : String(error),
     );
     process.exit(1);
