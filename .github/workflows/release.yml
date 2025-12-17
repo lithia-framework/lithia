@@ -34,6 +34,8 @@ jobs:
         run: |
           npm ci
 
+          npm adduser
+
           if [[ "${{ github.ref_name }}" == *"canary"* ]]; then
             npm publish --access public --tag canary --no-git-checks
           else
