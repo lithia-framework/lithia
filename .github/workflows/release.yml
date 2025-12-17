@@ -26,9 +26,13 @@ jobs:
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+          always-auth: false
 
       - name: Publish to npm
         run: |
+          unset NODE_AUTH_TOKEN
+          rm -f ~/.npmrc
+          
           npm ci
 
           if [[ "${{ github.ref_name }}" == *"canary"* ]]; then
