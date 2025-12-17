@@ -83,10 +83,6 @@ jobs:
           name: |
             ${{ contains(github.ref_name, 'canary') && 'Canary Release' || 'Release' }} ${{ github.ref_name }}
           body: |
-            ## What's Changed
-
-            See [CHANGELOG.md](./CHANGELOG.md) for full details.
-
             ## Installation
 
             ```bash

@@ -1,6 +1,6 @@
 {
   "name": "lithia",
-  "version": "4.0.4-canary.0",
+  "version": "5.0.0-canary.0",
   "description": "Next-generation framework for building server-side applications with Node.js & TypeScript 🚀",
   "keywords": [
     "lithia",
@@ -57,7 +57,7 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "LICENSE", "README.md", "CHANGELOG.md"],
+  "files": ["dist", "LICENSE", "README.md"],
   "scripts": {
     "build": "tsx build.ts",
     "format": "biome format --write .",
