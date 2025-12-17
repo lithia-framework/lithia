@@ -2,6 +2,7 @@ import type { Lithia } from 'lithia/types';
 import { performance } from 'node:perf_hooks';
 import { scanServerRoutes } from '../routing/index';
 import { RouterManager } from '../server/routing';
+import { EventManager } from '../events/event-manager';
 import { BuildContext, type BuildResult } from './context';
 import { BuildBuilderFactory } from './modes';
 import { ParallelRouteExecutor } from './parallel-executor';

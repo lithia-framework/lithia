@@ -71,7 +71,7 @@ export class ProductionServerManager {
     try {
       // Create HTTP server
       const serverManager = new HttpServerManager(this.lithia);
-      this.server = serverManager.createServer();
+      this.server = await serverManager.createServer();
 
       // Setup server event handlers
       this.setupServerEventHandlers();

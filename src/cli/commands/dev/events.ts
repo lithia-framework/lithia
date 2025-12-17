@@ -8,8 +8,11 @@
 export interface DevServerEvent {
   type: string;
   timestamp: number;
-  filePath?: string;
-  data?: any;
+  data?: {
+    filePath?: string;
+    timestamp?: number;
+    [key: string]: any;
+  };
 }
 
 export type DevServerEventListener = (
@@ -100,7 +103,7 @@ export class DevServerEventEmitter {
       const event: DevServerEvent = {
         type: eventType,
         timestamp: Date.now(),
-        data,
+        data: data as DevServerEvent['data'],
       };
 
       // Execute all listeners concurrently

@@ -30,7 +30,7 @@ dependencies:
     specifier: ^5.5.3
     version: 5.5.3
   import-fresh:
-    specifier: ^3.3.0
+    specifier: ^3.3.1
     version: 3.3.1
   klona:
     specifier: ^2.0.6
@@ -39,7 +39,7 @@ dependencies:
     specifier: ^2.2.0
     version: 2.2.0
   socket.io:
-    specifier: ^4.7.0
+    specifier: ^4.8.1
     version: 4.8.1
   std-env:
     specifier: ^3.8.0

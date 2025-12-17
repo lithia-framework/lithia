@@ -75,7 +75,7 @@ function scanExamples(): Project[] {
 }
 
 function runServer(project: Project): void {
-  const child = spawn('npm', ['run', 'dev'], {
+  const child = spawn('pnpm', ['run', 'dev'], {
     cwd: project.path,
     stdio: 'inherit',
     shell: true,
@@ -193,7 +193,7 @@ const main = defineCommand({
     const nodeModulesPath = path.join(selectedProject.path, 'node_modules');
     if (!fs.existsSync(nodeModulesPath)) {
       console.log('Installing dependencies...');
-      const installProcess = spawn('npm', ['install'], {
+      const installProcess = spawn('pnpm', ['install'], {
         cwd: selectedProject.path,
         stdio: 'inherit',
         shell: true,

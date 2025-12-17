@@ -1,5 +1,4 @@
 import type { IncomingHttpHeaders, IncomingMessage } from 'node:http';
-import { parse } from 'node:url';
 import { parse as parseCookie } from 'cookie';
 import type { Lithia, LithiaRequest, Params, Query } from 'lithia/types';
 
@@ -33,11 +32,21 @@ export class _LithiaRequest implements LithiaRequest {
     private readonly req: IncomingMessage,
     private readonly lithia: Lithia,
   ) {
-    const url = parse(req.url!, true);
-    this.pathname = url.pathname!;
+    // Use WHATWG URL API instead of deprecated url.parse()
+    // Construct full URL from request headers and URL path
+    const protocol =
+      req.headers['x-forwarded-proto'] === 'https' ||
+      (req.socket as any)?.encrypted === true
+        ? 'https'
+        : 'http';
+    const host = req.headers.host || 'unknown';
+    const fullUrl = `${protocol}://${host}${req.url!}`;
+    const url = new URL(fullUrl);
+    
+    this.pathname = url.pathname;
     this.method = req.method!;
     this.headers = req.headers;
-    this.query = parseQuery(new URLSearchParams(url.search ?? ''), this.lithia);
+    this.query = parseQuery(url.searchParams, this.lithia);
     this.storage = new Map<string, unknown>();
     this.params = {};
     this.on = this.req.on.bind(this.req);
@@ -299,9 +308,8 @@ export class _LithiaRequest implements LithiaRequest {
     return (
       (this.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
       (this.headers['x-real-ip'] as string) ||
-      this.req.connection?.remoteAddress ||
       this.req.socket?.remoteAddress ||
-      '127.0.0.1'
+      'unknown'
     );
   }
 
@@ -322,7 +330,7 @@ export class _LithiaRequest implements LithiaRequest {
   isSecure(): boolean {
     return (
       this.headers['x-forwarded-proto'] === 'https' ||
-      (this.req.connection as any)?.encrypted === true
+      (this.req.socket as any)?.encrypted === true
     );
   }
 
@@ -332,7 +340,7 @@ export class _LithiaRequest implements LithiaRequest {
    * @returns {string} Request host
    */
   host(): string {
-    return this.headers.host || 'localhost';
+    return this.headers.host || 'unknown';
   }
 
   /**

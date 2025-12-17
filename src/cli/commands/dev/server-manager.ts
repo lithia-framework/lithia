@@ -45,6 +45,7 @@ export class ServerManager {
   private eventEmitter: DevServerEventEmitter;
   private lithia: Lithia;
   private server?: Server;
+  private httpServerManager?: HttpServerManager;
   private config: ServerConfig;
   private stats: ServerStats;
   private isStarting = false;
@@ -80,8 +81,8 @@ export class ServerManager {
       });
 
       // Create HTTP server
-      const serverManager = new HttpServerManager(this.lithia);
-      this.server = serverManager.createServer();
+      this.httpServerManager = new HttpServerManager(this.lithia);
+      this.server = await this.httpServerManager.createServer();
 
       // Setup server event handlers
       this.setupServerEventHandlers();
@@ -137,6 +138,7 @@ export class ServerManager {
         });
 
         this.server = undefined;
+        this.httpServerManager = undefined;
       }
 
       this.stats.isRunning = false;
@@ -274,6 +276,7 @@ export class ServerManager {
       });
     });
   }
+
 
   /**
    * Get detailed server information.

@@ -1,0 +1,20 @@
+{
+  "name": "websocket-example",
+  "version": "1.0.0",
+  "description": "Lithia WebSocket example",
+  "scripts": {
+    "dev": "node ../../dist/cli/index.js dev",
+    "build": "node ../../dist/cli/index.js build",
+    "start": "node ../../dist/cli/index.js start"
+  },
+  "dependencies": {
+    "lithia": "file:../../dist",
+    "zod": "^3.24.1",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "typescript": "^5.7.3"
+  }
+}
+

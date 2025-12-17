@@ -4,7 +4,9 @@ import {
   type Server,
   type ServerResponse,
 } from 'node:http';
+import { Server as SocketIOServer } from 'socket.io';
 import type { Lithia } from 'lithia/types';
+import { EventManager } from '../events/event-manager';
 import { ErrorHandler } from './error-handler';
 import { MiddlewareManager } from './middleware-manager';
 import { _LithiaRequest } from './request';
@@ -22,6 +24,8 @@ export class HttpServerManager {
   private middlewareManager: MiddlewareManager;
   private errorHandler: ErrorHandler;
   private requestProcessor: RequestProcessor;
+  private eventManager: EventManager;
+  private io?: SocketIOServer;
 
   constructor(lithia: Lithia) {
     this.lithia = lithia;
@@ -33,13 +37,14 @@ export class HttpServerManager {
       this.routerManager,
       this.middlewareManager,
     );
+    this.eventManager = new EventManager(lithia);
   }
 
   /**
-   * Creates and configures an HTTP server.
+   * Creates and configures an HTTP server with optional WebSocket support.
    * @returns {Server} Configured HTTP server
    */
-  createServer(): Server {
+  async createServer(): Promise<Server> {
     const server = createServer(
       async (httpReq: IncomingMessage, httpRes: ServerResponse) => {
         await this.handleRequest(
@@ -49,8 +54,46 @@ export class HttpServerManager {
       },
     );
 
+    // Initialize WebSocket if events exist
+    await this.initializeWebSocket(server);
+
     return server;
   }
+
+  /**
+   * Initializes Socket.IO server if WebSocket events are found.
+   * @private
+   * @param {Server} server - HTTP server instance
+   */
+  private async initializeWebSocket(server: Server): Promise<void> {
+    try {
+      const events = await this.eventManager.scanEvents(this.lithia);
+      if (events.length > 0) {
+        this.io = new SocketIOServer(server, {
+          cors: {
+            origin: this.lithia.options.cors?.origin || '*',
+            methods: this.lithia.options.cors?.methods || ['GET', 'POST'],
+            credentials: this.lithia.options.cors?.credentials ?? true,
+          },
+        });
+        await this.eventManager.registerEvents(this.io);
+      }
+    } catch (error) {
+      // Log error but don't fail server startup if events can't be loaded
+      this.lithia.logger.warn(
+        `Failed to initialize WebSocket: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Gets the Socket.IO server instance if initialized.
+   * @returns {SocketIOServer | undefined} Socket.IO server or undefined
+   */
+  getSocketIOServer(): SocketIOServer | undefined {
+    return this.io;
+  }
+
 
   /**
    * Handles incoming HTTP requests.

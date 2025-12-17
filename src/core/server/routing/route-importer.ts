@@ -37,7 +37,7 @@ export class RouteImporter {
     try {
       if (this.isDevelopment) {
         // Use importFresh for guaranteed fresh imports in development
-        return importFresh(route.filePath);
+        return await importFresh(route.filePath);
       }
 
       // Production: use normal import for performance

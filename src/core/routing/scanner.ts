@@ -1,10 +1,8 @@
 import type { Lithia, Route } from 'lithia/types';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import {
-  DefaultFileSystemScanner,
-  type FileSystemScanner,
-} from './file-system-scanner';
+import { DefaultRouteFileSystemScanner } from './file-system-scanner';
+import type { FileSystemScanner } from '../_utils/file-system-scanner';
 import { DefaultRouteProcessor, type RouteProcessor } from './route-processor';
 
 /**
@@ -69,7 +67,7 @@ export class DefaultFileScanner implements FileScanner {
     routeProcessor?: RouteProcessor,
   ) {
     this.fileSystemScanner =
-      fileSystemScanner || new DefaultFileSystemScanner();
+      fileSystemScanner || new DefaultRouteFileSystemScanner();
     this.routeProcessor = routeProcessor || new DefaultRouteProcessor();
   }
 
@@ -85,7 +83,7 @@ export class DefaultFileScanner implements FileScanner {
    * @returns Promise that resolves to an array of discovered Route objects
    */
   async scanRoutes(lithia: Lithia): Promise<Route[]> {
-    const routesDir = path.join(process.cwd(), 'src', 'routes');
+    const routesDir = path.join(process.cwd(), 'src', 'app', 'routes');
     const cacheKey = routesDir;
 
     // Initialize cache file path

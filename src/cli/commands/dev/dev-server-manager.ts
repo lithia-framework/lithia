@@ -468,19 +468,19 @@ export class DevServerManager {
     // File change events
     this.eventEmitter.on(DevServerEventType.FILE_CHANGED, async (event) => {
       if (this.autoReload) {
-        await this.softReload(event.filePath);
+        await this.handleFileChange(event.data?.filePath);
       }
     });
 
     this.eventEmitter.on(DevServerEventType.FILE_ADDED, async (event) => {
       if (this.autoReload) {
-        await this.softReload(event.filePath);
+        await this.handleFileChange(event.data?.filePath);
       }
     });
 
     this.eventEmitter.on(DevServerEventType.FILE_DELETED, async (event) => {
       if (this.autoReload) {
-        await this.softReload(event.filePath);
+        await this.handleFileChange(event.data?.filePath);
       }
     });
 
@@ -530,6 +530,34 @@ export class DevServerManager {
     this.eventEmitter.on(DevServerEventType.WATCHER_ERROR, async (event) => {
       this.lithia.logger.error('File watcher error:', event.data);
     });
+  }
+
+  /**
+   * Handle file change events (added, changed, deleted).
+   * Performs soft reload and reloads WebSocket events if needed.
+   * @private
+   * @param filePath - Path to the changed file
+   */
+  private async handleFileChange(filePath?: string): Promise<void> {
+    if (!this.autoReload || !filePath) {
+      return;
+    }
+
+    try {
+      await this.softReload(filePath);
+
+      // Note: WebSocket events don't need explicit reload in development
+      // The socket.onAny() handler reads from the manifest dynamically,
+      // so it automatically uses the latest handlers when the manifest is updated
+    } catch (error) {
+      // Log error but don't throw - we don't want to break the event system
+      if (this.lithia?.logger) {
+        this.lithia.logger.error(
+          `Error handling file change for ${filePath}:`,
+          error,
+        );
+      }
+    }
   }
 
   /**

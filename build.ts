@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { cp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, cp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { build } from 'tsup';
 
@@ -9,6 +9,7 @@ import { build } from 'tsup';
 enum BuildStep {
   BUILD_LITHIA_CORE = '⚙️ Build Lithia Core',
   PROCESS_DIST_FILES = '🔄 Process Distribution Files',
+  INSTALL_STUDIO_DEPS = '📦 Install Studio Dependencies',
   BUILD_STUDIO_UI = '🎨 Build Studio UI',
   COPY_STUDIO_DIST = '📁 Copy Studio Dist Files',
   FINALIZE = '✨ Finalize Build',
@@ -56,41 +57,137 @@ async function executeStep<T>(
 }
 
 /**
- * Builds the Studio UI using Vite.
+ * Checks if the Studio directory exists and has a package.json.
+ */
+async function studioExists(): Promise<boolean> {
+  try {
+    const studioDir = join(process.cwd(), 'studio');
+    const packageJsonPath = join(studioDir, 'package.json');
+    await access(packageJsonPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Executes a command in a child process with proper error handling.
+ * Uses shell: true with command as string to avoid security warnings on Windows.
+ * On Unix-like systems, uses spawn without shell for better security.
+ */
+function execCommand(
+  command: string,
+  args: string[],
+  cwd: string,
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const isWindows = process.platform === 'win32';
+    
+    if (isWindows) {
+      // On Windows, construct command as a single string to avoid the security warning
+      // This is safe because we control the command and arguments
+      const escapedArgs = args.map(arg => {
+        // Escape arguments that contain spaces or special characters
+        if (arg.includes(' ') || arg.includes('"') || arg.includes("'") || arg.includes('&') || arg.includes('|')) {
+          return `"${arg.replace(/"/g, '\\"')}"`;
+        }
+        return arg;
+      });
+      const commandStr = `${command} ${escapedArgs.join(' ')}`;
+      
+      const childProcess = spawn(commandStr, {
+        cwd,
+        stdio: 'inherit',
+        shell: true,
+        env: { ...process.env },
+      });
+
+      childProcess.on('close', (code) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`Command failed with code ${code}`));
+        }
+      });
+
+      childProcess.on('error', (error) => {
+        reject(error);
+      });
+    } else {
+      // On Unix-like systems, use spawn without shell for better security
+      const childProcess = spawn(command, args, {
+        cwd,
+        stdio: 'inherit',
+        shell: false,
+        env: { ...process.env },
+      });
+
+      childProcess.on('close', (code) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`Command failed with code ${code}`));
+        }
+      });
+
+      childProcess.on('error', (error) => {
+        reject(error);
+      });
+    }
+  });
+}
+
+/**
+ * Installs Studio dependencies.
+ */
+async function installStudioDeps(): Promise<void> {
+  // Check if studio directory exists and has package.json
+  const exists = await studioExists();
+  if (!exists) {
+    console.log('⚠️  Studio directory not found or not initialized. Skipping Studio dependencies installation.');
+    return;
+  }
+
+  const studioDir = join(process.cwd(), 'studio');
+  await execCommand('pnpm', ['install'], studioDir);
+}
+
+/**
+ * Builds the Studio UI using Next.js.
  */
 async function buildStudio(): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    const buildProcess = spawn('pnpm', ['run', 'build'], {
-      cwd: join(process.cwd(), 'studio'),
-      stdio: 'inherit',
-      shell: true,
-    });
+  // Check if studio directory exists and has package.json
+  const exists = await studioExists();
+  if (!exists) {
+    console.log('⚠️  Studio directory not found or not initialized. Skipping Studio UI build.');
+    return;
+  }
 
-    buildProcess.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`Studio build failed with code ${code}`));
-      }
-    });
-
-    buildProcess.on('error', (error) => {
-      reject(error);
-    });
-  });
+  const studioDir = join(process.cwd(), 'studio');
+  await execCommand('pnpm', ['run', 'build'], studioDir);
 }
 
 /**
  * Copies the Studio dist files to the dist directory.
  */
 async function copyStudioDist() {
+  const studioOutDir = join(process.cwd(), 'studio', 'out');
+  
+  // Check if studio out directory exists
+  try {
+    await access(studioOutDir);
+  } catch {
+    console.log('⚠️  Studio build output not found. Skipping copy step.');
+    return;
+  }
+
   await rm(join(process.cwd(), 'dist', 'studio', 'app'), {
     recursive: true,
     force: true,
   });
 
   await cp(
-    join(process.cwd(), 'studio', 'out'),
+    studioOutDir,
     join(process.cwd(), 'dist', 'studio', 'app'),
     {
       recursive: true,
@@ -221,13 +318,16 @@ async function main() {
     // Step 3: Process distribution files
     await executeStep(BuildStep.PROCESS_DIST_FILES, processDistFiles);
 
-    // Step 4: Build Studio UI (after Lithia is ready)
+    // Step 4: Install Studio dependencies
+    await executeStep(BuildStep.INSTALL_STUDIO_DEPS, installStudioDeps);
+
+    // Step 5: Build Studio UI (after Lithia is ready and deps installed)
     await executeStep(BuildStep.BUILD_STUDIO_UI, buildStudio);
 
-    // Step 5: Copy Studio dist files
+    // Step 6: Copy Studio dist files
     await executeStep(BuildStep.COPY_STUDIO_DIST, copyStudioDist);
 
-    // Step 5: Finalize build
+    // Step 7: Finalize build
     await executeStep(BuildStep.FINALIZE, async () => {
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
       console.log(`\n🎉 Build completed successfully in ${duration}s!`);

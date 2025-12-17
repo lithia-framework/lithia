@@ -54,8 +54,7 @@ export default defineCommand({
       const buildTime = Date.now() - startTime;
 
       if (result.success) {
-        lithia.logger.success(`Build completed successfully in ${buildTime}ms`);
-        lithia.logger.info(`Routes built: ${result.routesBuilt}`);
+        lithia.logger.success(`Built in ${buildTime}ms`);
       } else {
         lithia.logger.error('Build failed');
         lithia.logger.error(`Errors: ${result.errors.length}`);

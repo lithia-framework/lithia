@@ -127,8 +127,15 @@ export class BuildMonitor {
 
       this.lithia.logger.wait('Building project...');
 
-      // Prepare and build
-      await prepare();
+      // Only prepare (clean) on full builds, not incremental builds
+      // Incremental builds should preserve existing files (routes/events)
+      if (!filePath) {
+        await prepare();
+      } else {
+        // For incremental builds, just ensure .lithia directory exists
+        const { mkdir } = await import('node:fs/promises');
+        await mkdir('.lithia', { recursive: true });
+      }
 
       // Use incremental build if filePath is provided
       const result = filePath
@@ -148,9 +155,8 @@ export class BuildMonitor {
         });
 
         this.lithia.logger.success(
-          `Build completed successfully in ${buildTime}ms`,
+          `Built in ${buildTime}ms`,
         );
-        this.lithia.logger.info(`Routes built: ${result.routesBuilt}`);
       } else {
         await this.eventEmitter.emit(DevServerEventType.BUILD_ERROR, {
           buildTime,
