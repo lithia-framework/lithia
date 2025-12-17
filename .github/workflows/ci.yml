@@ -20,35 +20,35 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - name: Install npm
+        uses: npm/action-setup@v4
         with:
           version: 8.15.0
 
-      - name: Get pnpm store directory
+      - name: Get npm store directory
         shell: bash
         run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
 
-      - name: Setup pnpm cache
+      - name: Setup npm cache
         uses: actions/cache@v4
         with:
           path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-npm-store-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-npm-store-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --frozen-lockfile
 
       - name: Run linter
-        run: pnpm run lint
+        run: npm run lint
 
       - name: Check formatting
-        run: pnpm run format:check
+        run: npm run format:check
 
       - name: Type check
-        run: pnpm run type-check
+        run: npm run type-check
 
   build:
     name: Build Verification
@@ -68,29 +68,29 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - name: Install npm
+        uses: npm/action-setup@v4
         with:
           version: 8.15.0
 
-      - name: Get pnpm store directory
+      - name: Get npm store directory
         shell: bash
         run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
 
-      - name: Setup pnpm cache
+      - name: Setup npm cache
         uses: actions/cache@v4
         with:
           path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-node${{ matrix.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-npm-store-node${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-node${{ matrix.node-version }}-
+            ${{ runner.os }}-npm-store-node${{ matrix.node-version }}-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --frozen-lockfile
 
       - name: Build project
-        run: pnpm run build
+        run: npm run build
 
       - name: Verify build output
         run: |
@@ -101,4 +101,4 @@ jobs:
 
       - name: Run tests
         if: always()
-        run: pnpm run test || echo "No test script found, skipping tests"
+        run: npm run test || echo "No test script found, skipping tests"

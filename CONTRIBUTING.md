@@ -131,7 +131,7 @@ When creating a bug report, include:
 - OS: Ubuntu 22.04
 - Node: v20.10.0
 - Lithia: v3.1.0 (or canary)
-- Package Manager: pnpm 8.15.0
+- Package Manager: npm 8.15.0
 ```
 
 ### Suggesting Enhancements
@@ -161,7 +161,7 @@ Don't be afraid to ask questions! We're here to help.
 ### Prerequisites
 
 - **Node.js** 18.x or higher
-- **pnpm** 8.x or higher
+- **npm** 8.x or higher
 - **Git**
 
 ### Clone and Install
@@ -180,11 +180,11 @@ git checkout canary
 git remote add upstream https://github.com/lithia-framework/lithia.git
 
 # Install dependencies
-pnpm install
+npm install
 
 # Install Studio dependencies
 cd studio
-pnpm install
+npm install
 cd ..
 ```
 
@@ -192,7 +192,7 @@ cd ..
 
 ```bash
 # Build Lithia core and Studio
-pnpm run build
+npm run build
 ```
 
 ### Run Examples
@@ -202,10 +202,10 @@ pnpm run build
 cd examples/1-basic-api
 
 # Install dependencies
-pnpm install
+npm install
 
 # Run in development mode
-pnpm run dev
+npm run dev
 ```
 
 ### Development Workflow
@@ -221,22 +221,22 @@ git checkout -b feat/my-feature
 # Make changes to src/
 
 # Build to test changes
-pnpm run build
+npm run build
 
 # Test with examples
 cd examples/1-basic-api
-pnpm run dev
+npm run dev
 
 # Check code quality
-pnpm run lint
-pnpm run format:check
+npm run lint
+npm run format:check
 ```
 
 ### Testing Your Changes with npm link
 
 ```bash
 # In the lithia directory
-pnpm run build
+npm run build
 npm link
 
 # In your test project
@@ -261,16 +261,16 @@ npm link lithia
 
    ```bash
    # Run linter
-   pnpm run lint
+   npm run lint
 
    # Check formatting
-   pnpm run format:check
+   npm run format:check
 
    # Run type checking
-   pnpm run type-check
+   npm run type-check
 
    # Test with examples
-   cd examples/1-basic-api && pnpm run dev
+   cd examples/1-basic-api && npm run dev
    ```
 
 4. **Commit your changes** following [commit guidelines](#commit-guidelines)
@@ -369,16 +369,16 @@ We use **ESLint** for linting and **Prettier** for formatting:
 
 ```bash
 # Format code
-pnpm run format
+npm run format
 
 # Check formatting
-pnpm run format:check
+npm run format:check
 
 # Lint
-pnpm run lint
+npm run lint
 
 # Fix linting issues
-pnpm run lint:fix
+npm run lint:fix
 ```
 
 ### Best Practices
@@ -525,8 +525,8 @@ We currently rely on manual testing with example projects:
 ```bash
 # Test with basic example
 cd examples/1-basic-api
-pnpm install
-pnpm run dev
+npm install
+npm run dev
 
 # Test features:
 # - Create new routes
@@ -558,7 +558,7 @@ For significant changes, test with a real project:
 
 ```bash
 # In lithia directory
-pnpm run build
+npm run build
 npm link
 
 # In your test project
@@ -643,16 +643,16 @@ Contributors are recognized in:
 
 ```bash
 # Development
-pnpm run build              # Build the project
-pnpm run dev                # Start with watch mode (if available)
-pnpm run lint               # Run ESLint
-pnpm run lint:fix           # Fix linting issues
-pnpm run format             # Format code with Prettier
-pnpm run format:check       # Check code formatting
-pnpm run type-check         # Run TypeScript type checking
+npm run build              # Build the project
+npm run dev                # Start with watch mode (if available)
+npm run lint               # Run ESLint
+npm run lint:fix           # Fix linting issues
+npm run format             # Format code with Prettier
+npm run format:check       # Check code formatting
+npm run type-check         # Run TypeScript type checking
 
 # Testing
-cd examples/1-basic-api && pnpm run dev
+cd examples/1-basic-api && npm run dev
 
 # Branch management
 git checkout canary         # Switch to canary
@@ -665,13 +665,13 @@ git checkout -b feat/new    # Create feature branch
 **Build fails with TypeScript errors:**
 
 - Make sure you're on the latest `canary` branch
-- Run `pnpm install` to ensure dependencies are up to date
+- Run `npm install` to ensure dependencies are up to date
 - Check that your Node.js version is 18.x or higher
 
 **Examples don't work:**
 
-- Rebuild the main project: `pnpm run build`
-- Reinstall example dependencies: `cd examples/1-basic-api && pnpm install`
+- Rebuild the main project: `npm run build`
+- Reinstall example dependencies: `cd examples/1-basic-api && npm install`
 - Clear any cached builds: `rm -rf dist`
 
 **Hot reload not working:**

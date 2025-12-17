@@ -154,7 +154,7 @@ async function installStudioDeps(): Promise<void> {
   }
 
   const studioDir = join(process.cwd(), 'studio');
-  await execCommand('pnpm', ['install'], studioDir);
+  await execCommand('npm', ['install'], studioDir);
 }
 
 /**
@@ -168,7 +168,7 @@ async function buildStudio(): Promise<void> {
   }
 
   const studioDir = join(process.cwd(), 'studio');
-  await execCommand('pnpm', ['run', 'build'], studioDir);
+  await execCommand('npm', ['run', 'build'], studioDir);
 }
 
 /**
