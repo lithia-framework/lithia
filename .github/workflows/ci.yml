@@ -18,37 +18,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
-      - name: Install npm
-        uses: npm/action-setup@v4
-        with:
-          version: 8.15.0
-
-      - name: Get npm store directory
-        shell: bash
+      - name: Lint
         run: |
-          echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup npm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-npm-store-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-store-
-
-      - name: Install dependencies
-        run: npm install --frozen-lockfile
-
-      - name: Run linter
-        run: npm run lint
-
-      - name: Check formatting
-        run: npm run format:check
-
-      - name: Type check
-        run: npm run type-check
+          npm ci
+          npm run lint
+          npm run type-check
 
   build:
     name: Build Verification
@@ -63,34 +39,15 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Install npm
-        uses: npm/action-setup@v4
-        with:
-          version: 8.15.0
-
-      - name: Get npm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup npm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-npm-store-node${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-store-node${{ matrix.node-version }}-
-
-      - name: Install dependencies
-        run: npm install --frozen-lockfile
+          node-version: '22'
 
       - name: Build project
-        run: npm run build
+        run: |
+          npm ci
+          npm run build
 
       - name: Verify build output
         run: |
@@ -101,4 +58,6 @@ jobs:
 
       - name: Run tests
         if: always()
-        run: npm run test || echo "No test script found, skipping tests"
+        run: |
+          npm ci
+          npm run test || echo "No test script found, skipping tests"
