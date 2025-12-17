@@ -100,6 +100,7 @@
     "zod": "^4.2.1"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": false
   }
 }
