@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import type { Lithia, Event } from 'lithia/types';
-import { getOutputPath } from '../_utils';
+import { getOutputPath } from '../../../_utils';
 
 /**
  * Manages events manifest file operations.
@@ -117,6 +117,10 @@ export class EventManifestManager {
    */
   private async writeEventsToFile(events: Event[]): Promise<void> {
     const outputPath = path.join('.lithia', 'events.json');
+
+    // Ensure .lithia directory exists
+    const { mkdir } = await import('node:fs/promises');
+    await mkdir(path.dirname(outputPath), { recursive: true });
 
     // Use compact JSON format for better performance
     const jsonContent = JSON.stringify(events);

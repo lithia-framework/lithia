@@ -1,8 +1,9 @@
 import type { Lithia, Event } from 'lithia/types';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { isDevelopment } from '../../../lithia-context';
 import { DefaultEventFileSystemScanner } from './file-system-scanner';
-import type { FileSystemScanner } from '../_utils/file-system-scanner';
+import type { FileSystemScanner } from '../../../_utils/file-system-scanner';
 import { DefaultEventProcessor, type EventProcessor } from './event-processor';
 
 /**
@@ -72,57 +73,63 @@ export class DefaultEventScanner implements EventScanner {
     const eventsDir = path.join(process.cwd(), 'src', 'app', 'events');
     const cacheKey = eventsDir;
 
-    // Initialize cache file path
-    if (!this.cacheFile) {
-      this.cacheFile = path.join(
-        process.cwd(),
-        '.lithia',
-        '.events-cache.json',
-      );
-    }
-
-    // Load persistent cache
-    await this.loadEventsCache();
-
-    try {
-      // Check if events directory has changed
-      const eventsDirStats = await stat(eventsDir);
-      const eventsDirMtime = eventsDirStats.mtime.getTime();
-
-      // Check cache first
-      const cached = this.eventsCache.get(cacheKey);
-      if (cached && cached.timestamp === eventsDirMtime) {
-        return cached.events;
+    // Only use cache in development mode
+    if (isDevelopment()) {
+      // Initialize cache file path
+      if (!this.cacheFile) {
+        this.cacheFile = path.join(
+          process.cwd(),
+          '.lithia',
+          '.events-cache.json',
+        );
       }
 
-      // Directory changed or cache miss, rescan
-      const files = await this.eventFileSystemScanner.scanDirectory();
-      const events = files.map((file) =>
-        this.eventProcessor.processFile(file, lithia),
-      );
+      // Load persistent cache
+      await this.loadEventsCache();
 
-      // Update cache
-      this.eventsCache.set(cacheKey, { events, timestamp: eventsDirMtime });
-      await this.saveEventsCache();
+      try {
+        // Check if events directory has changed
+        const eventsDirStats = await stat(eventsDir);
+        const eventsDirMtime = eventsDirStats.mtime.getTime();
 
-      // Create events manifest in development mode
-      if (
-        lithia.options._env === 'dev' ||
-        process.env.LITHIA_ENV === 'dev' ||
-        !process.env.NODE_ENV
-      ) {
-        const { EventManifestManager } = await import('./event-manifest-manager');
-        const manifestManager = new EventManifestManager(lithia);
-        await manifestManager.createManifest(events);
+        // Check cache first
+        const cached = this.eventsCache.get(cacheKey);
+        if (cached && cached.timestamp === eventsDirMtime) {
+          return cached.events;
+        }
+
+        // Directory changed or cache miss, rescan
+        const files = await this.eventFileSystemScanner.scanDirectory();
+        const events = files.map((file) =>
+          this.eventProcessor.processFile(file, lithia),
+        );
+
+        // Update cache
+        this.eventsCache.set(cacheKey, { events, timestamp: eventsDirMtime });
+        await this.saveEventsCache();
+
+        return events;
+      } catch (error) {
+        // If directory doesn't exist or other error, return empty array
+        if (error instanceof Error && error.message.includes('ENOENT')) {
+          return [];
+        }
+        throw error;
       }
-
-      return events;
-    } catch (error) {
-      // If directory doesn't exist or other error, return empty array
-      if (error instanceof Error && error.message.includes('ENOENT')) {
-        return [];
+    } else {
+      // Production: scan directly without cache
+      try {
+        const files = await this.eventFileSystemScanner.scanDirectory();
+        return files.map((file) =>
+          this.eventProcessor.processFile(file, lithia),
+        );
+      } catch (error) {
+        // If directory doesn't exist or other error, return empty array
+        if (error instanceof Error && error.message.includes('ENOENT')) {
+          return [];
+        }
+        throw error;
       }
-      throw error;
     }
   }
 

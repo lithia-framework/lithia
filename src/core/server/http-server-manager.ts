@@ -6,13 +6,14 @@ import {
 } from 'node:http';
 import { Server as SocketIOServer } from 'socket.io';
 import type { Lithia } from 'lithia/types';
-import { EventManager } from '../events/event-manager';
+import { isDevelopment } from '../lithia-context';
+import { EventManager } from './events/runtime';
 import { ErrorHandler } from './error-handler';
 import { MiddlewareManager } from './middleware-manager';
 import { _LithiaRequest } from './request';
 import { RequestProcessor } from './request-processor';
 import { _LithiaResponse } from './response';
-import { RouterManager } from './routing';
+import { RouterManager } from './routing/runtime';
 
 /**
  * HttpServerManager manages HTTP server creation and request handling.
@@ -32,12 +33,13 @@ export class HttpServerManager {
     this.routerManager = new RouterManager(lithia);
     this.middlewareManager = new MiddlewareManager(lithia);
     this.errorHandler = new ErrorHandler();
+    this.eventManager = new EventManager(lithia);
     this.requestProcessor = new RequestProcessor(
       lithia,
       this.routerManager,
       this.middlewareManager,
+      () => this.io, // Pass a getter function to access io
     );
-    this.eventManager = new EventManager(lithia);
   }
 
   /**
@@ -109,11 +111,7 @@ export class HttpServerManager {
     try {
       await this.requestProcessor.processRequest(req, res);
     } catch (error) {
-      this.errorHandler.handleError(
-        error,
-        res,
-        this.lithia.options._env === 'dev',
-      );
+      this.errorHandler.handleError(error, res, isDevelopment());
     }
   }
 }

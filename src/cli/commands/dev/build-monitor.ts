@@ -7,6 +7,7 @@ import {
   BuildContext,
   scanServerRoutes,
   RouterManager,
+  EventManager,
 } from 'lithia/core';
 
 /**
@@ -222,6 +223,11 @@ export class BuildMonitor {
       // Create manifest (this will use incremental manifest cache)
       const routerManager = new RouterManager(this.lithia);
       await routerManager.createRoutesManifest(routes);
+
+      // Create events manifest
+      const eventManager = new EventManager(this.lithia);
+      const events = await eventManager.scanEvents(this.lithia);
+      await eventManager.createEventsManifest(events);
 
       return {
         success: true,

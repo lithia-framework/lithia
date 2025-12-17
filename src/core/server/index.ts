@@ -3,6 +3,8 @@ export * from './errors';
 export * from './http-server-manager';
 export * from './middleware-manager';
 export * from './request';
+export * from './request-context';
 export * from './request-processor';
 export * from './response';
 export * from './routing';
+export * from './events';

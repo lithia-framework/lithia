@@ -1,5 +1,6 @@
 import type { Lithia } from 'lithia/types';
 import type { BuildResult } from './context';
+import { isDevelopment } from '../lithia-context';
 import {
   type BuildStrategy,
   DevelopmentBuildStrategy,
@@ -66,19 +67,17 @@ export class DefaultBuildManager implements BuildManager {
   /**
    * Selects the appropriate build strategy based on Lithia configuration.
    *
+   * This method is called within runWithContext, so it can use isDevelopment()
+   * from the context to determine the environment.
+   *
    * @private
    * @param lithia - The Lithia instance containing configuration
    * @returns The selected build strategy
    */
   private selectStrategy(lithia: Lithia): BuildStrategy {
-    // Check if we're in development mode based on CLI command
-    const isDev = lithia.options._cli?.command === 'dev';
-
-    // Check environment variables as fallback
-    const isDevEnv =
-      process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
-
-    return isDev || isDevEnv ? this.devStrategy : this.prodStrategy;
+    // Use context to determine environment
+    // This is called within runWithContext, so isDevelopment() will work
+    return isDevelopment() ? this.devStrategy : this.prodStrategy;
   }
 }
 

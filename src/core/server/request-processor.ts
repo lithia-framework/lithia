@@ -1,7 +1,12 @@
-import type { Lithia, Route, RouteModule } from 'lithia/types';
+import type { Lithia, Route, RouteModule, SocketIOServer } from 'lithia/types';
+import { isDevelopment } from '../lithia-context';
 import { InternalServerError, NotFoundError } from './errors';
 import type { MiddlewareManager } from './middleware-manager';
 import type { _LithiaRequest } from './request';
+import {
+  RequestContextProvider,
+} from './request-context';
+import { randomUUID } from 'node:crypto';
 import type { _LithiaResponse } from './response';
 import type { RouterManager } from './routing';
 import { DefaultRouteValidator } from './validation';
@@ -15,10 +20,15 @@ export class RequestProcessor {
     private lithia: Lithia,
     private routerManager: RouterManager,
     private middlewareManager: MiddlewareManager,
+    private getSocketIOServer: () => SocketIOServer | undefined,
   ) {}
 
   /**
    * Processes incoming HTTP request through the complete pipeline.
+   *
+   * Wraps the entire request processing in an AsyncLocalStorage context,
+   * making request, response, and route information available throughout
+   * the request lifecycle without explicitly passing them as parameters.
    *
    * @param req - Request object
    * @param res - Response object
@@ -27,35 +37,50 @@ export class RequestProcessor {
     req: _LithiaRequest,
     res: _LithiaResponse,
   ): Promise<void> {
-    try {
-      await this.lithia.hooks
-        .callHook('request:before', req, res)
-        .catch((error) => {
-          this.lithia.logger.error('Error in request:before hook:', error);
-        });
+    // Create request context
+    const context: RequestContextProvider = {
+      startTime: Date.now(),
+      requestId: randomUUID(),
+      socket: this.getSocketIOServer(),
+      storage: new Map(),
+    };
 
-      await this.executeGlobalMiddlewares(req, res);
+    // Run entire request pipeline within context
+    await RequestContextProvider(context, async () => {
+      try {
+        await this.lithia.hooks
+          .callHook('request:before', req, res)
+          .catch((error) => {
+            this.lithia.logger.error('Error in request:before hook:', error);
+          });
 
-      if (res._ended) return;
+        await this.executeGlobalMiddlewares(req, res);
 
-      const route = await this.findAndValidateRoute(req);
-      const module = await this.importAndValidateModule(route);
+        if (res._ended) return;
 
-      await this.executeRouteMiddlewares(req, res, route, module);
+        const route = await this.findAndValidateRoute(req);
+        
+        // Update context with matched route
+        context.route = route;
 
-      if (res._ended) return;
+        const module = await this.importAndValidateModule(route);
 
-      await this.executeRouteHandler(req, res, route, module);
-    } catch (error) {
-      await this.lithia.hooks.callHook('request:error', req, res, error);
-      throw error;
-    } finally {
-      await this.lithia.hooks
-        .callHook('request:after', req, res)
-        .catch((error) => {
-          this.lithia.logger.error('Error in request:after hook:', error);
-        });
-    }
+        await this.executeRouteMiddlewares(req, res, route, module);
+
+        if (res._ended) return;
+
+        await this.executeRouteHandler(req, res, route, module);
+      } catch (error) {
+        await this.lithia.hooks.callHook('request:error', req, res, error);
+        throw error;
+      } finally {
+        await this.lithia.hooks
+          .callHook('request:after', req, res)
+          .catch((error) => {
+            this.lithia.logger.error('Error in request:after hook:', error);
+          });
+      }
+    });
   }
 
   /**
@@ -217,7 +242,7 @@ export class RequestProcessor {
     let origins = corsConfig.origin || [];
     if (
       this.lithia.options.studio.enabled &&
-      this.lithia.options._env === 'dev'
+      isDevelopment()
     ) {
       origins = [...origins, 'http://localhost:8473'];
     }

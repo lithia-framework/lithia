@@ -1,6 +1,8 @@
 import type { Lithia, Event, SocketEventModule } from 'lithia/types';
 import type { Server as SocketIOServer, Socket } from 'socket.io';
-import { DefaultEventScanner } from './scanner';
+import { isDevelopment, LithiaContextProvider } from '../../../lithia-context';
+import { getOutputPath } from '../../../_utils';
+import { DefaultEventScanner } from '../discovery/scanner';
 import { EventImporter } from './event-importer';
 import { EventManifestManager } from './event-manifest-manager';
 
@@ -15,17 +17,12 @@ export class EventManager {
   private eventImporter: EventImporter;
   private eventManifestManager: EventManifestManager;
   private lithia: Lithia;
-  private isDevelopment: boolean;
 
   constructor(lithia: Lithia) {
     this.lithia = lithia;
     this.eventScanner = new DefaultEventScanner();
     this.eventImporter = new EventImporter();
     this.eventManifestManager = new EventManifestManager(lithia);
-    this.isDevelopment =
-      lithia.options._env === 'dev' ||
-      process.env.LITHIA_ENV === 'dev' ||
-      !process.env.NODE_ENV;
   }
 
   /**
@@ -61,16 +58,37 @@ export class EventManager {
     }
 
     // Create manifest in development mode
-    if (this.isDevelopment) {
+    if (isDevelopment()) {
       await this.eventManifestManager.createManifest(events);
     }
 
     // Use manifest-based routing in development, static registration in production
-    if (this.isDevelopment) {
-      await this.registerEventsWithManifest(io, events);
+    if (isDevelopment()) {
+      await this.registerEventsWithManifest(io);
     } else {
       await this.registerEventsStatically(io, events);
     }
+  }
+
+  /**
+   * Creates events manifest file.
+   * Only creates manifest in development mode.
+   * @param {Event[]} events - Events to include in manifest
+   * @returns {Promise<void>}
+   */
+  async createEventsManifest(events: Event[]): Promise<void> {
+    // Only create manifest in development mode
+    if (isDevelopment()) {
+      await this.eventManifestManager.createManifest(events);
+    }
+  }
+
+  /**
+   * Gets events from manifest file.
+   * @returns {Event[]} Array of events from manifest
+   */
+  getEventsFromManifest(): Event[] {
+    return this.eventManifestManager.getEventsFromManifest();
   }
 
   /**
@@ -78,27 +96,30 @@ export class EventManager {
    * Uses socket.onAny() to capture all events and route dynamically based on manifest.
    * @private
    * @param {SocketIOServer} io - Socket.IO server instance
-   * @param {Event[]} events - Array of discovered events
    * @returns {Promise<void>}
    */
   private async registerEventsWithManifest(
     io: SocketIOServer,
-    events: Event[],
   ): Promise<void> {
-    const connectionEvent = events.find((e) => e.name === 'connection');
-    const disconnectEvent = events.find((e) => e.name === 'disconnect');
+    // Get events from manifest (which has correct compiled file paths)
+    const manifestEvents = this.eventManifestManager.getEventsFromManifest();
+    const connectionEvent = manifestEvents.find((e) => e.name === 'connection');
+    const disconnectEvent = manifestEvents.find((e) => e.name === 'disconnect');
 
     io.on('connection', async (socket: Socket) => {
-      // Execute connection handler if exists
-      if (connectionEvent) {
-        await this.executeConnectionHandler(socket, connectionEvent);
-      }
+      // Wrap in app context to ensure isDevelopment() works in WebSocket handlers
+      await LithiaContextProvider(this.lithia, async () => {
+        // Execute connection handler if exists
+        if (connectionEvent) {
+          await this.executeEventHandler(socket, connectionEvent, 'connection');
+        }
 
-      // Register disconnect handler
-      this.registerDisconnectHandler(socket, disconnectEvent);
+        // Register disconnect handler
+        this.registerDisconnectHandler(socket, disconnectEvent);
 
-      // Register global handler using onAny() to capture all events dynamically
-      this.registerDynamicEventHandler(socket);
+        // Register global handler using onAny() to capture all events dynamically
+        this.registerDynamicEventHandler(socket);
+      });
     });
   }
 
@@ -113,60 +134,43 @@ export class EventManager {
     io: SocketIOServer,
     events: Event[],
   ): Promise<void> {
-    const connectionEvent = events.find((e) => e.name === 'connection');
-    const disconnectEvent = events.find((e) => e.name === 'disconnect');
-    const regularEvents = events.filter(
+    // Update file paths to compiled .js files for production
+    const updatedEvents = events.map((event) => ({
+      ...event,
+      filePath: getOutputPath(this.lithia, event.filePath),
+      sourceFilePath: event.sourceFilePath || event.filePath,
+    }));
+
+    const connectionEvent = updatedEvents.find((e) => e.name === 'connection');
+    const disconnectEvent = updatedEvents.find((e) => e.name === 'disconnect');
+    const regularEvents = updatedEvents.filter(
       (e) => e.name !== 'connection' && e.name !== 'disconnect',
     );
 
     io.on('connection', async (socket: Socket) => {
-      // Execute connection handler if exists
-      if (connectionEvent) {
-        await this.executeConnectionHandler(socket, connectionEvent);
-      }
+      // Wrap in app context to ensure isDevelopment() works in WebSocket handlers
+      await LithiaContextProvider(this.lithia, async () => {
+        // Execute connection handler if exists
+        if (connectionEvent) {
+          await this.executeEventHandler(socket, connectionEvent, 'connection');
+        }
 
-      // Register disconnect handler
-      this.registerDisconnectHandler(socket, disconnectEvent);
+        // Register disconnect handler
+        this.registerDisconnectHandler(socket, disconnectEvent);
 
-      // Register static event handlers
-      await this.registerStaticEventHandlers(socket, regularEvents);
+        // Register static event handlers
+        await this.registerStaticEventHandlers(socket, regularEvents);
+      });
     });
   }
 
   /**
-   * Checks if an event module can be imported successfully.
-   * @param {Event} event - Event to check
-   * @returns {Promise<boolean>} True if event can be imported
-   */
-  async canImportEvent(event: Event): Promise<boolean> {
-    return this.eventImporter.canImportEvent(event);
-  }
-
-  /**
-   * Creates events manifest file.
-   * @param {Event[]} events - Events to include in manifest
-   * @returns {Promise<void>}
-   */
-  async createEventsManifest(events: Event[]): Promise<void> {
-    await this.eventManifestManager.createManifest(events);
-  }
-
-  /**
-   * Gets events from manifest file.
-   * @returns {Event[]} Array of events from manifest
-   */
-  getEventsFromManifest(): Event[] {
-    return this.eventManifestManager.getEventsFromManifest();
-  }
-
-
-  /**
-   * Executes an event handler module.
+   * Executes a given event handler module.
    * @private
    * @param {Socket} socket - Socket instance
-   * @param {Event} event - Event to execute
-   * @param {string} eventType - Type of event (for error messages)
-   * @param {unknown} data - Optional event data
+   * @param {Event} event - The event object
+   * @param {string} eventType - Type of event for logging (e.g., 'connection', 'disconnect', 'chat:message')
+   * @param {unknown} [data] - Optional data passed to the handler
    */
   private async executeEventHandler(
     socket: Socket,
@@ -187,19 +191,6 @@ export class EventManager {
   }
 
   /**
-   * Executes connection event handler.
-   * @private
-   * @param {Socket} socket - Socket instance
-   * @param {Event} event - Connection event
-   */
-  private async executeConnectionHandler(
-    socket: Socket,
-    event: Event,
-  ): Promise<void> {
-    await this.executeEventHandler(socket, event, 'connection');
-  }
-
-  /**
    * Registers disconnect event handler for a socket.
    * @private
    * @param {Socket} socket - Socket instance
@@ -214,7 +205,10 @@ export class EventManager {
     }
 
     socket.on('disconnect', async () => {
-      await this.executeEventHandler(socket, event, 'disconnect');
+      // Wrap in app context to ensure isDevelopment() works
+      await LithiaContextProvider(this.lithia, async () => {
+        await this.executeEventHandler(socket, event, 'disconnect');
+      });
     });
   }
 
@@ -225,12 +219,13 @@ export class EventManager {
    */
   private registerDynamicEventHandler(socket: Socket): void {
     socket.onAny(async (eventName: string, ...args: unknown[]) => {
-      // Skip internal Socket.IO events
-      if (eventName === 'connect' || eventName === 'disconnect') {
-        return;
-      }
+      // Wrap in app context to ensure isDevelopment() works
+      await LithiaContextProvider(this.lithia, async () => {
+        // Skip internal Socket.IO events
+        if (eventName === 'connect' || eventName === 'disconnect') {
+          return;
+        }
 
-      try {
         const manifestEvents = this.eventManifestManager.getEventsFromManifest();
         const event = manifestEvents.find((e) => e.name === eventName);
 
@@ -238,11 +233,7 @@ export class EventManager {
           const data = args.length > 0 ? args[0] : undefined;
           await this.executeEventHandler(socket, event, eventName, data);
         }
-      } catch (error) {
-        this.lithia.logger.error(
-          `Error in event handler ${eventName}: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
+      });
     });
   }
 
@@ -252,14 +243,16 @@ export class EventManager {
    * @param {Socket} socket - Socket instance
    * @param {Event[]} events - Array of regular events to register
    */
-  private registerStaticEventHandlers(
+  private async registerStaticEventHandlers(
     socket: Socket,
     events: Event[],
-  ): void {
+  ): Promise<void> {
     for (const event of events) {
-      // Register handler - module will be imported when event is triggered
       socket.on(event.name, async (data?: unknown) => {
-        await this.executeEventHandler(socket, event, event.name, data);
+        // Wrap in app context to ensure isDevelopment() works
+        await LithiaContextProvider(this.lithia, async () => {
+          await this.executeEventHandler(socket, event, event.name, data);
+        });
       });
     }
   }

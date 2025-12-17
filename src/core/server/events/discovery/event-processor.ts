@@ -43,27 +43,36 @@ export class DefaultEventProcessor implements EventProcessor {
    * @returns A complete Event object ready for use by the event system
    */
   processFile(file: FileInfo, _lithia: Lithia): Event {
-    // Remove 'src/app/events/' prefix and file extension
-    let eventPath = file.path.replace(/\.ts$/, '');
+    const baseDir = 'src/app/events/';
+    let eventPath = file.path;
 
-    // Handle special event names (connection, disconnect)
-    if (eventPath === 'connection' || eventPath === 'disconnect') {
-      return {
-        name: eventPath,
-        filePath: file.fullPath,
-        sourceFilePath: file.fullPath,
-      };
+    // Remove the base directory prefix
+    if (eventPath.startsWith(baseDir)) {
+      eventPath = eventPath.substring(baseDir.length);
     }
 
-    // Convert directory structure to namespace (e.g., chat/message → chat:message)
-    const eventName = eventPath.replace(/\//g, ':');
+    // Remove file extension
+    eventPath = eventPath.replace(/\.ts$/, '');
 
-    // Extract namespace if event is in a subdirectory
+    // Determine event name and namespace
     const parts = eventPath.split('/');
-    const namespace = parts.length > 1 ? parts.slice(0, -1).join(':') : undefined;
+    let name: string;
+    let namespace: string | undefined;
+
+    if (parts.length > 1) {
+      name = parts.pop()!; // Last part is the event name
+      namespace = parts.join(':'); // Remaining parts form the namespace
+    } else {
+      name = parts[0];
+    }
+
+    // Special handling for 'connection' and 'disconnect' events
+    if (name === 'connection' || name === 'disconnect') {
+      namespace = undefined; // These are global events, no namespace
+    }
 
     return {
-      name: eventName,
+      name: namespace ? `${namespace}:${name}` : name,
       filePath: file.fullPath,
       sourceFilePath: file.fullPath,
       namespace,

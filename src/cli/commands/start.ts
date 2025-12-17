@@ -113,56 +113,61 @@ export default defineCommand({
         },
       });
 
-      if (options.verbose) {
-        lithia.logger.info(
-          `Starting production server on ${options.host}:${options.port}`,
-        );
-        lithia.logger.info(`Output directory: ${outputPath}`);
-        if (options.https) {
-          lithia.logger.info(`HTTPS enabled with certificate: ${options.cert}`);
+      // Run server startup within Lithia context
+      const { LithiaContextProvider } = await import('lithia/core');
+
+      await LithiaContextProvider(lithia, async () => {
+        if (options.verbose) {
+          lithia.logger.info(
+            `Starting production server on ${options.host}:${options.port}`,
+          );
+          lithia.logger.info(`Output directory: ${outputPath}`);
+          if (options.https) {
+            lithia.logger.info(`HTTPS enabled with certificate: ${options.cert}`);
+          }
         }
-      }
 
-      // Create server configuration
-      const serverConfig: ProductionServerConfig = {
-        port: options.port!,
-        host: options.host!,
-        https: options.https,
-        cert: options.cert,
-        key: options.key,
-      };
+        // Create server configuration
+        const serverConfig: ProductionServerConfig = {
+          port: options.port!,
+          host: options.host!,
+          https: options.https,
+          cert: options.cert,
+          key: options.key,
+        };
 
-      // Create and start production server manager
-      const serverManager = new ProductionServerManager(lithia, serverConfig);
-      await serverManager.start();
+        // Create and start production server manager
+        const serverManager = new ProductionServerManager(lithia, serverConfig);
+        await serverManager.start();
 
-      const startupTime = Date.now() - startTime;
+        const startupTime = Date.now() - startTime;
 
-      if (options.verbose) {
-        const info = serverManager.getDetailedInfo();
-        lithia.logger.info(`Server uptime: ${info.uptimeFormatted}`);
-        lithia.logger.info(
-          `Memory usage: ${Math.round(info.stats.requestCount)} requests handled`,
+        if (options.verbose) {
+          const info = serverManager.getDetailedInfo();
+          lithia.logger.info(`Server uptime: ${info.uptimeFormatted}`);
+          lithia.logger.info(
+            `Memory usage: ${Math.round(info.stats.requestCount)} requests handled`,
+          );
+
+          const health = serverManager.getHealthStatus();
+          lithia.logger.info(`Health status: ${health.status}`);
+          lithia.logger.info(
+            `Memory usage: ${Math.round(health.memoryUsage.heapUsed / 1024 / 1024)}MB`,
+          );
+        }
+
+        lithia.logger.ready(
+          `Server listening on http://${serverConfig.host}:${serverConfig.port} (started in ${startupTime}ms)`,
         );
 
-        const health = serverManager.getHealthStatus();
-        lithia.logger.info(`Health status: ${health.status}`);
-        lithia.logger.info(
-          `Memory usage: ${Math.round(health.memoryUsage.heapUsed / 1024 / 1024)}MB`,
-        );
-      }
+        if (options.verbose) {
+          lithia.logger.info('Use --debug flag for detailed logs');
+          lithia.logger.info('Press Ctrl+C to stop the server');
+        }
 
-      lithia.logger.ready(
-        `Server listening on http://${serverConfig.host}:${serverConfig.port} (started in ${startupTime}ms)`,
-      );
-
-      if (options.verbose) {
-        lithia.logger.info('Use --debug flag for detailed logs');
-        lithia.logger.info('Press Ctrl+C to stop the server');
-      }
-
-      // Keep the process alive
-      await new Promise(() => {});
+        // Keep the process alive
+        await new Promise(() => {});
+      });
     } catch (error) {
       console.error('Failed to start production server:', error);
       process.exit(1);

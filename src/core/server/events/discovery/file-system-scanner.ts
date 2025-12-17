@@ -1,7 +1,7 @@
 import { readdir } from 'node:fs/promises';
 import nodePath from 'node:path';
 import type { FileInfo } from 'lithia/types';
-import type { FileSystemScanner } from '../_utils/file-system-scanner';
+import type { FileSystemScanner } from '../../../_utils/file-system-scanner';
 
 /**
  * Default implementation of FileSystemScanner for events that uses Node.js filesystem APIs.

@@ -1,7 +1,7 @@
 import { pathToFileURL } from 'node:url';
 import importFresh from 'import-fresh';
 import type { Route, RouteModule } from 'lithia/types';
-import { isDevelopment } from '../../lithia-context';
+import { isDevelopment } from '../../../lithia-context';
 
 /**
  * Handles dynamic import of route modules.

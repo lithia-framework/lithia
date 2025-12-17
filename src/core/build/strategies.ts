@@ -1,8 +1,8 @@
 import type { Lithia } from 'lithia/types';
 import { performance } from 'node:perf_hooks';
-import { scanServerRoutes } from '../routing/index';
-import { RouterManager } from '../server/routing';
-import { EventManager } from '../events/event-manager';
+import { scanServerRoutes } from '../server/routing/discovery';
+import { RouterManager } from '../server/routing/runtime';
+import { EventManager } from '../server/events/runtime';
 import { BuildContext, type BuildResult } from './context';
 import { BuildBuilderFactory } from './modes';
 import { ParallelRouteExecutor } from './parallel-executor';
@@ -100,7 +100,7 @@ export class DevelopmentBuildStrategy implements BuildStrategy {
   }
 
   /**
-   * Creates the routes manifest.
+   * Creates the routes and events manifests.
    *
    * @private
    * @param context - The build context
@@ -108,6 +108,13 @@ export class DevelopmentBuildStrategy implements BuildStrategy {
   private async createManifest(context: BuildContext): Promise<void> {
     const routerManager = new RouterManager(context.lithia);
     await routerManager.createRoutesManifest(context.routes);
+
+    // Create events manifest if events exist (only in development)
+    const eventManager = new EventManager(context.lithia);
+    const events = await eventManager.scanEvents(context.lithia);
+    if (events.length > 0) {
+      await eventManager.createEventsManifest(events);
+    }
   }
 }
 

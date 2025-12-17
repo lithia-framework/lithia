@@ -2,7 +2,6 @@ import { createHooks } from 'hookable';
 import {
   C12ConfigProvider,
   type ConfigUpdateContext,
-  createLithia,
   type DiffEntry,
   registerHooksFromConfig,
 } from 'lithia/core';
@@ -54,12 +53,14 @@ export class DevServerManager {
   ];
 
   constructor(
+    lithia: Lithia,
     options: {
       autoReload?: boolean;
       debug?: boolean;
       maxReloadAttempts?: number;
     } = {},
   ) {
+    this.lithia = lithia;
     this.autoReload = options.autoReload ?? true;
     this.debugMode = options.debug ?? false;
     this.maxReloadAttempts = options.maxReloadAttempts ?? 3;
@@ -77,13 +78,6 @@ export class DevServerManager {
     }
 
     try {
-      // Create Lithia instance
-      this.lithia = await createLithia({
-        _env: 'dev',
-        _cli: { command: 'dev' },
-        debug: this.debugMode,
-      });
-
       // Initialize components
       this.buildMonitor = new BuildMonitor(this.eventEmitter, this.lithia);
       this.serverManager = new ServerManager(this.eventEmitter, this.lithia);

@@ -6,7 +6,7 @@ export default {
     host: 'localhost',
   },
   cors: {
-    origin: '*',
+    origin: ['*'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   },
