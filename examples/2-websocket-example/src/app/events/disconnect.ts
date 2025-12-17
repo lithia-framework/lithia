@@ -8,4 +8,3 @@ export default async (socket: Socket) => {
   console.log(`Client disconnected: ${socket.id}`);
   // Cleanup logic can be added here
 };
-

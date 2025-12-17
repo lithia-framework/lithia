@@ -166,4 +166,3 @@ export const runWithContext = LithiaContextProvider;
  * @deprecated Use useApp instead
  */
 export const getContext = useApp;
-

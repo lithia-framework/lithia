@@ -4,7 +4,6 @@ import type { Lithia, Params, Route, RouteModule } from 'lithia/types';
 import { ManifestManager } from './manifest-manager';
 import { ParameterExtractor } from './parameter-extractor';
 import { RouteImporter } from './route-importer';
-import { RouteMetadataManager } from './route-metadata';
 import { RouteUtils } from './utils';
 
 /**
@@ -16,13 +15,11 @@ import { RouteUtils } from './utils';
 export class RouterManager {
   private manifestManager: ManifestManager;
   private routeImporter: RouteImporter;
-  private metadataManager: RouteMetadataManager;
   private parameterExtractor: ParameterExtractor;
 
   constructor(lithia: Lithia) {
     this.manifestManager = new ManifestManager(lithia);
     this.routeImporter = new RouteImporter();
-    this.metadataManager = new RouteMetadataManager(lithia);
     this.parameterExtractor = new ParameterExtractor();
   }
 
@@ -59,15 +56,6 @@ export class RouterManager {
    */
   async importRouteModule(route: Route): Promise<RouteModule> {
     return this.routeImporter.importRoute(route);
-  }
-
-  /**
-   * Gets metadata for a route.
-   * @param {Route} route - Route configuration
-   * @returns {Promise<any>} Route metadata
-   */
-  async getRouteMetadata(route: Route): Promise<any> {
-    return this.metadataManager.getRouteMetadata(route);
   }
 
   /**

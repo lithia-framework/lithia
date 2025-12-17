@@ -10,7 +10,7 @@ import { type Socket, Server as SocketIOServer } from 'socket.io';
  */
 export class WebSocketManager {
   private io: SocketIOServer;
-  private eventHandlers: Map<string, (socket: Socket, data?: any) => void> =
+  private eventHandlers: Map<string, (socket: Socket, data?: unknown) => void> =
     new Map();
 
   constructor(httpServer: Server) {
@@ -30,7 +30,7 @@ export class WebSocketManager {
   /**
    * Register an event handler for incoming WebSocket events.
    */
-  on(event: string, handler: (socket: Socket, data?: any) => void): void {
+  on(event: string, handler: (socket: Socket, data?: unknown) => void): void {
     this.eventHandlers.set(event, handler);
   }
 
@@ -44,14 +44,14 @@ export class WebSocketManager {
   /**
    * Send data to a specific client.
    */
-  sendToClient(socket: Socket, event: string, data: any): void {
+  sendToClient(socket: Socket, event: string, data: unknown): void {
     socket.emit(event, data);
   }
 
   /**
    * Send data to all connected clients.
    */
-  sendToAll(event: string, data: any): void {
+  sendToAll(event: string, data: unknown): void {
     this.io.emit(event, data);
   }
 
@@ -62,12 +62,10 @@ export class WebSocketManager {
     this.io.on('connection', (socket: Socket) => {
       // Register all event handlers
       this.eventHandlers.forEach((handler, event) => {
-        socket.on(event, (data?: any) => {
+        socket.on(event, (data?: unknown) => {
           handler(socket, data);
         });
       });
-
-      socket.on('disconnect', () => {});
     });
   }
 

@@ -1,8 +1,8 @@
-import type { Lithia } from 'lithia/types';
 import { performance } from 'node:perf_hooks';
+import type { Lithia } from 'lithia/types';
+import { EventManager } from '../server/events/runtime';
 import { scanServerRoutes } from '../server/routing/discovery';
 import { RouterManager } from '../server/routing/runtime';
-import { EventManager } from '../server/events/runtime';
 import { BuildContext, type BuildResult } from './context';
 import { BuildBuilderFactory } from './modes';
 import { ParallelRouteExecutor } from './parallel-executor';

@@ -1,5 +1,4 @@
-import type { FileInfo, Lithia } from 'lithia/types';
-import type { Event } from 'lithia/types';
+import type { Event, FileInfo, Lithia } from 'lithia/types';
 
 /**
  * Interface for event processing implementations.
@@ -79,4 +78,3 @@ export class DefaultEventProcessor implements EventProcessor {
     };
   }
 }
-

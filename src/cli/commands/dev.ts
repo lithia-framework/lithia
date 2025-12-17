@@ -1,5 +1,9 @@
 import { defineCommand } from 'citty';
-import { createLithia, isDevelopment, LithiaContextProvider } from 'lithia/core';
+import {
+  createLithia,
+  isDevelopment,
+  LithiaContextProvider,
+} from 'lithia/core';
 import { DevServerManager } from './dev/index';
 
 export default defineCommand({

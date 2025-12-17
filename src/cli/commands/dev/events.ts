@@ -11,7 +11,15 @@ export interface DevServerEvent {
   data?: {
     filePath?: string;
     timestamp?: number;
-    [key: string]: any;
+    error?: unknown;
+    config?: unknown;
+    buildTime?: number;
+    routesBuilt?: number;
+    errors?: unknown[];
+    reason?: string;
+    watchDir?: string;
+    options?: unknown;
+    [key: string]: unknown;
   };
 }
 

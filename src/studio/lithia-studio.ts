@@ -98,7 +98,28 @@ export class LithiaStudio {
 
     this.webSocketManager.on('create-route', async (socket, data) => {
       try {
-        await this.routerManager.createRoute(data);
+        // Type guard for createRoute data
+        if (
+          !data ||
+          typeof data !== 'object' ||
+          !('path' in data) ||
+          !('fileName' in data) ||
+          !('filePath' in data) ||
+          !('code' in data)
+        ) {
+          throw new Error('Invalid route data');
+        }
+
+        const routeData = data as {
+          path: string;
+          method?: string;
+          env?: string;
+          fileName: string;
+          filePath: string;
+          code: string;
+        };
+
+        await this.routerManager.createRoute(routeData);
         this.webSocketManager.sendToClient(socket, 'route-created', {
           success: true,
         });
@@ -116,9 +137,24 @@ export class LithiaStudio {
       'validate-route-conflicts',
       async (socket, data) => {
         try {
+          // Type guard for validateRouteConflicts data
+          if (
+            !data ||
+            typeof data !== 'object' ||
+            !('path' in data) ||
+            !('method' in data)
+          ) {
+            throw new Error('Invalid validation data');
+          }
+
+          const validationData = data as {
+            path: string;
+            method: string;
+          };
+
           const result = await this.routerManager.validateRouteConflicts(
-            data.path,
-            data.method,
+            validationData.path,
+            validationData.method,
           );
           this.webSocketManager.sendToClient(
             socket,
@@ -237,14 +273,14 @@ export class LithiaStudio {
   /**
    * Send build statistics to connected clients.
    */
-  emitBuildStats(buildStats: any): void {
+  emitBuildStats(buildStats: unknown): void {
     this.webSocketManager.sendToAll('build-stats', buildStats);
   }
 
   /**
    * Send dev server statistics to connected clients.
    */
-  emitDevServerStats(devServerStats: any): void {
+  emitDevServerStats(devServerStats: unknown): void {
     this.webSocketManager.sendToAll('dev-server-stats', devServerStats);
   }
 }

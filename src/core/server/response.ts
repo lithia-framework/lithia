@@ -12,9 +12,26 @@ import type { LithiaResponse } from 'lithia/types';
  * @property {boolean} _ended - Internal flag tracking response completion state
  * @property {ServerResponse} res - Native Node.js response object
  */
+/**
+ * Cookie options interface matching the cookie library's serialize options.
+ */
+interface CookieOptions {
+  domain?: string;
+  expires?: Date;
+  httpOnly?: boolean;
+  maxAge?: number;
+  path?: string;
+  sameSite?: boolean | 'lax' | 'strict' | 'none';
+  secure?: boolean;
+}
+
 export class _LithiaResponse implements LithiaResponse {
   _ended = false;
-  private _cookies: Array<{ name: string; value: string; options?: any }> = [];
+  private _cookies: Array<{
+    name: string;
+    value: string;
+    options?: CookieOptions;
+  }> = [];
 
   /**
    * @constructor
@@ -286,7 +303,11 @@ export class _LithiaResponse implements LithiaResponse {
    * @param {object} [options] - Cookie options
    * @returns {LithiaResponse} Current instance for chaining
    */
-  cookie(name: string, value: string, options: any = {}): LithiaResponse {
+  cookie(
+    name: string,
+    value: string,
+    options: CookieOptions = {},
+  ): LithiaResponse {
     this.checkIfEnded();
     this._cookies.push({ name, value, options });
     return this;
@@ -299,7 +320,7 @@ export class _LithiaResponse implements LithiaResponse {
    * @param {object} [options] - Cookie options
    * @returns {LithiaResponse} Current instance for chaining
    */
-  clearCookie(name: string, options: any = {}): LithiaResponse {
+  clearCookie(name: string, options: CookieOptions = {}): LithiaResponse {
     this.checkIfEnded();
     return this.cookie(name, '', { ...options, expires: new Date(0) });
   }

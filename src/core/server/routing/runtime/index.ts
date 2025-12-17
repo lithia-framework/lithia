@@ -7,4 +7,3 @@ export { RouteImporter } from './route-importer';
 export { RouteMetadataManager } from './route-metadata';
 export { RouterManager } from './router-manager';
 export { RouteUtils } from './utils';
-

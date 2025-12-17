@@ -175,7 +175,7 @@ export class FileWatcher {
    * @param delay - Delay in milliseconds
    * @returns Debounced function
    */
-  private debounce<T extends (...args: any[]) => void>(
+  private debounce<T extends (...args: unknown[]) => void>(
     func: T,
     delay: number,
   ): T {

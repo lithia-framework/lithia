@@ -82,19 +82,25 @@ function execCommand(
 ): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const isWindows = process.platform === 'win32';
-    
+
     if (isWindows) {
       // On Windows, construct command as a single string to avoid the security warning
       // This is safe because we control the command and arguments
-      const escapedArgs = args.map(arg => {
+      const escapedArgs = args.map((arg) => {
         // Escape arguments that contain spaces or special characters
-        if (arg.includes(' ') || arg.includes('"') || arg.includes("'") || arg.includes('&') || arg.includes('|')) {
+        if (
+          arg.includes(' ') ||
+          arg.includes('"') ||
+          arg.includes("'") ||
+          arg.includes('&') ||
+          arg.includes('|')
+        ) {
           return `"${arg.replace(/"/g, '\\"')}"`;
         }
         return arg;
       });
       const commandStr = `${command} ${escapedArgs.join(' ')}`;
-      
+
       const childProcess = spawn(commandStr, {
         cwd,
         stdio: 'inherit',
@@ -144,7 +150,9 @@ async function installStudioDeps(): Promise<void> {
   // Check if studio directory exists and has package.json
   const exists = await studioExists();
   if (!exists) {
-    console.log('⚠️  Studio directory not found or not initialized. Skipping Studio dependencies installation.');
+    console.log(
+      '⚠️  Studio directory not found or not initialized. Skipping Studio dependencies installation.',
+    );
     return;
   }
 
@@ -159,7 +167,9 @@ async function buildStudio(): Promise<void> {
   // Check if studio directory exists and has package.json
   const exists = await studioExists();
   if (!exists) {
-    console.log('⚠️  Studio directory not found or not initialized. Skipping Studio UI build.');
+    console.log(
+      '⚠️  Studio directory not found or not initialized. Skipping Studio UI build.',
+    );
     return;
   }
 
@@ -172,7 +182,7 @@ async function buildStudio(): Promise<void> {
  */
 async function copyStudioDist() {
   const studioOutDir = join(process.cwd(), 'studio', 'out');
-  
+
   // Check if studio out directory exists
   try {
     await access(studioOutDir);
@@ -186,13 +196,9 @@ async function copyStudioDist() {
     force: true,
   });
 
-  await cp(
-    studioOutDir,
-    join(process.cwd(), 'dist', 'studio', 'app'),
-    {
-      recursive: true,
-    },
-  );
+  await cp(studioOutDir, join(process.cwd(), 'dist', 'studio', 'app'), {
+    recursive: true,
+  });
 }
 
 /**

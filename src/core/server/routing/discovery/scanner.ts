@@ -1,8 +1,8 @@
-import type { Lithia, Route } from 'lithia/types';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { DefaultRouteFileSystemScanner } from './file-system-scanner';
+import type { Lithia, Route } from 'lithia/types';
 import type { FileSystemScanner } from '../../../_utils/file-system-scanner';
+import { DefaultRouteFileSystemScanner } from './file-system-scanner';
 import { DefaultRouteProcessor, type RouteProcessor } from './route-processor';
 
 /**
@@ -174,4 +174,3 @@ export class DefaultFileScanner implements FileScanner {
     }
   }
 }
-

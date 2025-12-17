@@ -14,7 +14,7 @@ export class ErrorUtils {
       (typeof error === 'object' &&
         error !== null &&
         '_isHttpError' in error &&
-        (error as any)._isHttpError === true)
+        (error as { _isHttpError?: boolean })._isHttpError === true)
     );
   }
 
@@ -67,20 +67,22 @@ export class ErrorUtils {
       },
     };
 
+    const errorResponse = response.error as Record<string, unknown>;
+
     if (error.code) {
-      (response.error as any).code = error.code;
+      errorResponse.code = error.code;
     }
 
     if (error.data) {
-      (response.error as any).data = error.data;
+      errorResponse.data = error.data;
     }
 
     if (error.requestId) {
-      (response.error as any).requestId = error.requestId;
+      errorResponse.requestId = error.requestId;
     }
 
     if (includeStack && error.stack) {
-      (response.error as any).stack = error.stack;
+      errorResponse.stack = error.stack;
     }
 
     return response;

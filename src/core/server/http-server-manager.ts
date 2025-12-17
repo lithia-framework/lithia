@@ -4,11 +4,11 @@ import {
   type Server,
   type ServerResponse,
 } from 'node:http';
-import { Server as SocketIOServer } from 'socket.io';
 import type { Lithia } from 'lithia/types';
+import { Server as SocketIOServer } from 'socket.io';
 import { isDevelopment } from '../lithia-context';
-import { EventManager } from './events/runtime';
 import { ErrorHandler } from './error-handler';
+import { EventManager } from './events/runtime';
 import { MiddlewareManager } from './middleware-manager';
 import { _LithiaRequest } from './request';
 import { RequestProcessor } from './request-processor';
@@ -95,7 +95,6 @@ export class HttpServerManager {
   getSocketIOServer(): SocketIOServer | undefined {
     return this.io;
   }
-
 
   /**
    * Handles incoming HTTP requests.

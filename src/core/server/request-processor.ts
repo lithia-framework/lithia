@@ -1,12 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import type { Lithia, Route, RouteModule, SocketIOServer } from 'lithia/types';
 import { isDevelopment } from '../lithia-context';
 import { InternalServerError, NotFoundError } from './errors';
 import type { MiddlewareManager } from './middleware-manager';
 import type { _LithiaRequest } from './request';
-import {
-  RequestContextProvider,
-} from './request-context';
-import { randomUUID } from 'node:crypto';
+import { RequestContextProvider } from './request-context';
 import type { _LithiaResponse } from './response';
 import type { RouterManager } from './routing';
 import { DefaultRouteValidator } from './validation';
@@ -59,7 +57,7 @@ export class RequestProcessor {
         if (res._ended) return;
 
         const route = await this.findAndValidateRoute(req);
-        
+
         // Update context with matched route
         context.route = route;
 
@@ -240,10 +238,7 @@ export class RequestProcessor {
 
     // Prepare origins - add Studio origin if enabled
     let origins = corsConfig.origin || [];
-    if (
-      this.lithia.options.studio.enabled &&
-      isDevelopment()
-    ) {
+    if (this.lithia.options.studio.enabled && isDevelopment()) {
       origins = [...origins, 'http://localhost:8473'];
     }
 

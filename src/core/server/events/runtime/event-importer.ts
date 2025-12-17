@@ -1,7 +1,6 @@
 import { pathToFileURL } from 'node:url';
 import importFresh from 'import-fresh';
-import type { Event } from 'lithia/types';
-import type { SocketEventModule } from 'lithia/types';
+import type { Event, SocketEventModule } from 'lithia/types';
 import { isDevelopment } from '../../../lithia-context';
 
 /**
@@ -11,7 +10,6 @@ import { isDevelopment } from '../../../lithia-context';
  * In production, uses normal import for performance.
  */
 export class EventImporter {
-
   /**
    * Dynamically imports event module with cache invalidation.
    *
@@ -33,9 +31,8 @@ export class EventImporter {
       // The filePath points to the compiled .js file in .lithia directory
       const importPath = event.filePath;
 
-      console.log(isDevelopment())
+      console.log(isDevelopment());
 
-      
       if (isDevelopment()) {
         // Use importFresh for guaranteed fresh imports in development
         // importFresh handles file paths correctly, including Windows paths
@@ -68,4 +65,3 @@ export class EventImporter {
     }
   }
 }
-

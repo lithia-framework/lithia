@@ -123,7 +123,9 @@ export default defineCommand({
           );
           lithia.logger.info(`Output directory: ${outputPath}`);
           if (options.https) {
-            lithia.logger.info(`HTTPS enabled with certificate: ${options.cert}`);
+            lithia.logger.info(
+              `HTTPS enabled with certificate: ${options.cert}`,
+            );
           }
         }
 
@@ -166,6 +168,7 @@ export default defineCommand({
         }
 
         // Keep the process alive
+        // biome-ignore lint/suspicious/noEmptyBlockStatements: Intentional - Promise never resolves to keep process alive
         await new Promise(() => {});
       });
     } catch (error) {

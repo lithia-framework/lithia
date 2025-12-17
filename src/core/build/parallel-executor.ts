@@ -1,6 +1,6 @@
 import type { Route } from 'lithia/types';
-import type { RouteBuilder } from './route-builder';
 import type { BuildContext } from './context';
+import type { RouteBuilder } from './route-builder';
 
 /**
  * Parallel route executor that builds multiple routes concurrently.

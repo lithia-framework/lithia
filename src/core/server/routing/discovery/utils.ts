@@ -22,4 +22,3 @@ export async function scanServerRoutes(lithia: Lithia): Promise<Route[]> {
   const scanner = new DefaultFileScanner();
   return await scanner.scanRoutes(lithia);
 }
-

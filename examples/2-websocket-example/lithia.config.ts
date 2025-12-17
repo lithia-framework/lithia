@@ -14,4 +14,3 @@ export default {
     enabled: true,
   },
 } satisfies LithiaConfig;
-

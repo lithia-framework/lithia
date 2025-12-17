@@ -3,7 +3,7 @@ import type { Socket, Server as SocketIOServer } from 'socket.io';
 /**
  * Re-export Socket.IO types for convenience.
  */
-export type { Socket, Server as SocketIOServer } from 'socket.io';
+export type { Server as SocketIOServer, Socket } from 'socket.io';
 
 /**
  * Handler function for Socket.IO events.
@@ -37,4 +37,3 @@ export interface Event {
   /** Optional namespace if event is in a subdirectory */
   namespace?: string;
 }
-

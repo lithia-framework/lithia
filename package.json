@@ -57,12 +57,7 @@
     },
     "./package.json": "./package.json"
   },
-  "files": [
-    "dist",
-    "LICENSE",
-    "README.md",
-    "CHANGELOG.md"
-  ],
+  "files": ["dist", "LICENSE", "README.md", "CHANGELOG.md"],
   "scripts": {
     "build": "tsx build.ts",
     "format": "biome format --write .",

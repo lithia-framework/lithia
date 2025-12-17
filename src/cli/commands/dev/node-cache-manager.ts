@@ -43,7 +43,9 @@ export class NodeCacheManager {
         typeof globalThis.import !== 'undefined' &&
         'cache' in globalThis.import
       ) {
-        const esModuleCache = (globalThis.import as any).cache;
+        const esModuleCache = (
+          globalThis.import as { cache?: Map<string, unknown> }
+        ).cache;
         if (esModuleCache && typeof esModuleCache.delete === 'function') {
           // Clear ES modules from output directory
           for (const [key] of esModuleCache.entries()) {
@@ -95,7 +97,9 @@ export class NodeCacheManager {
         typeof globalThis.import !== 'undefined' &&
         'cache' in globalThis.import
       ) {
-        const esModuleCache = (globalThis.import as any).cache;
+        const esModuleCache = (
+          globalThis.import as { cache?: Map<string, unknown> }
+        ).cache;
         if (esModuleCache && typeof esModuleCache.delete === 'function') {
           esModuleCache.delete(normalizedPath);
         }

@@ -34,7 +34,8 @@ export interface RequestContextProvider {
  * the entire request lifecycle. Multiple requests can be processed
  * concurrently without context interference.
  */
-const RequestContextProviderStorage = new AsyncLocalStorage<RequestContextProvider>();
+const RequestContextProviderStorage =
+  new AsyncLocalStorage<RequestContextProvider>();
 
 /**
  * Runs a function within a request context.
@@ -118,18 +119,18 @@ export function useRoute(): Route | undefined {
  * // In a route handler
  * export default async (req, res) => {
  *   const io = useSocket();
- *   
+ *
  *   if (io) {
  *     // Broadcast to all connected clients
  *     io.emit('notification', { message: 'New data available' });
- *     
+ *
  *     // Or emit to a specific room
  *     io.to('room1').emit('update', { data: req.body });
- *     
+ *
  *     // Or emit to a specific namespace
  *     io.of('/admin').emit('alert', { message: 'Admin notification' });
  *   }
- *   
+ *
  *   res.json({ success: true });
  * };
  * ```
@@ -223,4 +224,3 @@ export function getRequestId(): string | undefined {
 export function getRequestStartTime(): number | undefined {
   return useRequest()?.startTime;
 }
-

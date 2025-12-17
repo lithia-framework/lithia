@@ -1,7 +1,7 @@
-import type { Lithia, Event, SocketEventModule } from 'lithia/types';
-import type { Server as SocketIOServer, Socket } from 'socket.io';
-import { isDevelopment, LithiaContextProvider } from '../../../lithia-context';
+import type { Event, Lithia, SocketEventModule } from 'lithia/types';
+import type { Socket, Server as SocketIOServer } from 'socket.io';
 import { getOutputPath } from '../../../_utils';
+import { isDevelopment, LithiaContextProvider } from '../../../lithia-context';
 import { DefaultEventScanner } from '../discovery/scanner';
 import { EventImporter } from './event-importer';
 import { EventManifestManager } from './event-manifest-manager';
@@ -98,9 +98,7 @@ export class EventManager {
    * @param {SocketIOServer} io - Socket.IO server instance
    * @returns {Promise<void>}
    */
-  private async registerEventsWithManifest(
-    io: SocketIOServer,
-  ): Promise<void> {
+  private async registerEventsWithManifest(io: SocketIOServer): Promise<void> {
     // Get events from manifest (which has correct compiled file paths)
     const manifestEvents = this.eventManifestManager.getEventsFromManifest();
     const connectionEvent = manifestEvents.find((e) => e.name === 'connection');
@@ -226,7 +224,8 @@ export class EventManager {
           return;
         }
 
-        const manifestEvents = this.eventManifestManager.getEventsFromManifest();
+        const manifestEvents =
+          this.eventManifestManager.getEventsFromManifest();
         const event = manifestEvents.find((e) => e.name === eventName);
 
         if (event) {
@@ -257,4 +256,3 @@ export class EventManager {
     }
   }
 }
-

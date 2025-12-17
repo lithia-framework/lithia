@@ -22,14 +22,12 @@ export interface ServerStats {
  * and emits them to connected Studio clients.
  */
 export class ServerMonitor extends EventEmitter {
-  private lithia: Lithia;
   private intervalId: NodeJS.Timeout | null = null;
   private startTime: Date;
   private isRunning = false;
 
-  constructor(lithia: Lithia) {
+  constructor(_lithia: Lithia) {
     super();
-    this.lithia = lithia;
     this.startTime = new Date();
   }
 

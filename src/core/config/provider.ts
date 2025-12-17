@@ -116,9 +116,9 @@ export class C12ConfigProvider implements ConfigProvider {
       ...opts.c12,
     };
 
-    const loadedConfig = await (
-      opts.watch ? watchConfig<LithiaConfig> : loadConfig<LithiaConfig>
-    )(
+    const loadedConfig = await (opts.watch
+      ? watchConfig<LithiaConfig>
+      : loadConfig<LithiaConfig>)(
       opts.watch && this.configUpdateCallback
         ? {
             ...configOptions,

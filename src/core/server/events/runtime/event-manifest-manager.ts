@@ -1,8 +1,8 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 import path from 'node:path';
-import type { Lithia, Event } from 'lithia/types';
+import type { Event, Lithia } from 'lithia/types';
 import { getOutputPath } from '../../../_utils';
 
 /**
@@ -143,4 +143,3 @@ export class EventManifestManager {
     }
   }
 }
-

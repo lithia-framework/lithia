@@ -138,4 +138,3 @@ export class DefaultPathTransformer implements PathTransformer {
     ).source;
   }
 }
-

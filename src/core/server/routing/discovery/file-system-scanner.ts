@@ -82,4 +82,3 @@ type ScanDirOptions = {
   /** File patterns to ignore during scanning */
   ignore?: string[];
 };
-

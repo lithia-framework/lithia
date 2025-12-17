@@ -1,10 +1,10 @@
-import type { Lithia, Event } from 'lithia/types';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { isDevelopment } from '../../../lithia-context';
-import { DefaultEventFileSystemScanner } from './file-system-scanner';
+import type { Event, Lithia } from 'lithia/types';
 import type { FileSystemScanner } from '../../../_utils/file-system-scanner';
+import { isDevelopment } from '../../../lithia-context';
 import { DefaultEventProcessor, type EventProcessor } from './event-processor';
+import { DefaultEventFileSystemScanner } from './file-system-scanner';
 
 /**
  * Interface for event scanning implementations.
@@ -178,4 +178,3 @@ export class DefaultEventScanner implements EventScanner {
     }
   }
 }
-

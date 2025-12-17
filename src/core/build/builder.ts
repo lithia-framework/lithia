@@ -1,6 +1,6 @@
 import type { Lithia } from 'lithia/types';
-import type { BuildResult } from './context';
 import { isDevelopment } from '../lithia-context';
+import type { BuildResult } from './context';
 import {
   type BuildStrategy,
   DevelopmentBuildStrategy,

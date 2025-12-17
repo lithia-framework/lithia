@@ -36,13 +36,13 @@ export class _LithiaRequest implements LithiaRequest {
     // Construct full URL from request headers and URL path
     const protocol =
       req.headers['x-forwarded-proto'] === 'https' ||
-      (req.socket as any)?.encrypted === true
+      (req.socket as { encrypted?: boolean })?.encrypted === true
         ? 'https'
         : 'http';
     const host = req.headers.host || 'unknown';
     const fullUrl = `${protocol}://${host}${req.url!}`;
     const url = new URL(fullUrl);
-    
+
     this.pathname = url.pathname;
     this.method = req.method!;
     this.headers = req.headers;
@@ -330,7 +330,7 @@ export class _LithiaRequest implements LithiaRequest {
   isSecure(): boolean {
     return (
       this.headers['x-forwarded-proto'] === 'https' ||
-      (this.req.socket as any)?.encrypted === true
+      (this.req.socket as { encrypted?: boolean })?.encrypted === true
     );
   }
 

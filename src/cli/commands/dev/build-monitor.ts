@@ -1,14 +1,15 @@
-import { buildLithia, prepare } from 'lithia/core';
+import {
+  BuildContext,
+  buildLithia,
+  EventManager,
+  prepare,
+  RouterManager,
+  SWCRouteBuilder,
+  scanServerRoutes,
+} from 'lithia/core';
 import type { Lithia } from 'lithia/types';
 import { type DevServerEventEmitter, DevServerEventType } from './events';
 import { NodeCacheManager } from './node-cache-manager';
-import {
-  SWCRouteBuilder,
-  BuildContext,
-  scanServerRoutes,
-  RouterManager,
-  EventManager,
-} from 'lithia/core';
 
 /**
  * Build statistics for monitoring.
@@ -155,9 +156,7 @@ export class BuildMonitor {
           reason,
         });
 
-        this.lithia.logger.success(
-          `Built in ${buildTime}ms`,
-        );
+        this.lithia.logger.success(`Built in ${buildTime}ms`);
       } else {
         await this.eventEmitter.emit(DevServerEventType.BUILD_ERROR, {
           buildTime,

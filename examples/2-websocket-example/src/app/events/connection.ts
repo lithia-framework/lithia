@@ -5,11 +5,10 @@ import type { Socket } from 'socket.io';
  * Called when a client connects to the WebSocket server.
  */
 export default async (socket: Socket) => {
-  
   // Store custom data on the socket
   socket.data.userId = `user-${socket.id}`;
   socket.data.connectedAt = Date.now();
-  
+
   console.log(`Client connected: ${socket.data.userId}`);
 
   // Send welcome message
@@ -19,6 +18,5 @@ export default async (socket: Socket) => {
       serverTime: Date.now(),
       socketId: socket.id,
     });
-  }, 0)
+  }, 0);
 };
-

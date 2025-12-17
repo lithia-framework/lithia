@@ -261,4 +261,3 @@ export class StandardizedRouteConvention implements RouteConvention {
     return { method, updatedPath: path };
   }
 }
-

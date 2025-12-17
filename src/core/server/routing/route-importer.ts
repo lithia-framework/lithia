@@ -10,7 +10,6 @@ import { isDevelopment } from '../../lithia-context';
  * normal import in production for performance.
  */
 export class RouteImporter {
-
   /**
    * Dynamically imports route module with cache invalidation.
    *
@@ -55,15 +54,5 @@ export class RouteImporter {
     } catch {
       return false;
     }
-  }
-
-  /**
-   * Gets route module metadata.
-   * @param {Route} route - Route configuration
-   * @returns {Promise<any>} Route metadata
-   */
-  async getRouteMetadata(route: Route): Promise<any> {
-    const module = await this.importRoute(route);
-    return module.metadata;
   }
 }

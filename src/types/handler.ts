@@ -183,9 +183,32 @@ export interface LithiaResponse {
 
   // Cookie Helpers
   /** Sets a cookie */
-  cookie: (name: string, value: string, options?: any) => LithiaResponse;
+  cookie: (
+    name: string,
+    value: string,
+    options?: {
+      domain?: string;
+      expires?: Date;
+      httpOnly?: boolean;
+      maxAge?: number;
+      path?: string;
+      sameSite?: boolean | 'lax' | 'strict' | 'none';
+      secure?: boolean;
+    },
+  ) => LithiaResponse;
   /** Clears a cookie */
-  clearCookie: (name: string, options?: any) => LithiaResponse;
+  clearCookie: (
+    name: string,
+    options?: {
+      domain?: string;
+      expires?: Date;
+      httpOnly?: boolean;
+      maxAge?: number;
+      path?: string;
+      sameSite?: boolean | 'lax' | 'strict' | 'none';
+      secure?: boolean;
+    },
+  ) => LithiaResponse;
 
   // CORS Helpers
   /** Sets CORS headers */

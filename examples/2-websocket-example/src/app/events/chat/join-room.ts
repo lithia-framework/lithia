@@ -27,4 +27,3 @@ export default async (socket: Socket, data: JoinRoomData) => {
     socketId: socket.id,
   });
 };
-

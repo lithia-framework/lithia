@@ -30,4 +30,3 @@ export default async (socket: Socket, data: MessageData) => {
   // Echo back to sender for confirmation
   socket.emit('chat:message:sent', { success: true, messageId: message.id });
 };
-

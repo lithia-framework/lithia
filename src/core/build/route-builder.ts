@@ -1,9 +1,9 @@
-import { transformFile } from '@swc/core';
-import { glob } from 'glob';
-import type { Route } from 'lithia/types';
 import { createWriteStream } from 'node:fs';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { transformFile } from '@swc/core';
+import { glob } from 'glob';
+import type { Route } from 'lithia/types';
 import type { BuildContext } from './context';
 
 /**
@@ -158,7 +158,7 @@ export class SWCRouteBuilder implements RouteBuilder {
   ): Promise<void> {
     try {
       const projectRoot =
-        (context.lithia.options._c12 as any)?.cwd || process.cwd();
+        (context.lithia.options._c12 as { cwd?: string })?.cwd || process.cwd();
       const srcDir = path.join(projectRoot, 'src');
       const outputDir = path.join(projectRoot, '.lithia');
 
@@ -298,7 +298,7 @@ export class SWCRouteBuilder implements RouteBuilder {
   private async buildAllFiles(context: BuildContext): Promise<void> {
     try {
       const projectRoot =
-        (context.lithia.options._c12 as any)?.cwd || process.cwd();
+        (context.lithia.options._c12 as { cwd?: string })?.cwd || process.cwd();
       const srcDir = path.join(projectRoot, 'src');
       const outputDir = path.join(projectRoot, '.lithia');
       this.cacheFile = path.join(outputDir, 'swc-cache.json');

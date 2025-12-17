@@ -10,12 +10,7 @@ export type MatchedMethodSuffix =
 
 export type MatchedEnvSuffix = 'dev' | 'prod';
 
-export type Metadata = {
-  // Future metadata for route documentation
-  description?: string;
-  summary?: string;
-  tags?: string[];
-};
+export type Metadata = {};
 
 export type Route = {
   method?: MatchedMethodSuffix;
