@@ -20,7 +20,8 @@
   "scripts": {
     "build:rust": "napi build --platform --release",
     "test": "cargo test",
-    "check": "cargo check"
+    "check": "cargo check",
+    "machete": "cargo machete --fix"
   },
 	"devDependencies": {
 		"@napi-rs/cli": "^3.5.1"

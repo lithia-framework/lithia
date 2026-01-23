@@ -10,4 +10,13 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 napi = { version = "3.8.2", features = ["napi9"] }
 napi-derive = { version = "3.5.1" }
-swc_core = "55.0.2"
+rayon = "1.11"
+lithia_native_scanner = { path = "../native-scanner" }
+swc_common = { version = "18.0.1", features = ["concurrent", "sourcemap"] }
+swc_ecma_codegen = "22.0.0"
+swc_ecma_parser = "33.0.0"
+swc_ecma_transforms_base = "36.0.1"
+swc_ecma_transforms_typescript = "39.0.1"
+
+[dev-dependencies]
+tempfile = "3.24.0"

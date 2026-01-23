@@ -6,11 +6,12 @@
 	"scripts": {
 		"build": "turbo build",
     "test": "turbo test",
-    "check": "turbo check"
+    "check": "turbo check",
+    "machete": "turbo machete"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.0",
-		"@types/node": "^25.0.3",
+		"@types/node": "^25.0.10",
 		"turbo": "^2.7.5",
 		"typescript": "^5.9.3"
 	}
