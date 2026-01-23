@@ -3,16 +3,7 @@
 		"target": "ESNext",
 		"module": "ESNext",
 		"moduleResolution": "node",
-		"allowJs": false,
-		"types": ["node"],
-		"resolveJsonModule": true,
-		"strict": true,
-		"baseUrl": "",
-		"paths": {
-			"@/*": ["src/*"],
-			"lithia": ["../../dist"],
-			"lithia/*": ["../../dist/*"]
-		}
 	},
+  "include": ["src/**/*"],
 	"exclude": []
 }

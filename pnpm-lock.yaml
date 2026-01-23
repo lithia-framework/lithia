@@ -21,11 +21,20 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  examples/1-basic-api:
+    dependencies:
+      '@lithiajs/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@lithiajs/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
   packages/cli:
     dependencies:
       citty:
-        specifier: ^0.1.6
-        version: 0.1.6
+        specifier: ^0.2.0
+        version: 0.2.0
     devDependencies:
       '@lithiajs/native-builder':
         specifier: workspace:*

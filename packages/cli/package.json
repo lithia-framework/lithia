@@ -5,12 +5,15 @@
 	"scripts": {
 		"build": "tsc"
 	},
+	"bin": {
+		"lithia": "dist/main.js"
+	},
 	"dependencies": {
-		"citty": "^0.1.6"
+		"citty": "^0.2.0"
 	},
 	"devDependencies": {
-		"@lithiajs/tsconfig": "workspace:*",
-    "@lithiajs/native-router": "workspace:*",
-    "@lithiajs/native-builder": "workspace:*"
+		"@lithiajs/native-builder": "workspace:*",
+		"@lithiajs/native-router": "workspace:*",
+		"@lithiajs/tsconfig": "workspace:*"
 	}
 }

@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 import { defineCommand, runMain } from "citty";
 import build from "./cmd/build";
 import dev from "./cmd/dev";

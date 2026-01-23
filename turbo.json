@@ -6,16 +6,12 @@
 		},
     "build:rust": {
       "cache": false,
-      "outputs": ["**/*.node", "index.d.ts", "**/*.js"]
+      "outputs": ["*.node", "*.d.ts", "*.js"]
     },
     "test": {
       "dependsOn": ["^test"]
     },
-    "check": {
-      "dependsOn": ["^check"]
-    },
-    "machete": {
-      
-    }
+    "check": {},
+    "machete": {}
 	}
 }

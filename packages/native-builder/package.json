@@ -2,17 +2,18 @@
 	"name": "@lithiajs/native-builder",
 	"version": "5.0.0",
 	"private": false,
-	"main": "index.js",
-	"types": "index.d.ts",
+  "main": "index.js",
+  "types": "index.d.ts",
 	"exports": {
 		".": {
 			"import": "./index.js",
+			"require": "./index.js",
 			"types": "./index.d.ts"
 		}
 	},
 	"files": [
-		"*.js",
-		"*.d.ts",
+		"index.js",
+		"index.d.ts",
 		"*.node",
 		"package.json",
 		"README.md"
