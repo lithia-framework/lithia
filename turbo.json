@@ -7,6 +7,12 @@
     "build:rust": {
       "cache": false,
       "outputs": ["**/*.node", "index.d.ts", "**/*.js"]
+    },
+    "test": {
+      "dependsOn": ["^test"]
+    },
+    "check": {
+      "dependsOn": ["^check"]
     }
 	}
 }

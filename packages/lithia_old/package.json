@@ -62,16 +62,6 @@
 		"README.md"
 	],
 	"scripts": {
-		"format": "biome format --write .",
-		"format:check": "biome format .",
-		"lint": "biome lint .",
-		"lint:fix": "biome lint --write .",
-		"check": "biome check .",
-		"check:fix": "biome check --write .",
-		"type-check": "tsc --noEmit",
-		"examples": "tsx examples/example-runner.ts",
-		"studio": "cd studio && npm run dev",
-		"prepublishOnly": "npm run build"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.9",

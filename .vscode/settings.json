@@ -15,9 +15,5 @@
 	},
 	"[rust]": {
 		"editor.defaultFormatter": "rust-lang.rust-analyzer",
-	},
-  "rust-analyzer.linkedProjects": [
-    "packages/native-builder/Cargo.toml",
-    "packages/native-router/Cargo.toml"
-  ]
+	}
 }

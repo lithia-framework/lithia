@@ -1,5 +1,5 @@
 {
-	"name": "@lithiajs/native-router",
+	"name": "@lithiajs/native-scanner",
 	"version": "5.0.0",
 	"private": false,
   "main": "index.js",
@@ -19,6 +19,7 @@
   ],
   "scripts": {
     "build:rust": "napi build --platform --release",
+    "test": "cargo test",
     "check": "cargo check"
   },
 	"devDependencies": {

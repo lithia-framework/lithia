@@ -18,7 +18,8 @@
 		"README.md"
 	],
 	"scripts": {
-		"build:rust": "napi build --platform --release"
+		"build:rust": "napi build --platform --release",
+    "check": "cargo check"
 	},
 	"devDependencies": {
 		"@napi-rs/cli": "^3.5.1"
