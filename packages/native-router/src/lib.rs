@@ -214,7 +214,7 @@ mod tests {
         assert!(result.is_ok());
 
         // Check default file was created
-        let default_path = std::path::Path::new("routes-manifest.json");
+        let default_path = std::path::Path::new("routes.json");
         assert!(default_path.exists());
 
         // Cleanup

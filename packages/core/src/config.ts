@@ -55,28 +55,6 @@ export const DEFAULT_CONFIG: LithiaConfig = {
 	},
 };
 
-// interface DiffHashedObject {
-// 	key: string;
-// 	hash: string;
-// 	value: any;
-// 	props: any;
-// }
-
-// interface DiffEntry {
-// 	key: string;
-// 	type: string;
-// 	newValue: DiffHashedObject;
-// 	oldValue: DiffHashedObject;
-// }
-
-// interface ConfigUpdateCtx {
-// 	getDiff: () => Array<DiffEntry>;
-// 	newConfig: LithiaOptions;
-// 	oldConfig: LithiaOptions;
-// }
-
-// type ConfigUpdateCallback = (context: ConfigUpdateCtx) => void | Promise<void>;
-
 type LoadConfigOptions = {
 	watch?: boolean;
 	c12?: WatchConfigOptions;
