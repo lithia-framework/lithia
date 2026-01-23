@@ -61,7 +61,7 @@ pub fn scan_and_process_routes(
     let json = serde_json::to_string_pretty(&routes)
         .map_err(|e| napi::Error::from_reason(format!("Failed to serialize routes: {}", e)))?;
 
-    let output_path = output_file.unwrap_or_else(|| "routes-manifest.json".to_string());
+    let output_path = output_file.unwrap_or_else(|| "routes.json".to_string());
     fs::write(&output_path, json)
         .map_err(|e| napi::Error::from_reason(format!("Failed to write file: {}", e)))?;
 
