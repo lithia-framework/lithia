@@ -1,7 +1,9 @@
-dist
-node_modules
-*.d.ts
-!src/**/*.d.ts
+# Turbo Daemon
+.turbo
 
-.lithia
-.idea
+# Dependency directories
+node_modules/
+target/
+
+# Build output
+dist/

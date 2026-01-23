@@ -1,0 +1,11 @@
+[package]
+name = "lithia-native-router"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "3.8.2", features = ["napi9"] }
+napi-derive = { version = "3.5.1" }

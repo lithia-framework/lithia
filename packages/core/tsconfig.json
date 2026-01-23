@@ -1,0 +1,11 @@
+{
+	"extends": "@lithiajs/tsconfig/base.json",
+	"compilerOptions": {
+		"composite": true,
+		"rootDir": "src",
+		"outDir": "dist",
+		"declarationDir": "dist",
+	},
+	"include": ["src/**/*"],
+	"references": []
+}

@@ -1,14 +1,14 @@
 {
-  "name": "lithia-example",
-  "version": "1.0.0",
-  "description": "Basic API example using the Lithia framework",
-  "scripts": {
-    "dev": "node ../../dist/cli/index.js dev",
-    "build": "node ../../dist/cli/index.js build",
-    "start": "node ../../dist/cli/index.js start"
-  },
-  "dependencies": {
-    "lithia": "file:../../dist",
-    "zod": "^3.24.1"
-  }
+	"name": "lithia-example",
+	"version": "1.0.0",
+	"description": "Basic API example using the Lithia framework",
+	"scripts": {
+		"dev": "node ../../dist/cli/index.js dev",
+		"build": "node ../../dist/cli/index.js build",
+		"start": "node ../../dist/cli/index.js start"
+	},
+	"dependencies": {
+		"lithia": "file:../../dist",
+		"zod": "^3.24.1"
+	}
 }

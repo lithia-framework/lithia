@@ -1,5 +1,0 @@
----
-description: Comments should be written in English, and always be verbose and descriptive, because they are for other developers to understand the code and contribute with the framework.
-globs: **/*
-alwaysApply: true
----

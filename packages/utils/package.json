@@ -1,0 +1,19 @@
+{
+	"name": "@lithiajs/utils",
+	"version": "5.0.0",
+	"private": false,
+	"main": "dist/lib.js",
+	"types": "dist/lib.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/lib.js",
+			"types": "./dist/lib.d.ts"
+		}
+	},
+	"scripts": {
+		"build": "tsc"
+	},
+	"devDependencies": {
+		"@lithiajs/tsconfig": "workspace:*"
+	}
+}

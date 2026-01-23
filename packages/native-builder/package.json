@@ -1,0 +1,26 @@
+{
+	"name": "@lithiajs/native-builder",
+	"version": "5.0.0",
+	"private": false,
+	"main": "index.js",
+	"types": "index.d.ts",
+	"exports": {
+		".": {
+			"import": "./index.js",
+			"types": "./index.d.ts"
+		}
+	},
+	"files": [
+		"*.js",
+		"*.d.ts",
+		"*.node",
+		"package.json",
+		"README.md"
+	],
+	"scripts": {
+		"build:rust": "napi build --platform --release"
+	},
+	"devDependencies": {
+		"@napi-rs/cli": "^3.5.1"
+	}
+}

@@ -1,0 +1,24 @@
+{
+	"name": "@lithiajs/core",
+	"version": "5.0.0",
+	"private": false,
+	"main": "dist/lib.js",
+	"types": "dist/lib.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/lib.js",
+			"types": "./dist/lib.d.ts"
+		}
+	},
+	"devDependencies": {
+		"@lithiajs/tsconfig": "workspace:*",
+		"@lithiajs/utils": "workspace:*",
+    "@lithiajs/native-router": "workspace:*"
+	},
+	"dependencies": {
+		"c12": "^3.3.3",
+		"hookable": "^5.5.3",
+		"klona": "^2.0.6",
+		"zod": "^4.2.1"
+	}
+}

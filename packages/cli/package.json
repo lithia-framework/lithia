@@ -1,0 +1,16 @@
+{
+	"name": "@lithiajs/cli",
+	"version": "5.0.0",
+	"private": false,
+	"scripts": {
+		"build": "tsc"
+	},
+	"dependencies": {
+		"citty": "^0.1.6"
+	},
+	"devDependencies": {
+		"@lithiajs/tsconfig": "workspace:*",
+    "@lithiajs/native-router": "workspace:*",
+    "@lithiajs/native-builder": "workspace:*"
+	}
+}
