@@ -32,19 +32,25 @@ importers:
 
   packages/cli:
     dependencies:
+      '@lithiajs/native':
+        specifier: workspace:*
+        version: link:../native
       citty:
         specifier: ^0.2.0
         version: 0.2.0
     devDependencies:
-      '@lithiajs/native':
-        specifier: workspace:*
-        version: link:../native
       '@lithiajs/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
 
   packages/core:
     dependencies:
+      '@lithiajs/native':
+        specifier: workspace:*
+        version: link:../native
+      '@lithiajs/utils':
+        specifier: workspace:*
+        version: link:../utils
       c12:
         specifier: ^3.3.3
         version: 3.3.3
@@ -61,9 +67,6 @@ importers:
       '@lithiajs/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
-      '@lithiajs/utils':
-        specifier: workspace:*
-        version: link:../utils
 
   packages/lithia_old:
     dependencies:

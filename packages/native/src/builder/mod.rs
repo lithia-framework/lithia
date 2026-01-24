@@ -23,6 +23,9 @@ pub fn build_project() -> napi::Result<()> {
 
     // Load configuration
     let config = BuildConfig::new().map_err(|e| napi::Error::from_reason(e))?;
+
+    fs::remove_dir_all(&config.out_root).ok();
+
     // Scan TypeScript files using glob patterns
     use crate::scanner::FileScanner;
     let ts_files = crate::scanner::NativeFileScanner::new()

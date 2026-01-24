@@ -9,10 +9,10 @@
 		"lithia": "dist/main.js"
 	},
 	"dependencies": {
+		"@lithiajs/native": "workspace:*",
 		"citty": "^0.2.0"
 	},
 	"devDependencies": {
-		"@lithiajs/native": "workspace:*",
 		"@lithiajs/tsconfig": "workspace:*"
 	}
 }
