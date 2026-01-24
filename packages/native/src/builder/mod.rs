@@ -1,4 +1,4 @@
-use lithia_native_router::{
+use crate::router::{
     processor::{NativeRouteProcessor, RouteProcessor},
     Route,
 };
@@ -6,12 +6,12 @@ use napi_derive::napi;
 use rayon::prelude::*;
 use std::{fs, time::Instant};
 
-mod compiler;
-mod config;
-mod reporter;
-mod sourcemap;
-mod tsconfig;
-mod types;
+pub mod compiler;
+pub mod config;
+pub mod reporter;
+pub mod sourcemap;
+pub mod tsconfig;
+pub mod types;
 
 use compiler::TypeScriptCompiler;
 use config::BuildConfig;
@@ -25,9 +25,10 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
     let config = BuildConfig::new(source_dir, out_dir).map_err(|e| napi::Error::from_reason(e))?;
 
     // Scan TypeScript files using glob patterns
-    let ts_files = lithia_native_scanner::scan_files_with_globs(
-        vec![config.source_root_str()],
-        Some(lithia_native_scanner::ScanOptions {
+    use crate::scanner::FileScanner;
+    let ts_files = crate::scanner::NativeFileScanner::new().scan_dir(
+        &[config.source_root_str()],
+        Some(crate::scanner::ScanOptions {
             include: Some(vec!["**/*.ts".to_string()]),
             ignore: Some(config.ignore_patterns.clone()),
         }),
@@ -91,13 +92,13 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
 
     let routes_path = config.out_root.join("app").join("routes");
     if routes_path.exists() {
-        let route_files = lithia_native_scanner::scan_files_with_globs(
-            vec![
+        let route_files = crate::scanner::NativeFileScanner::new().scan_dir(
+            &[
                 config.output_path_str(),
                 "app".to_string(),
                 "routes".to_string(),
             ],
-            Some(lithia_native_scanner::ScanOptions {
+            Some(crate::scanner::ScanOptions {
                 include: Some(vec!["**/*.js".to_string()]),
                 ignore: None,
             }),

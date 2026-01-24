@@ -1,6 +1,5 @@
-use lithia_native_scanner::FileInfo;
-
-use crate::{
+use crate::scanner::FileInfo;
+use crate::router::{
     convention::{NativeRouteConvention, RouteConvention},
     transformer::{NativePathTransformer, PathTransformer},
     RouteCore,
@@ -55,7 +54,7 @@ impl RouteProcessor for NativeRouteProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::convention::MatchedMethodSuffix;
+    use crate::router::convention::MatchedMethodSuffix;
 
     fn processor() -> NativeRouteProcessor {
         NativeRouteProcessor::new(None, None)

@@ -1,11 +1,11 @@
 use napi_derive::napi;
 use serde::Serialize;
 
-use crate::convention::MatchedMethodSuffix;
+use crate::router::convention::MatchedMethodSuffix;
 
-mod convention;
+pub mod convention;
 pub mod processor;
-mod transformer;
+pub mod transformer;
 
 #[napi(object)]
 #[derive(Serialize)]

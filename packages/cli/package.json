@@ -12,8 +12,7 @@
 		"citty": "^0.2.0"
 	},
 	"devDependencies": {
-		"@lithiajs/native-builder": "workspace:*",
-		"@lithiajs/native-router": "workspace:*",
+		"@lithiajs/native": "workspace:*",
 		"@lithiajs/tsconfig": "workspace:*"
 	}
 }

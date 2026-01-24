@@ -36,12 +36,9 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
     devDependencies:
-      '@lithiajs/native-builder':
+      '@lithiajs/native':
         specifier: workspace:*
-        version: link:../native-builder
-      '@lithiajs/native-router':
-        specifier: workspace:*
-        version: link:../native-router
+        version: link:../native
       '@lithiajs/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
@@ -52,8 +49,8 @@ importers:
         specifier: ^3.3.3
         version: 3.3.3
       hookable:
-        specifier: ^5.5.3
-        version: 5.5.3
+        specifier: ^6.0.1
+        version: 6.0.1
       klona:
         specifier: ^2.0.6
         version: 2.0.6
@@ -61,9 +58,6 @@ importers:
         specifier: ^4.2.1
         version: 4.3.6
     devDependencies:
-      '@lithiajs/native-router':
-        specifier: workspace:*
-        version: link:../native-router
       '@lithiajs/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
@@ -150,19 +144,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/native-builder:
-    devDependencies:
-      '@napi-rs/cli':
-        specifier: ^3.5.1
-        version: 3.5.1(@emnapi/runtime@1.8.1)(@types/node@25.0.10)
-
-  packages/native-router:
-    devDependencies:
-      '@napi-rs/cli':
-        specifier: ^3.5.1
-        version: 3.5.1(@emnapi/runtime@1.8.1)(@types/node@25.0.10)
-
-  packages/native-scanner:
+  packages/native:
     devDependencies:
       '@napi-rs/cli':
         specifier: ^3.5.1
@@ -1448,6 +1430,9 @@ packages:
 
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
+
+  hookable@6.0.1:
+    resolution: {integrity: sha512-uKGyY8BuzN/a5gvzvA+3FVWo0+wUjgtfSdnmjtrOVwQCZPHpHDH2WRO3VZSOeluYrHoDCiXFffZXs8Dj1ULWtw==}
 
   http-errors@2.0.1:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
@@ -2837,6 +2822,8 @@ snapshots:
       path-scurry: 2.0.1
 
   hookable@5.5.3: {}
+
+  hookable@6.0.1: {}
 
   http-errors@2.0.1:
     dependencies:

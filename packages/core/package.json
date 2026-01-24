@@ -12,12 +12,11 @@
 	},
 	"devDependencies": {
 		"@lithiajs/tsconfig": "workspace:*",
-		"@lithiajs/utils": "workspace:*",
-    "@lithiajs/native-router": "workspace:*"
+		"@lithiajs/utils": "workspace:*"
 	},
 	"dependencies": {
 		"c12": "^3.3.3",
-		"hookable": "^5.5.3",
+		"hookable": "^6.0.1",
 		"klona": "^2.0.6",
 		"zod": "^4.2.1"
 	}

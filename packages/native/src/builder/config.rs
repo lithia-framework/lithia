@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::tsconfig::{parse_tsconfig, TsConfigOptions};
+use super::tsconfig::{parse_tsconfig, TsConfigOptions};
 
 /// Build configuration for the TypeScript compiler
 #[derive(Clone, Debug)]

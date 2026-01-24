@@ -1,4 +1,4 @@
-import { buildProject } from "@lithiajs/native-builder";
+import { buildProject } from "@lithiajs/native";
 import { defineCommand } from "citty";
 
 const build = defineCommand({

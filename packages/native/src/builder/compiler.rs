@@ -12,8 +12,8 @@ use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsSyntax};
 use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
 use swc_ecma_transforms_typescript::strip;
 
-use crate::sourcemap::{generate_sourcemap, write_sourcemap_and_code};
-use crate::tsconfig::TsConfigOptions;
+use super::sourcemap::{generate_sourcemap, write_sourcemap_and_code};
+use super::tsconfig::TsConfigOptions;
 
 /// Buffer writer that captures error messages
 #[derive(Clone)]

@@ -1,7 +1,5 @@
 [workspace]
 members = [
-  "packages/native-builder",
-  "packages/native-router",
-  "packages/native-scanner",
+  "packages/native",
 ]
 resolver = "2"

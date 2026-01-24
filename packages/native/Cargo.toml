@@ -1,18 +1,18 @@
 [package]
-name = "lithia_native_builder"
+name = "lithia_native"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
 path = "src/lib.rs"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 napi = { version = "3.8.2", features = ["napi9"] }
 napi-derive = { version = "3.5.1" }
+walkdir = "2.5.0"
+globset = "0.4.18"
 rayon = "1.11"
-lithia_native_scanner = { path = "../native-scanner" }
-lithia_native_router = { path = "../native-router" }
 swc_common = { version = "18.0.1", features = ["concurrent", "sourcemap"] }
 swc_ecma_codegen = "22.0.0"
 swc_ecma_parser = "33.0.0"
@@ -20,6 +20,8 @@ swc_ecma_transforms_base = "36.0.1"
 swc_ecma_transforms_typescript = "39.0.1"
 serde_json = "1.0.149"
 swc_ecma_ast = "20.0.0"
+regex = { version = "1.12.2" }
+serde = { version = "1.0.228", features = ["derive"] }
 
 [dev-dependencies]
 tempfile = "3.24.0"

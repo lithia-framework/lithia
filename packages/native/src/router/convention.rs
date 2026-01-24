@@ -1,6 +1,6 @@
 use regex::Regex;
 
-use crate::transformer::{NativePathTransformer, PathTransformer};
+use crate::router::transformer::{NativePathTransformer, PathTransformer};
 
 pub trait RouteConvention {
     fn transform_path(&self, path: &str) -> String;
