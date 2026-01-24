@@ -53,7 +53,7 @@ fn scan_and_process_creates_routes_manifest() -> std::io::Result<()> {
     let output_file = root.join("test-manifest.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()));
+    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
 
     assert!(result.is_ok());
     assert!(output_file.exists());
@@ -73,7 +73,7 @@ fn processes_all_route_types() -> std::io::Result<()> {
     let output_file = root.join("routes-manifest.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()));
+    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
 
     assert!(result.is_ok());
     let routes = result.unwrap();
@@ -115,7 +115,7 @@ fn generates_correct_regex_patterns() -> std::io::Result<()> {
     let output_file = root.join("regex-test.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()));
+    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
 
     assert!(result.is_ok());
     let routes = result.unwrap();
@@ -137,7 +137,7 @@ fn uses_default_output_filename() -> std::io::Result<()> {
     let temp_name = get_temp_name(&temp_dir);
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, None);
+    let result = scan_and_process_routes(routes_dir, None, None, None);
 
     assert!(result.is_ok());
 
@@ -153,7 +153,7 @@ fn uses_default_output_filename() -> std::io::Result<()> {
 
 #[test]
 fn returns_error_for_nonexistent_directory() {
-    let result = scan_and_process_routes("nonexistent_dir".to_string(), None);
+    let result = scan_and_process_routes("nonexistent_dir".to_string(), None, None, None);
     assert!(result.is_err());
 }
 
@@ -164,7 +164,7 @@ fn json_output_matches_expected_format() -> std::io::Result<()> {
     let output_file = root.join("format-test.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()));
+    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
 
     assert!(result.is_ok());
 
@@ -247,7 +247,7 @@ fn validates_regex_patterns_match_expected_format() -> std::io::Result<()> {
     let output_file = root.join("validation-test.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()));
+    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
 
     assert!(result.is_ok());
     let routes = result.unwrap();
@@ -278,7 +278,7 @@ fn regex_patterns_actually_match_correct_urls() -> std::io::Result<()> {
     let output_file = root.join("regex-match-test.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()));
+    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
 
     assert!(result.is_ok());
     let routes = result.unwrap();

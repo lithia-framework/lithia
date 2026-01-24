@@ -10,6 +10,5 @@
 	"dependencies": {
 		"@lithiajs/cli": "workspace:*",
     "@lithiajs/core": "workspace:*"
-	},
-  "turbo-ignore": 0
+	}
 }

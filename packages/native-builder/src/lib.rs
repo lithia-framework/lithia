@@ -18,11 +18,9 @@ use swc_ecma_codegen::to_code_default;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsSyntax};
 use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
 use swc_ecma_transforms_typescript::strip;
-use tsconfig::parse_tsconfig;
-
-use crate::tsconfig::TsConfigOptions;
-
 mod tsconfig;
+use tsconfig::parse_tsconfig;
+use tsconfig::TsConfigOptions;
 
 #[napi]
 pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> napi::Result<()> {
@@ -31,11 +29,15 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
     let source_root = source_dir.unwrap_or_else(|| "src".to_string());
     let out_root = out_dir.unwrap_or_else(|| "dist".to_string());
 
-    let files = lithia_native_scanner::scan_files(vec![source_root.clone()], None)
-        .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
+    let all_files = lithia_native_scanner::scan_files(
+        vec![source_root.clone()],
+        vec![".test.ts".to_string(), ".spec.ts".to_string()].into(),
+    )
+    .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
 
-    let ts_files: Vec<FileInfo> = files
-        .into_iter()
+    let ts_files: Vec<FileInfo> = all_files
+        .iter()
+        .cloned()
         .filter(|f| f.path.ends_with(".ts"))
         .collect();
 
@@ -45,7 +47,7 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
     };
 
     let compile_start = Instant::now();
-    
+
     let results: Vec<Result<(String, f64), String>> = ts_files
         .par_iter()
         .map(|file| {
@@ -104,6 +106,20 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
 
     let total = start.elapsed();
     println!("Total build time: {:.2}ms", total.as_secs_f64() * 1000.0);
+
+    {
+        let manifest_path = std::path::Path::new(&out_root).join("routes.json");
+        let manifest_path_str = manifest_path.to_string_lossy().to_string();
+
+        if let Err(e) = lithia_native_router::scan_and_process_routes(
+            source_root.clone(),
+            Some(manifest_path_str),
+            Some(out_root.clone()),
+            Some(source_root.clone()),
+        ) {
+            eprintln!("Failed to generate route manifest: {}", e);
+        }
+    }
 
     Ok(())
 }

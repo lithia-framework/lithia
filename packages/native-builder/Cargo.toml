@@ -12,6 +12,7 @@ napi = { version = "3.8.2", features = ["napi9"] }
 napi-derive = { version = "3.5.1" }
 rayon = "1.11"
 lithia_native_scanner = { path = "../native-scanner" }
+lithia_native_router = { path = "../native-router" }
 swc_common = { version = "18.0.1", features = ["concurrent", "sourcemap"] }
 swc_ecma_codegen = "22.0.0"
 swc_ecma_parser = "33.0.0"
