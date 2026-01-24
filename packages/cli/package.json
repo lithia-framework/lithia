@@ -18,7 +18,6 @@
 		"check": "biome check --write"
 	},
 	"dependencies": {
-		"@lithiajs/native": "workspace:*",
 		"@lithiajs/core": "workspace:*",
 		"citty": "^0.2.0",
 		"chokidar": "^5.0.0"
