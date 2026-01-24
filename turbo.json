@@ -5,7 +5,7 @@
 			"dependsOn": ["^build", "^build:rust"]
 		},
     "build:rust": {
-      "cache": false,
+      "cache": true,
       "outputs": ["*.node", "*.d.ts", "*.js"]
     },
     "test": {
