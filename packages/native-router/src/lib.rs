@@ -15,7 +15,6 @@ pub struct Route {
     pub path: String,
     pub dynamic: bool,
     pub file_path: String,
-    pub source_file_path: String,
     pub regex: String,
 }
 
@@ -35,7 +34,6 @@ impl From<RouteCore> for Route {
             path: core.path,
             dynamic: core.dynamic,
             file_path: core.file_path,
-            source_file_path: core.source_file_path,
             regex: core.regex,
         }
     }

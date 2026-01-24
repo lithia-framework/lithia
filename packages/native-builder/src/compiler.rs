@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::io::Write;
 
 use swc_common::{
     comments::SingleThreadedComments,
@@ -14,6 +15,44 @@ use swc_ecma_transforms_typescript::strip;
 use crate::sourcemap::{generate_sourcemap, write_sourcemap_and_code};
 use crate::tsconfig::TsConfigOptions;
 
+/// Buffer writer that captures error messages
+#[derive(Clone)]
+struct ErrorBuffer {
+    buffer: std::sync::Arc<std::sync::Mutex<Vec<u8>>>,
+}
+
+impl ErrorBuffer {
+    fn new() -> Self {
+        Self {
+            buffer: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
+        }
+    }
+
+    fn get_content(&self) -> String {
+        self.buffer
+            .lock()
+            .ok()
+            .and_then(|buf| String::from_utf8(buf.clone()).ok())
+            .unwrap_or_default()
+    }
+}
+
+impl Write for ErrorBuffer {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.buffer
+            .lock()
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Lock failed"))?
+            .write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.buffer
+            .lock()
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Lock failed"))?
+            .flush()
+    }
+}
+
 /// TypeScript to JavaScript compiler using SWC
 pub struct TypeScriptCompiler {
     ts_config: TsConfigOptions,
@@ -27,7 +66,17 @@ impl TypeScriptCompiler {
     /// Compile a single TypeScript file to JavaScript
     pub fn compile_file(&self, input: &Path, output: &Path) -> Result<(), String> {
         let cm: Lrc<SourceMap> = Default::default();
-        let emitter = EmitterWriter::new(Box::new(std::io::stderr()), Some(cm.clone()), false, true);
+        
+        // Capture errors in a buffer instead of printing to stderr
+        let error_buffer = ErrorBuffer::new();
+        let error_buffer_clone = error_buffer.clone();
+        
+        let emitter = EmitterWriter::new(
+            Box::new(error_buffer),
+            Some(cm.clone()),
+            false,
+            true,
+        );
         let handler = Handler::with_emitter(true, false, Box::new(emitter));
 
         let fm = cm
@@ -55,7 +104,14 @@ impl TypeScriptCompiler {
 
         let module = parser.parse_program().map_err(|e| {
             e.into_diagnostic(&handler).emit();
-            format!("Failed to parse {}", input.display())
+            
+            // Get error message from buffer
+            let error_msg = error_buffer_clone.get_content();
+            if error_msg.is_empty() {
+                format!("Failed to parse {}", input.display())
+            } else {
+                error_msg
+            }
         })?;
 
         // Apply transformations and generate code

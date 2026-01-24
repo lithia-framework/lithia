@@ -91,31 +91,36 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
     build_result.total_duration_ms = start.elapsed().as_secs_f64() * 1000.0;
     println!("Total build time: {:.2}ms", build_result.total_duration_ms);
 
-    let route_files = lithia_native_scanner::scan_files_with_globs(
-        vec![
-            config.output_path_str(),
-            "app".to_string(),
-            "routes".to_string(),
-        ],
-        Some(lithia_native_scanner::ScanOptions {
-            include: Some(vec!["**/*.js".to_string()]),
-            ignore: None,
-        }),
-    )
-    .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
+    let routes_path = config.out_root.join("app").join("routes");
+    if routes_path.exists() {
+        let route_files = lithia_native_scanner::scan_files_with_globs(
+            vec![
+                config.output_path_str(),
+                "app".to_string(),
+                "routes".to_string(),
+            ],
+            Some(lithia_native_scanner::ScanOptions {
+                include: Some(vec!["**/*.js".to_string()]),
+                ignore: None,
+            }),
+        )
+        .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
 
-    let processor = NativeRouteProcessor::new(None, None);
-    let routes: Vec<Route> = route_files
-        .iter()
-        .map(|file| processor.process_route_file(file))
-        .map(Route::from)
-        .collect();
+        let processor = NativeRouteProcessor::new(None, None);
+        let routes: Vec<Route> = route_files
+            .iter()
+            .map(|file| processor.process_route_file(file))
+            .map(Route::from)
+            .collect();
 
-    let json = serde_json::to_string_pretty(&routes)
-        .map_err(|e| napi::Error::from_reason(format!("Failed to serialize routes: {}", e)))?;
+        let json = serde_json::to_string_pretty(&routes)
+            .map_err(|e| napi::Error::from_reason(format!("Failed to serialize routes: {}", e)))?;
 
-    fs::write(&config.out_root.join("routes.json"), json)
-        .map_err(|e| napi::Error::from_reason(format!("Failed to write file: {}", e)))?;
+        fs::write(&config.out_root.join("routes.json"), json)
+            .map_err(|e| napi::Error::from_reason(format!("Failed to write file: {}", e)))?;
+
+        println!("Wrote route manifest: routes.json");
+    }
 
     Ok(())
 }
