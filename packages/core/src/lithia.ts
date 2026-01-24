@@ -69,6 +69,15 @@ export class Lithia {
 								typeof ctx.getDiff === "function" ? ctx.getDiff() : [];
 							if (diffs && diffs.length > 0) {
 								logger.event(`Config updated — ${diffs.length} change(s)`);
+								for (const d of diffs.slice(0, 20)) {
+									if (d.key === "http.port" || d.key === "http.host") {
+										logger.warn(
+											`  • ${d.key}: ${d.oldValue} → ${d.newValue} (requires server restart)`,
+										);
+									} else {
+										logger.info(`  • ${d.key}: ${d.oldValue} → ${d.newValue}`);
+									}
+								}
 							}
 						} catch (logErr) {
 							logger.debug("Failed to summarize config diff:", logErr);
@@ -97,7 +106,7 @@ export class Lithia {
 	private configureEventEmitter() {
 		// wire build -> loadRoutes on the already-initialized emitter
 		this.emitter.on("built", (durationMs: number) => {
-			logger.info(`Build completed in ${durationMs.toFixed(2)}ms`);
+			logger.success(`Build completed in ${durationMs.toFixed(2)}ms`);
 			this.loadRoutes();
 		});
 

@@ -1,12 +1,4 @@
-import {
-	bold,
-	cyan,
-	green,
-	magenta,
-	red,
-	white,
-	yellow,
-} from "@lithiajs/utils";
+import { blue, bold, cyan, green, red, white, yellow } from "@lithiajs/utils";
 
 export type LogLevel =
 	| "info"
@@ -36,31 +28,25 @@ export class Logger {
 	}
 
 	warn(msg: any, meta?: any) {
-		const symbol = yellow(bold("⚠"));
+		const symbol = yellow(bold("○"));
 		const m = formatMeta(meta);
 		console.warn(`${symbol} ${msg}${m ? ` — ${m}` : ""}`);
 	}
 
 	error(msg: any, meta?: any) {
-		const symbol = red(bold("✖"));
+		const symbol = red(bold("○"));
 		const m = formatMeta(meta);
 		console.error(`${symbol} ${msg}${m ? ` — ${m}` : ""}`);
 	}
 
 	success(msg: any, meta?: any) {
-		const symbol = green(bold("✓"));
-		const m = formatMeta(meta);
-		console.log(`${symbol} ${msg}${m ? ` — ${m}` : ""}`);
-	}
-
-	ready(msg: any, meta?: any) {
-		const symbol = magenta(bold("▲"));
+		const symbol = green(bold("▲"));
 		const m = formatMeta(meta);
 		console.log(`${symbol} ${msg}${m ? ` — ${m}` : ""}`);
 	}
 
 	event(msg: any, meta?: any) {
-		const symbol = green(bold("✓"));
+		const symbol = blue(bold("▲"));
 		const m = formatMeta(meta);
 		console.log(`${symbol} ${msg}${m ? ` — ${m}` : ""}`);
 	}
@@ -74,7 +60,7 @@ export class Logger {
 	wait(msg: any, meta?: any) {
 		const symbol = white(bold("○"));
 		const m = formatMeta(meta);
-		console.log(`${symbol} ${msg}${m ? " — " + m : ""}`);
+		console.log(`${symbol} ${msg}${m ? ` — ${m}` : ""}`);
 	}
 }
 
