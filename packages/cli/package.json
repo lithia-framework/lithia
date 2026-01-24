@@ -2,23 +2,24 @@
 	"name": "@lithiajs/cli",
 	"version": "5.0.0",
 	"private": false,
-  "main": "dist/main.js",
-  "exports": {
+	"main": "dist/main.js",
+	"exports": {
 		".": {
 			"import": "./dist/main.js",
 			"require": "./dist/main.js",
 			"default": "./dist/main.js"
 		}
-  },
-  "bin": {
+	},
+	"bin": {
 		"lithia": "dist/main.js"
 	},
 	"scripts": {
-		"build": "tsc"
+		"build": "tsc",
+		"check": "biome check --write"
 	},
 	"dependencies": {
 		"@lithiajs/native": "workspace:*",
-    "@lithiajs/core": "workspace:*",
+		"@lithiajs/core": "workspace:*",
 		"citty": "^0.2.0",
 		"chokidar": "^5.0.0"
 	},

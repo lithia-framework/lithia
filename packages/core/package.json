@@ -12,9 +12,10 @@
 			"types": "./dist/lib.d.ts"
 		}
 	},
-  "scripts": {
-    "build": "tsc"
-  },
+	"scripts": {
+		"build": "tsc",
+		"check": "biome check --write"
+	},
 	"devDependencies": {
 		"@lithiajs/tsconfig": "workspace:*"
 	},

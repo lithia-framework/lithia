@@ -1,8 +1,8 @@
 import {
-  createServer,
-  type IncomingMessage,
-  type Server,
-  type ServerResponse,
+	createServer,
+	type IncomingMessage,
+	type Server,
+	type ServerResponse,
 } from "node:http";
 import type { LithiaOptions } from "../config";
 import { logger } from "../logger";
@@ -62,7 +62,7 @@ export class HttpServer {
 				logger.event(
 					`Server listening on http://${this.config.host}:${this.config.port}`,
 				);
-        
+
 				resolve();
 			});
 

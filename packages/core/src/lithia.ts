@@ -104,7 +104,7 @@ export class Lithia {
 		if (this.serverRunning) return;
 
 		this.httpServer = createHttpServerFromConfig({ options: this.config });
-    
+
 		try {
 			await this.httpServer.listen();
 			this.serverRunning = true;
