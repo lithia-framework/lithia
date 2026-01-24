@@ -14,6 +14,10 @@ import {
 	RoutesManifestLoadError,
 } from "./errors";
 import { logger } from "./logger";
+import {
+	createHttpServerFromConfig,
+	type HttpServer,
+} from "./server/http-server";
 
 export type Environment = "production" | "development";
 
@@ -32,6 +36,8 @@ export class Lithia {
 	private config: LithiaOptions;
 	private emitter: EventEmitter;
 	private configProvider: ConfigProvider;
+	private httpServer?: HttpServer;
+	private serverRunning = false;
 	private configWatchHandle?: { close?: () => void };
 
 	private constructor() {
@@ -88,6 +94,35 @@ export class Lithia {
 			} catch (err) {
 				this.emitter.emit("error", err);
 			}
+		}
+	}
+
+	/**
+	 * Start the HTTP server using current configuration.
+	 */
+	async start() {
+		if (this.serverRunning) return;
+
+		this.httpServer = createHttpServerFromConfig({ options: this.config });
+    
+		try {
+			await this.httpServer.listen();
+			this.serverRunning = true;
+		} catch (err) {
+			this.emitter.emit("error", err);
+		}
+	}
+
+	/**
+	 * Stop the HTTP server.
+	 */
+	async stop() {
+		if (!this.serverRunning) return;
+		try {
+			await this.httpServer?.close();
+			this.serverRunning = false;
+		} catch (err) {
+			this.emitter.emit("error", err);
 		}
 	}
 

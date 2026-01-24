@@ -7,7 +7,12 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["packages/**", "!packages/lithia_old", "!dist/**/*"]
+		"includes": [
+			"packages/**",
+			"!packages/lithia_old",
+			"!packages/native/*",
+			"!**/dist/**/*"
+		]
 	},
 	"formatter": {
 		"enabled": true,
@@ -17,9 +22,9 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
-      "suspicious": {
-        "noExplicitAny": "off"
-      }
+			"suspicious": {
+				"noExplicitAny": "off"
+			}
 		}
 	},
 	"javascript": {

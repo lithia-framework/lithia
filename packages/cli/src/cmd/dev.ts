@@ -22,6 +22,13 @@ const dev = defineCommand({
 		// Initial build
 		lithia.build();
 
+		// Start the HTTP server after initial build
+		try {
+			await lithia.start();
+		} catch {
+			// let Lithia's emitter handle the error
+		}
+
 		// Debounced rebuild helper
 		let timer: NodeJS.Timeout | null = null;
 		const debounce = (fn: () => void, ms = 150) => {
@@ -56,8 +63,21 @@ const dev = defineCommand({
 			}
 		});
 
-		// Keep process alive
-		return new Promise(() => {});
+		// Graceful shutdown: stop watcher and server
+		const shutdown = async () => {
+			try {
+				await watcher.close();
+			} catch (_) {}
+			try {
+				await lithia.stop();
+			} catch (_) {}
+			process.exit(0);
+		};
+
+		process.on("SIGINT", shutdown);
+		process.on("SIGTERM", shutdown);
+
+		// Process remains alive while the HTTP server and watcher run
 	},
 });
 
