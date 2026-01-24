@@ -7,9 +7,8 @@ const build = defineCommand({
 		description: "Start the build process (uses native-builder)",
 	},
 	run() {
-		const outDir = ".lithia";
 		try {
-			buildProject("src", outDir);
+			buildProject();
 			return 0;
 		} catch {
 			return 1;

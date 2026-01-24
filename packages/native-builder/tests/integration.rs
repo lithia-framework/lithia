@@ -22,11 +22,18 @@ fn builds_simple_ts_files() -> Result<(), Box<dyn std::error::Error>> {
 
     let out = temp.path().join("out");
 
-    let res = build_project(format!("{}/src", temp_name), Some(out.to_string_lossy().to_string()));
+    let res = build_project(
+        Some(format!("{}/src", temp_name)),
+        Some(out.to_string_lossy().to_string()),
+    );
     assert!(res.is_ok());
 
     let out_file = out.join("index.js");
-    assert!(out_file.exists(), "Expected compiled file at {:?}", out_file);
+    assert!(
+        out_file.exists(),
+        "Expected compiled file at {:?}",
+        out_file
+    );
 
     Ok(())
 }
@@ -49,8 +56,14 @@ fn fails_on_invalid_ts() -> Result<(), Box<dyn std::error::Error>> {
 
     let out = temp.path().join("out");
 
-    let res = build_project(format!("{}/src", temp_name), Some(out.to_string_lossy().to_string()));
-    assert!(res.is_err(), "Expected build to fail for invalid TypeScript");
+    let res = build_project(
+        Some(format!("{}/src", temp_name)),
+        Some(out.to_string_lossy().to_string()),
+    );
+    assert!(
+        res.is_err(),
+        "Expected build to fail for invalid TypeScript"
+    );
 
     Ok(())
 }

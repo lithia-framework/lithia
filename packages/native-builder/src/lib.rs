@@ -7,23 +7,31 @@ use lithia_native_scanner::FileInfo;
 
 use std::path::Path;
 
+use serde_json::json;
 use swc_common::{
     comments::SingleThreadedComments,
     errors::{EmitterWriter, Handler},
     sync::Lrc,
     Globals, Mark, SourceMap, GLOBALS,
 };
+use swc_ecma_codegen::to_code_default;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsSyntax};
 use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
 use swc_ecma_transforms_typescript::strip;
-use swc_ecma_codegen::to_code_default;
-use serde_json::json;
+use tsconfig::parse_tsconfig;
+
+use crate::tsconfig::TsConfigOptions;
+
+mod tsconfig;
 
 #[napi]
-pub fn build_project(source_dir: String, out_dir: Option<String>) -> napi::Result<()> {
+pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> napi::Result<()> {
     let start = Instant::now();
 
-    let files = lithia_native_scanner::scan_files(vec![source_dir.clone()], None)
+    let source_root = source_dir.unwrap_or_else(|| "src".to_string());
+    let out_root = out_dir.unwrap_or_else(|| "dist".to_string());
+
+    let files = lithia_native_scanner::scan_files(vec![source_root.clone()], None)
         .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
 
     let ts_files: Vec<FileInfo> = files
@@ -31,9 +39,13 @@ pub fn build_project(source_dir: String, out_dir: Option<String>) -> napi::Resul
         .filter(|f| f.path.ends_with(".ts"))
         .collect();
 
-    let out_root = out_dir.unwrap_or_else(|| ".lithia".to_string());
+    let ts_cfg = match parse_tsconfig() {
+        Ok(cfg) => cfg,
+        Err(e) => return Err(napi::Error::from_reason(e)),
+    };
 
     let compile_start = Instant::now();
+    
     let results: Vec<Result<(String, f64), String>> = ts_files
         .par_iter()
         .map(|file| {
@@ -50,7 +62,7 @@ pub fn build_project(source_dir: String, out_dir: Option<String>) -> napi::Resul
             let output = out_path.to_string_lossy().to_string();
 
             let file_start = Instant::now();
-            match compile_ts_to_js(input, &output) {
+            match compile_ts_to_js(input, &output, ts_cfg.clone()) {
                 Ok(_) => {
                     let dur_ms = file_start.elapsed().as_secs_f64() * 1000.0;
                     Ok((output.clone(), dur_ms))
@@ -96,7 +108,7 @@ pub fn build_project(source_dir: String, out_dir: Option<String>) -> napi::Resul
     Ok(())
 }
 
-fn compile_ts_to_js(input: &str, output: &str) -> Result<(), String> {
+fn compile_ts_to_js(input: &str, output: &str, ts_cfg: TsConfigOptions) -> Result<(), String> {
     let cm: Lrc<SourceMap> = Default::default();
     let emitter = EmitterWriter::new(Box::new(std::io::stderr()), Some(cm.clone()), false, true);
     let handler = Handler::with_emitter(true, false, Box::new(emitter));
@@ -107,12 +119,13 @@ fn compile_ts_to_js(input: &str, output: &str) -> Result<(), String> {
 
     let comments = SingleThreadedComments::default();
 
+    // we don't support TSX (no React) — always parse as plain TypeScript
     let lexer = Lexer::new(
         Syntax::Typescript(TsSyntax {
-            tsx: input.ends_with(".tsx"),
+            tsx: false,
             ..Default::default()
         }),
-        Default::default(),
+        ts_cfg.target,
         StringInput::from(&*fm),
         Some(&comments),
     );
@@ -139,13 +152,18 @@ fn compile_ts_to_js(input: &str, output: &str) -> Result<(), String> {
 
         let program = module.apply(fixer(Some(&comments)));
 
-        // generate code (using existing helper)
         let code = to_code_default(cm, Some(&comments), &program);
 
-        // create a minimal source map (no precise mappings) to allow tools to show original source
-        let input_file_name = std::path::Path::new(input).file_name().unwrap().to_string_lossy();
-        let output_file_name = std::path::Path::new(output).file_name().unwrap().to_string_lossy();
-        let src_content = std::fs::read_to_string(input).map_err(|e| format!("read source {}: {}", input, e))?;
+        let input_file_name = std::path::Path::new(input)
+            .file_name()
+            .unwrap()
+            .to_string_lossy();
+        let output_file_name = std::path::Path::new(output)
+            .file_name()
+            .unwrap()
+            .to_string_lossy();
+        let src_content =
+            std::fs::read_to_string(input).map_err(|e| format!("read source {}: {}", input, e))?;
 
         let map = json!({
             "version": 3,
@@ -157,15 +175,25 @@ fn compile_ts_to_js(input: &str, output: &str) -> Result<(), String> {
         })
         .to_string();
 
-        // write JS + sourceMappingURL (map filename is output filename + .map)
-        let map_file_name = format!("{}.map", std::path::Path::new(output).file_name().unwrap().to_string_lossy());
-        let code_with_map = format!("{}\n//# sourceMappingURL={}\n", code, map_file_name);
+        if ts_cfg.emit_sourcemap {
+            let map_file_name = format!(
+                "{}.map",
+                std::path::Path::new(output)
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+            );
+            let code_with_map = format!("{}\n//# sourceMappingURL={}\n", code, map_file_name);
 
-        std::fs::write(output, code_with_map).map_err(|e| format!("write error {}: {}", output, e))?;
+            std::fs::write(output, code_with_map)
+                .map_err(|e| format!("write error {}: {}", output, e))?;
 
-        // write map alongside output
-        let map_path = format!("{}.map", output);
-        std::fs::write(&map_path, map).map_err(|e| format!("write map error {}: {}", map_path, e))?;
+            let map_path = format!("{}.map", output);
+            std::fs::write(&map_path, map)
+                .map_err(|e| format!("write map error {}: {}", map_path, e))?;
+        } else {
+            std::fs::write(output, code).map_err(|e| format!("write error {}: {}", output, e))?;
+        }
 
         Ok::<(), String>(())
     });
