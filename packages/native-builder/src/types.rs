@@ -1,7 +1,8 @@
-/// Result of compiling a single TypeScript file
 #[derive(Debug, Clone)]
 pub struct CompileResult {
+    #[allow(dead_code)]
     pub output_path: String,
+    #[allow(dead_code)]
     pub duration_ms: f64,
 }
 

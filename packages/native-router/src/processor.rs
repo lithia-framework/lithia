@@ -46,8 +46,7 @@ impl RouteProcessor for NativeRouteProcessor {
             method: extracted.method,
             path,
             dynamic,
-            file_path: file.path.clone(),
-            source_file_path: file.full_path.clone(),
+            file_path: file.full_path.clone(),
             regex,
         }
     }
@@ -70,137 +69,103 @@ mod tests {
     }
 
     #[test]
-    fn process_simple_route() {
+    fn processes_static_routes_with_methods() {
         let p = processor();
-        let file = file_info("users/route.ts", "/project/src/users/route.ts");
-        let route = p.process_route_file(&file);
-
+        
+        // Simple route without method
+        let route = p.process_route_file(&file_info("users/route.ts", "/project/src/users/route.ts"));
         assert_eq!(route.path, "/users");
         assert_eq!(route.method, None);
         assert!(!route.dynamic);
-        assert_eq!(route.file_path, "users/route.ts");
-        assert_eq!(route.source_file_path, "/project/src/users/route.ts");
-    }
+        assert_eq!(route.file_path, "/project/src/users/route.ts");
+        assert_eq!(route.regex, r"^\/users$");
 
-    #[test]
-    fn process_route_with_method() {
-        let p = processor();
-        let file = file_info("users/route.post.ts", "/project/src/users/route.post.ts");
-        let route = p.process_route_file(&file);
-
+        // Route with POST method
+        let route = p.process_route_file(&file_info("users/route.post.ts", "/project/src/users/route.post.ts"));
         assert_eq!(route.path, "/users");
         assert_eq!(route.method, Some(MatchedMethodSuffix::Post));
         assert!(!route.dynamic);
-        assert_eq!(route.file_path, "users/route.post.ts");
-    }
+        assert_eq!(route.file_path, "/project/src/users/route.post.ts");
 
-    #[test]
-    fn process_dynamic_route() {
-        let p = processor();
-        let file = file_info("users/[id]/route.ts", "/project/src/users/[id]/route.ts");
-        let route = p.process_route_file(&file);
-
-        assert_eq!(route.path, "/users/:id");
-        assert_eq!(route.method, None);
-        assert!(route.dynamic);
-        assert_eq!(route.file_path, "users/[id]/route.ts");
-    }
-
-    #[test]
-    fn process_nested_dynamic_route() {
-        let p = processor();
-        let file = file_info(
-            "users/[userId]/posts/[postId]/route.get.ts",
-            "/project/src/users/[userId]/posts/[postId]/route.get.ts",
-        );
-
-        let route = p.process_route_file(&file);
-
-        assert_eq!(route.path, "/users/:userId/posts/:postId");
+        // Route with GET method
+        let route = p.process_route_file(&file_info("about/route.get.ts", "/project/src/about/route.get.ts"));
+        assert_eq!(route.path, "/about");
         assert_eq!(route.method, Some(MatchedMethodSuffix::Get));
-        assert!(route.dynamic);
-        assert_eq!(route.file_path, "users/[userId]/posts/[postId]/route.get.ts");
-    }
-
-    #[test]
-    fn process_index_route() {
-        let p = processor();
-        let file = file_info("index/route.ts", "/project/src/index/route.ts");
-        let route = p.process_route_file(&file);
-
-        assert_eq!(route.path, "/");
-        assert_eq!(route.method, None);
-        assert!(!route.dynamic);
-        assert_eq!(route.file_path, "index/route.ts");
-    }
-
-    #[test]
-    fn process_nested_index_route() {
-        let p = processor();
-        let file = file_info("users/index/route.ts", "/project/src/users/index/route.ts");
-        let route = p.process_route_file(&file);
-
-        assert_eq!(route.path, "/users");
-        assert_eq!(route.method, None);
-        assert!(!route.dynamic);
-        assert_eq!(route.file_path, "users/index/route.ts");
-    }
-
-    #[test]
-    fn process_route_with_groups() {
-        let p = processor();
-        let file = file_info("(v1)/users/route.ts", "/project/src/(v1)/users/route.ts");
-        let route = p.process_route_file(&file);
-
-        assert_eq!(route.path, "/users");
-        assert!(!route.dynamic);
-        assert_eq!(route.file_path, "(v1)/users/route.ts");
-    }
-
-    #[test]
-    fn process_route_removes_route_groups_and_handles_method() {
-        let p = processor();
-        let file = file_info(
-            "(api)/users/[id]/route.delete.ts",
-            "/project/src/(api)/users/[id]/route.delete.ts",
-        );
-        let route = p.process_route_file(&file);
-
-        assert_eq!(route.path, "/users/:id");
-        assert_eq!(route.method, Some(MatchedMethodSuffix::Delete));
-        assert!(route.dynamic);
-        assert_eq!(route.file_path, "(api)/users/[id]/route.delete.ts");
-    }
-
-    #[test]
-    fn process_windows_path() {
-        let p = processor();
-        let file = file_info(
-            r"users\[id]\route.ts",
-            r"C:\project\src\users\[id]\route.ts",
-        );
-        let route = p.process_route_file(&file);
-
-        assert_eq!(route.path, "/users/:id");
-        assert!(route.dynamic);
-        assert_eq!(route.file_path, r"users\[id]\route.ts");
-    }
-
-    #[test]
-    fn process_generates_correct_regex_for_static_route() {
-        let p = processor();
-        let file = file_info("about/route.ts", "/project/src/about/route.ts");
-        let route = p.process_route_file(&file);
-
         assert_eq!(route.regex, r"^\/about$");
     }
 
     #[test]
-    fn process_generates_correct_regex_for_dynamic_route() {
+    fn processes_dynamic_routes() {
         let p = processor();
-        let file = file_info("users/[id]/route.ts", "/project/src/users/[id]/route.ts");
-        let route = p.process_route_file(&file);
-
+        
+        // Single dynamic segment
+        let route = p.process_route_file(&file_info("users/[id]/route.ts", "/project/src/users/[id]/route.ts"));
+        assert_eq!(route.path, "/users/:id");
+        assert_eq!(route.method, None);
+        assert!(route.dynamic);
+        assert_eq!(route.file_path, "/project/src/users/[id]/route.ts");
         assert_eq!(route.regex, r"^\/users\/([^\/]+)$");
+
+        // Multiple dynamic segments with method
+        let route = p.process_route_file(&file_info(
+            "users/[userId]/posts/[postId]/route.get.ts",
+            "/project/src/users/[userId]/posts/[postId]/route.get.ts",
+        ));
+        assert_eq!(route.path, "/users/:userId/posts/:postId");
+        assert_eq!(route.method, Some(MatchedMethodSuffix::Get));
+        assert!(route.dynamic);
+        assert_eq!(route.file_path, "/project/src/users/[userId]/posts/[postId]/route.get.ts");
+        assert_eq!(route.regex, r"^\/users\/([^\/]+)\/posts\/([^\/]+)$");
+    }
+
+    #[test]
+    fn processes_index_routes() {
+        let p = processor();
+        
+        // Root index
+        let route = p.process_route_file(&file_info("index/route.ts", "/project/src/index/route.ts"));
+        assert_eq!(route.path, "/");
+        assert_eq!(route.method, None);
+        assert!(!route.dynamic);
+        assert_eq!(route.file_path, "/project/src/index/route.ts");
+
+        // Nested index
+        let route = p.process_route_file(&file_info("users/index/route.ts", "/project/src/users/index/route.ts"));
+        assert_eq!(route.path, "/users");
+        assert_eq!(route.method, None);
+        assert_eq!(route.file_path, "/project/src/users/index/route.ts");
+    }
+
+    #[test]
+    fn processes_route_groups() {
+        let p = processor();
+        
+        // Simple group
+        let route = p.process_route_file(&file_info("(v1)/users/route.ts", "/project/src/(v1)/users/route.ts"));
+        assert_eq!(route.path, "/users");
+        assert!(!route.dynamic);
+        assert_eq!(route.file_path, "/project/src/(v1)/users/route.ts");
+
+        // Group with dynamic route and method
+        let route = p.process_route_file(&file_info(
+            "(api)/users/[id]/route.delete.ts",
+            "/project/src/(api)/users/[id]/route.delete.ts",
+        ));
+        assert_eq!(route.path, "/users/:id");
+        assert_eq!(route.method, Some(MatchedMethodSuffix::Delete));
+        assert!(route.dynamic);
+        assert_eq!(route.file_path, "/project/src/(api)/users/[id]/route.delete.ts");
+    }
+
+    #[test]
+    fn handles_windows_paths() {
+        let p = processor();
+        let route = p.process_route_file(&file_info(
+            r"users\[id]\route.ts",
+            r"C:\project\src\users\[id]\route.ts",
+        ));
+        assert_eq!(route.path, "/users/:id");
+        assert!(route.dynamic);
+        assert_eq!(route.file_path, r"C:\project\src\users\[id]\route.ts");
     }
 }

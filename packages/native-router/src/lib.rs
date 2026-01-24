@@ -23,7 +23,6 @@ pub struct RouteCore {
     pub path: String,
     pub dynamic: bool,
     pub file_path: String,
-    pub source_file_path: String,
     pub regex: String,
 }
 

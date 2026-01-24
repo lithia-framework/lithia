@@ -15,7 +15,6 @@ mod types;
 
 use compiler::TypeScriptCompiler;
 use config::BuildConfig;
-use reporter::print_timings;
 use types::{BuildResult, CompileResult};
 
 #[napi]
@@ -78,7 +77,6 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
         compile_duration.as_secs_f64() * 1000.0,
         build_result.failures.len()
     );
-    print_timings(&build_result);
 
     if build_result.has_failures() {
         return Err(napi::Error::from_reason(format!(
@@ -118,8 +116,6 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
 
         fs::write(&config.out_root.join("routes.json"), json)
             .map_err(|e| napi::Error::from_reason(format!("Failed to write file: {}", e)))?;
-
-        println!("Wrote route manifest: routes.json");
     }
 
     Ok(())
