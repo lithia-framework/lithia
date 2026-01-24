@@ -31,7 +31,7 @@ impl BuildConfig {
         self.source_root.to_string_lossy().to_string()
     }
 
-    pub fn out_root_str(&self) -> String {
+    pub fn output_path_str(&self) -> String {
         self.out_root.to_string_lossy().to_string()
     }
 

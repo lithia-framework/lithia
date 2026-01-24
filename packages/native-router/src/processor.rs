@@ -91,6 +91,7 @@ mod tests {
         assert_eq!(route.path, "/users");
         assert_eq!(route.method, Some(MatchedMethodSuffix::Post));
         assert!(!route.dynamic);
+        assert_eq!(route.file_path, "users/route.post.ts");
     }
 
     #[test]
@@ -102,6 +103,7 @@ mod tests {
         assert_eq!(route.path, "/users/:id");
         assert_eq!(route.method, None);
         assert!(route.dynamic);
+        assert_eq!(route.file_path, "users/[id]/route.ts");
     }
 
     #[test]
@@ -111,11 +113,13 @@ mod tests {
             "users/[userId]/posts/[postId]/route.get.ts",
             "/project/src/users/[userId]/posts/[postId]/route.get.ts",
         );
+
         let route = p.process_route_file(&file);
 
         assert_eq!(route.path, "/users/:userId/posts/:postId");
         assert_eq!(route.method, Some(MatchedMethodSuffix::Get));
         assert!(route.dynamic);
+        assert_eq!(route.file_path, "users/[userId]/posts/[postId]/route.get.ts");
     }
 
     #[test]
@@ -127,6 +131,7 @@ mod tests {
         assert_eq!(route.path, "/");
         assert_eq!(route.method, None);
         assert!(!route.dynamic);
+        assert_eq!(route.file_path, "index/route.ts");
     }
 
     #[test]
@@ -138,6 +143,7 @@ mod tests {
         assert_eq!(route.path, "/users");
         assert_eq!(route.method, None);
         assert!(!route.dynamic);
+        assert_eq!(route.file_path, "users/index/route.ts");
     }
 
     #[test]
@@ -148,6 +154,7 @@ mod tests {
 
         assert_eq!(route.path, "/users");
         assert!(!route.dynamic);
+        assert_eq!(route.file_path, "(v1)/users/route.ts");
     }
 
     #[test]
@@ -162,6 +169,7 @@ mod tests {
         assert_eq!(route.path, "/users/:id");
         assert_eq!(route.method, Some(MatchedMethodSuffix::Delete));
         assert!(route.dynamic);
+        assert_eq!(route.file_path, "(api)/users/[id]/route.delete.ts");
     }
 
     #[test]
@@ -175,6 +183,7 @@ mod tests {
 
         assert_eq!(route.path, "/users/:id");
         assert!(route.dynamic);
+        assert_eq!(route.file_path, r"users\[id]\route.ts");
     }
 
     #[test]

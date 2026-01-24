@@ -1,8 +1,42 @@
-use lithia_native_router::scan_and_process_routes;
+use lithia_native_router::processor::{NativeRouteProcessor, RouteProcessor};
+use lithia_native_router::Route;
+use lithia_native_scanner::{scan_files_with_globs, ScanOptions};
 use regex::Regex;
-use std::{fs, env};
 use std::io::Write;
+use std::{env, fs};
 use tempfile::TempDir;
+
+fn scan_and_process_routes(path_components: Vec<String>) -> Result<Vec<Route>, String> {
+    // Se path_components tem apenas um elemento e não é um caminho absoluto,
+    // assume que é relativo ao cwd
+    let components = if path_components.len() == 1 && !path_components[0].starts_with('/') {
+        // Converte "temp_dir/routes" em ["temp_dir", "routes"]
+        path_components[0]
+            .split('/')
+            .map(|s| s.to_string())
+            .collect()
+    } else {
+        path_components
+    };
+
+    let files = scan_files_with_globs(
+        components,
+        Some(ScanOptions {
+            include: Some(vec!["**/*.ts".to_string()]),
+            ignore: None,
+        }),
+    )
+    .map_err(|e| e.to_string())?;
+
+    let processor = NativeRouteProcessor::new(None, None);
+    let routes: Vec<Route> = files
+        .iter()
+        .map(|file| processor.process_route_file(file))
+        .map(Route::from)
+        .collect();
+
+    Ok(routes)
+}
 
 fn setup_routes_dir() -> std::io::Result<(TempDir, std::path::PathBuf)> {
     let cwd = env::current_dir()?;
@@ -48,32 +82,30 @@ fn get_temp_name(temp_dir: &TempDir) -> String {
 
 #[test]
 fn scan_and_process_creates_routes_manifest() -> std::io::Result<()> {
-    let (temp_dir, root) = setup_routes_dir()?;
+    let (temp_dir, _root) = setup_routes_dir()?;
     let temp_name = get_temp_name(&temp_dir);
-    let output_file = root.join("test-manifest.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
+    let result = scan_and_process_routes(vec![routes_dir]);
 
+    if let Err(e) = &result {
+        eprintln!("Error: {:?}", e);
+    }
     assert!(result.is_ok());
-    assert!(output_file.exists());
 
-    let content = fs::read_to_string(&output_file)?;
-    let parsed: Vec<serde_json::Value> = serde_json::from_str(&content)?;
-
-    assert!(!parsed.is_empty());
+    let routes = result.unwrap();
+    assert!(!routes.is_empty());
 
     Ok(())
 }
 
 #[test]
 fn processes_all_route_types() -> std::io::Result<()> {
-    let (temp_dir, root) = setup_routes_dir()?;
+    let (temp_dir, _) = setup_routes_dir()?;
     let temp_name = get_temp_name(&temp_dir);
-    let output_file = root.join("routes-manifest.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
+    let result = scan_and_process_routes(vec![routes_dir]);
 
     assert!(result.is_ok());
     let routes = result.unwrap();
@@ -88,11 +120,15 @@ fn processes_all_route_types() -> std::io::Result<()> {
     assert!(!root_route.unwrap().dynamic);
 
     // Check GET /users
-    let users_get = routes.iter().find(|r| r.path == "/users" && r.method == Some("GET".to_string()));
+    let users_get = routes
+        .iter()
+        .find(|r| r.path == "/users" && r.method == Some("GET".to_string()));
     assert!(users_get.is_some());
 
     // Check POST /users
-    let users_post = routes.iter().find(|r| r.path == "/users" && r.method == Some("POST".to_string()));
+    let users_post = routes
+        .iter()
+        .find(|r| r.path == "/users" && r.method == Some("POST".to_string()));
     assert!(users_post.is_some());
 
     // Check dynamic route
@@ -110,12 +146,11 @@ fn processes_all_route_types() -> std::io::Result<()> {
 
 #[test]
 fn generates_correct_regex_patterns() -> std::io::Result<()> {
-    let (temp_dir, root) = setup_routes_dir()?;
+    let (temp_dir, _) = setup_routes_dir()?;
     let temp_name = get_temp_name(&temp_dir);
-    let output_file = root.join("regex-test.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
+    let result = scan_and_process_routes(vec![routes_dir]);
 
     assert!(result.is_ok());
     let routes = result.unwrap();
@@ -132,61 +167,74 @@ fn generates_correct_regex_patterns() -> std::io::Result<()> {
 }
 
 #[test]
-fn uses_default_output_filename() -> std::io::Result<()> {
+fn returns_routes_array() -> std::io::Result<()> {
     let (temp_dir, _root) = setup_routes_dir()?;
     let temp_name = get_temp_name(&temp_dir);
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, None, None, None);
+    let result = scan_and_process_routes(vec![routes_dir]);
 
     assert!(result.is_ok());
+    let routes = result.unwrap();
 
-    // Check default file was created
-    let default_path = std::path::Path::new("routes.json");
-    assert!(default_path.exists());
-
-    // Cleanup
-    fs::remove_file(default_path)?;
+    // Should return array of routes
+    assert!(!routes.is_empty());
+    assert_eq!(routes.len(), 6);
 
     Ok(())
 }
 
 #[test]
 fn returns_error_for_nonexistent_directory() {
-    let result = scan_and_process_routes("nonexistent_dir".to_string(), None, None, None);
+    let result = scan_and_process_routes(vec!["nonexistent_dir".to_string()]);
     assert!(result.is_err());
 }
 
 #[test]
 fn json_output_matches_expected_format() -> std::io::Result<()> {
-    let (temp_dir, root) = setup_routes_dir()?;
+    let (temp_dir, _root) = setup_routes_dir()?;
     let temp_name = get_temp_name(&temp_dir);
-    let output_file = root.join("format-test.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
+    let result = scan_and_process_routes(vec![routes_dir]);
 
     assert!(result.is_ok());
+    let routes = result.unwrap();
 
-    let content = fs::read_to_string(&output_file)?;
-    let json: serde_json::Value = serde_json::from_str(&content)?;
+    // Serialize to JSON to validate format
+    let json = serde_json::to_value(&routes).expect("Failed to serialize routes");
     let array = json.as_array().expect("JSON should be an array");
 
     assert!(!array.is_empty());
 
     // Validate first route structure
     let first_route = &array[0];
-    
+
     // Check all required fields exist with correct casing
     assert!(first_route.get("path").is_some(), "Missing 'path' field");
-    assert!(first_route.get("dynamic").is_some(), "Missing 'dynamic' field");
-    assert!(first_route.get("filePath").is_some(), "Missing 'filePath' field (should be camelCase)");
-    assert!(first_route.get("sourceFilePath").is_some(), "Missing 'sourceFilePath' field (should be camelCase)");
+    assert!(
+        first_route.get("dynamic").is_some(),
+        "Missing 'dynamic' field"
+    );
+    assert!(
+        first_route.get("filePath").is_some(),
+        "Missing 'filePath' field (should be camelCase)"
+    );
+    assert!(
+        first_route.get("sourceFilePath").is_some(),
+        "Missing 'sourceFilePath' field (should be camelCase)"
+    );
     assert!(first_route.get("regex").is_some(), "Missing 'regex' field");
 
     // Validate snake_case fields don't exist
-    assert!(first_route.get("file_path").is_none(), "Should use 'filePath', not 'file_path'");
-    assert!(first_route.get("source_file_path").is_none(), "Should use 'sourceFilePath', not 'source_file_path'");
+    assert!(
+        first_route.get("file_path").is_none(),
+        "Should use 'filePath', not 'file_path'"
+    );
+    assert!(
+        first_route.get("source_file_path").is_none(),
+        "Should use 'sourceFilePath', not 'source_file_path'"
+    );
 
     // Validate types
     assert!(first_route["path"].is_string());
@@ -201,7 +249,9 @@ fn json_output_matches_expected_format() -> std::io::Result<()> {
     }
 
     // Find a route with method to validate format
-    let route_with_method = array.iter().find(|r| r.get("method").and_then(|m| m.as_str()).is_some());
+    let route_with_method = array
+        .iter()
+        .find(|r| r.get("method").and_then(|m| m.as_str()).is_some());
     if let Some(route) = route_with_method {
         let method = route["method"].as_str().unwrap();
         // Method should be uppercase
@@ -242,28 +292,36 @@ fn setup_specific_routes() -> std::io::Result<(TempDir, std::path::PathBuf)> {
 
 #[test]
 fn validates_regex_patterns_match_expected_format() -> std::io::Result<()> {
-    let (temp_dir, root) = setup_specific_routes()?;
+    let (temp_dir, _) = setup_specific_routes()?;
     let temp_name = get_temp_name(&temp_dir);
-    let output_file = root.join("validation-test.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
+    let result = scan_and_process_routes(vec![routes_dir]);
 
     assert!(result.is_ok());
     let routes = result.unwrap();
 
     // Find each route and validate regex
-    let health_route = routes.iter().find(|r| r.path == "/health").expect("Missing /health route");
+    let health_route = routes
+        .iter()
+        .find(|r| r.path == "/health")
+        .expect("Missing /health route");
     assert_eq!(health_route.method, Some("GET".to_string()));
     assert!(!health_route.dynamic);
     assert_eq!(health_route.regex, "^\\/health$");
 
-    let hello_route = routes.iter().find(|r| r.path == "/hello").expect("Missing /hello route");
+    let hello_route = routes
+        .iter()
+        .find(|r| r.path == "/hello")
+        .expect("Missing /hello route");
     assert_eq!(hello_route.method, Some("GET".to_string()));
     assert!(!hello_route.dynamic);
     assert_eq!(hello_route.regex, "^\\/hello$");
 
-    let users_id_route = routes.iter().find(|r| r.path == "/users/:id").expect("Missing /users/:id route");
+    let users_id_route = routes
+        .iter()
+        .find(|r| r.path == "/users/:id")
+        .expect("Missing /users/:id route");
     assert_eq!(users_id_route.method, Some("GET".to_string()));
     assert!(users_id_route.dynamic);
     assert_eq!(users_id_route.regex, "^\\/users\\/([^\\/]+)$");
@@ -273,12 +331,11 @@ fn validates_regex_patterns_match_expected_format() -> std::io::Result<()> {
 
 #[test]
 fn regex_patterns_actually_match_correct_urls() -> std::io::Result<()> {
-    let (temp_dir, root) = setup_specific_routes()?;
+    let (temp_dir, _) = setup_specific_routes()?;
     let temp_name = get_temp_name(&temp_dir);
-    let output_file = root.join("regex-match-test.json");
 
     let routes_dir = format!("{}/routes", temp_name);
-    let result = scan_and_process_routes(routes_dir, Some(output_file.to_string_lossy().to_string()), None, None);
+    let result = scan_and_process_routes(vec![routes_dir]);
 
     assert!(result.is_ok());
     let routes = result.unwrap();
@@ -286,34 +343,68 @@ fn regex_patterns_actually_match_correct_urls() -> std::io::Result<()> {
     // Test /health regex
     let health_route = routes.iter().find(|r| r.path == "/health").unwrap();
     let health_regex = Regex::new(&health_route.regex).expect("Invalid regex for /health");
-    
+
     assert!(health_regex.is_match("/health"), "/health should match");
-    assert!(!health_regex.is_match("/health/extra"), "/health/extra should NOT match");
-    assert!(!health_regex.is_match("/healthz"), "/healthz should NOT match");
-    assert!(!health_regex.is_match("health"), "health (without /) should NOT match");
+    assert!(
+        !health_regex.is_match("/health/extra"),
+        "/health/extra should NOT match"
+    );
+    assert!(
+        !health_regex.is_match("/healthz"),
+        "/healthz should NOT match"
+    );
+    assert!(
+        !health_regex.is_match("health"),
+        "health (without /) should NOT match"
+    );
 
     // Test /hello regex
     let hello_route = routes.iter().find(|r| r.path == "/hello").unwrap();
     let hello_regex = Regex::new(&hello_route.regex).expect("Invalid regex for /hello");
-    
+
     assert!(hello_regex.is_match("/hello"), "/hello should match");
-    assert!(!hello_regex.is_match("/hello/world"), "/hello/world should NOT match");
+    assert!(
+        !hello_regex.is_match("/hello/world"),
+        "/hello/world should NOT match"
+    );
 
     // Test /users/:id regex
     let users_id_route = routes.iter().find(|r| r.path == "/users/:id").unwrap();
     let users_id_regex = Regex::new(&users_id_route.regex).expect("Invalid regex for /users/:id");
-    
-    assert!(users_id_regex.is_match("/users/123"), "/users/123 should match");
-    assert!(users_id_regex.is_match("/users/abc"), "/users/abc should match");
-    assert!(users_id_regex.is_match("/users/user-123"), "/users/user-123 should match");
-    
-    assert!(!users_id_regex.is_match("/users"), "/users (no id) should NOT match");
-    assert!(!users_id_regex.is_match("/users/"), "/users/ (empty id) should NOT match");
-    assert!(!users_id_regex.is_match("/users/123/extra"), "/users/123/extra should NOT match");
-    
+
+    assert!(
+        users_id_regex.is_match("/users/123"),
+        "/users/123 should match"
+    );
+    assert!(
+        users_id_regex.is_match("/users/abc"),
+        "/users/abc should match"
+    );
+    assert!(
+        users_id_regex.is_match("/users/user-123"),
+        "/users/user-123 should match"
+    );
+
+    assert!(
+        !users_id_regex.is_match("/users"),
+        "/users (no id) should NOT match"
+    );
+    assert!(
+        !users_id_regex.is_match("/users/"),
+        "/users/ (empty id) should NOT match"
+    );
+    assert!(
+        !users_id_regex.is_match("/users/123/extra"),
+        "/users/123/extra should NOT match"
+    );
+
     // Test capturing group
     if let Some(captures) = users_id_regex.captures("/users/my-user-123") {
-        assert_eq!(captures.get(1).unwrap().as_str(), "my-user-123", "Should capture the ID parameter");
+        assert_eq!(
+            captures.get(1).unwrap().as_str(),
+            "my-user-123",
+            "Should capture the ID parameter"
+        );
     } else {
         panic!("Regex should capture the ID parameter");
     }

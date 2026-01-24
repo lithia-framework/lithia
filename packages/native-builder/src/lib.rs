@@ -1,8 +1,10 @@
+use lithia_native_router::{
+    processor::{NativeRouteProcessor, RouteProcessor},
+    Route,
+};
 use napi_derive::napi;
 use rayon::prelude::*;
-use std::time::Instant;
-
-use lithia_native_scanner::FileInfo;
+use std::{fs, time::Instant};
 
 mod compiler;
 mod config;
@@ -21,21 +23,17 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
     let start = Instant::now();
 
     // Load configuration
-    let config = BuildConfig::new(source_dir, out_dir)
-        .map_err(|e| napi::Error::from_reason(e))?;
+    let config = BuildConfig::new(source_dir, out_dir).map_err(|e| napi::Error::from_reason(e))?;
 
-    // Scan files
-    let all_files = lithia_native_scanner::scan_files(
+    // Scan TypeScript files using glob patterns
+    let ts_files = lithia_native_scanner::scan_files_with_globs(
         vec![config.source_root_str()],
-        Some(config.ignore_patterns.clone()),
+        Some(lithia_native_scanner::ScanOptions {
+            include: Some(vec!["**/*.ts".to_string()]),
+            ignore: Some(config.ignore_patterns.clone()),
+        }),
     )
     .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
-
-    let ts_files: Vec<FileInfo> = all_files
-        .iter()
-        .cloned()
-        .filter(|f| f.path.ends_with(".ts"))
-        .collect();
 
     // Compile files in parallel
     let compile_start = Instant::now();
@@ -86,31 +84,38 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
         return Err(napi::Error::from_reason(format!(
             "Build completed with {} failures: {:?}",
             build_result.failures.len(),
-            build_result
-                .failures
-                .iter()
-                .take(5)
-                .collect::<Vec<_>>()
+            build_result.failures.iter().take(5).collect::<Vec<_>>()
         )));
     }
 
     build_result.total_duration_ms = start.elapsed().as_secs_f64() * 1000.0;
     println!("Total build time: {:.2}ms", build_result.total_duration_ms);
 
-    // Generate route manifest
-    let manifest_path = config.out_root.join("routes.json");
-    let manifest_path_str = manifest_path.to_string_lossy().to_string();
+    let route_files = lithia_native_scanner::scan_files_with_globs(
+        vec![
+            config.output_path_str(),
+            "app".to_string(),
+            "routes".to_string(),
+        ],
+        Some(lithia_native_scanner::ScanOptions {
+            include: Some(vec!["**/*.js".to_string()]),
+            ignore: None,
+        }),
+    )
+    .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
 
-    if let Err(e) = lithia_native_router::scan_and_process_routes(
-        config.source_root_str(),
-        Some(manifest_path_str.clone()),
-        Some(config.out_root_str()),
-        Some(config.source_root_str()),
-    ) {
-        eprintln!("Failed to generate route manifest: {}", e);
-    } else {
-        println!("Wrote route manifest: {}", manifest_path_str);
-    }
+    let processor = NativeRouteProcessor::new(None, None);
+    let routes: Vec<Route> = route_files
+        .iter()
+        .map(|file| processor.process_route_file(file))
+        .map(Route::from)
+        .collect();
+
+    let json = serde_json::to_string_pretty(&routes)
+        .map_err(|e| napi::Error::from_reason(format!("Failed to serialize routes: {}", e)))?;
+
+    fs::write(&config.out_root.join("routes.json"), json)
+        .map_err(|e| napi::Error::from_reason(format!("Failed to write file: {}", e)))?;
 
     Ok(())
 }

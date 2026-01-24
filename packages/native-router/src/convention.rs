@@ -59,7 +59,7 @@ pub struct NativeRouteConvention {
 impl NativeRouteConvention {
     pub fn new(transformer: Option<Box<dyn PathTransformer>>) -> Self {
         Self {
-            route_regex: Regex::new(r"/route(\.(delete|get|head|options|patch|post|put))?\.ts$")
+            route_regex: Regex::new(r"/route(\.(delete|get|head|options|patch|post|put))?\.(ts|js)$")
                 .unwrap(),
             transformer: transformer.unwrap_or_else(|| Box::new(NativePathTransformer::new())),
         }
