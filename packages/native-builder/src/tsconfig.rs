@@ -1,4 +1,5 @@
 use serde_json::Value;
+use std::path::Path;
 
 use swc_ecma_ast::EsVersion;
 
@@ -12,16 +13,23 @@ fn normalize_target(s: &str) -> String {
     s.trim().to_lowercase().replace('-', "").replace('_', "")
 }
 
-pub fn parse_tsconfig() -> Result<TsConfigOptions, String> {
-    let path = std::env::current_dir()
-        .map_err(|e| format!("failed to get current dir: {}", e))?
-        .join("tsconfig.json");
+pub fn parse_tsconfig(path: Option<&Path>) -> Result<TsConfigOptions, String> {
+    let default_config = TsConfigOptions {
+        emit_sourcemap: true,
+        target: EsVersion::Es5,
+    };
+
+    let path = match path {
+        Some(p) => p.to_path_buf(),
+        None => {
+            let cwd = std::env::current_dir()
+                .map_err(|e| format!("failed to get current dir: {}", e))?;
+            cwd.join("tsconfig.json")
+        }
+    };
 
     if !path.exists() {
-        return Ok(TsConfigOptions {
-            emit_sourcemap: true,
-            target: EsVersion::Es5,
-        });
+        return Ok(default_config);
     }
 
     let s = std::fs::read_to_string(&path)

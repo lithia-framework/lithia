@@ -1,37 +1,33 @@
 use napi_derive::napi;
 use rayon::prelude::*;
-use std::path::PathBuf;
 use std::time::Instant;
 
 use lithia_native_scanner::FileInfo;
 
-use std::path::Path;
-
-use serde_json::json;
-use swc_common::{
-    comments::SingleThreadedComments,
-    errors::{EmitterWriter, Handler},
-    sync::Lrc,
-    Globals, Mark, SourceMap, GLOBALS,
-};
-use swc_ecma_codegen::to_code_default;
-use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsSyntax};
-use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
-use swc_ecma_transforms_typescript::strip;
+mod compiler;
+mod config;
+mod reporter;
+mod sourcemap;
 mod tsconfig;
-use tsconfig::parse_tsconfig;
-use tsconfig::TsConfigOptions;
+mod types;
+
+use compiler::TypeScriptCompiler;
+use config::BuildConfig;
+use reporter::print_timings;
+use types::{BuildResult, CompileResult};
 
 #[napi]
 pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> napi::Result<()> {
     let start = Instant::now();
 
-    let source_root = source_dir.unwrap_or_else(|| "src".to_string());
-    let out_root = out_dir.unwrap_or_else(|| "dist".to_string());
+    // Load configuration
+    let config = BuildConfig::new(source_dir, out_dir)
+        .map_err(|e| napi::Error::from_reason(e))?;
 
+    // Scan files
     let all_files = lithia_native_scanner::scan_files(
-        vec![source_root.clone()],
-        vec![".test.ts".to_string(), ".spec.ts".to_string()].into(),
+        vec![config.source_root_str()],
+        Some(config.ignore_patterns.clone()),
     )
     .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
 
@@ -41,181 +37,80 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
         .filter(|f| f.path.ends_with(".ts"))
         .collect();
 
-    let ts_cfg = match parse_tsconfig() {
-        Ok(cfg) => cfg,
-        Err(e) => return Err(napi::Error::from_reason(e)),
-    };
-
+    // Compile files in parallel
     let compile_start = Instant::now();
+    let compiler = TypeScriptCompiler::new(config.ts_config.clone());
 
-    let results: Vec<Result<(String, f64), String>> = ts_files
+    let results: Vec<Result<CompileResult, String>> = ts_files
         .par_iter()
         .map(|file| {
-            let relative = PathBuf::from(&file.path);
-            let mut out_path = PathBuf::from(&out_root);
-            out_path.push(relative);
-            out_path.set_extension("js");
+            let output_path = config.compute_output_path(&file.path);
 
-            if let Some(parent) = out_path.parent() {
+            if let Some(parent) = output_path.parent() {
                 std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
             }
 
-            let input = &file.full_path;
-            let output = out_path.to_string_lossy().to_string();
-
             let file_start = Instant::now();
-            match compile_ts_to_js(input, &output, ts_cfg.clone()) {
-                Ok(_) => {
-                    let dur_ms = file_start.elapsed().as_secs_f64() * 1000.0;
-                    Ok((output.clone(), dur_ms))
-                }
-                Err(e) => Err(e),
-            }
+            compiler
+                .compile_file(&std::path::Path::new(&file.full_path), &output_path)
+                .map(|_| CompileResult {
+                    output_path: output_path.to_string_lossy().to_string(),
+                    duration_ms: file_start.elapsed().as_secs_f64() * 1000.0,
+                })
         })
         .collect();
+
     let compile_duration = compile_start.elapsed();
 
-    let mut failures: Vec<String> = Vec::new();
-    let mut timings: Vec<(String, f64)> = Vec::new();
-    for r in results {
-        match r {
-            Ok((path, ms)) => timings.push((path, ms)),
-            Err(e) => failures.push(e),
+    // Aggregate results
+    let mut build_result = BuildResult::new(start.elapsed().as_secs_f64() * 1000.0);
+    build_result.files_compiled = ts_files.len();
+
+    for result in results {
+        match result {
+            Ok(timing) => build_result.timings.push(timing),
+            Err(e) => build_result.failures.push(e),
         }
     }
 
+    // Print build summary
     println!(
         "Built {} files in {:.2}ms ({} failures)",
-        ts_files.len(),
+        build_result.files_compiled,
         compile_duration.as_secs_f64() * 1000.0,
-        failures.len()
+        build_result.failures.len()
     );
+    print_timings(&build_result);
 
-    // print per-file timings
-    for (p, ms) in &timings {
-        println!("  {}: {:.2}ms", p, ms);
-    }
-
-    if !failures.is_empty() {
+    if build_result.has_failures() {
         return Err(napi::Error::from_reason(format!(
             "Build completed with {} failures: {:?}",
-            failures.len(),
-            failures.iter().take(5).collect::<Vec<_>>()
+            build_result.failures.len(),
+            build_result
+                .failures
+                .iter()
+                .take(5)
+                .collect::<Vec<_>>()
         )));
     }
 
-    let total = start.elapsed();
-    println!("Total build time: {:.2}ms", total.as_secs_f64() * 1000.0);
+    build_result.total_duration_ms = start.elapsed().as_secs_f64() * 1000.0;
+    println!("Total build time: {:.2}ms", build_result.total_duration_ms);
 
-    {
-        let manifest_path = std::path::Path::new(&out_root).join("routes.json");
-        let manifest_path_str = manifest_path.to_string_lossy().to_string();
+    // Generate route manifest
+    let manifest_path = config.out_root.join("routes.json");
+    let manifest_path_str = manifest_path.to_string_lossy().to_string();
 
-        if let Err(e) = lithia_native_router::scan_and_process_routes(
-            source_root.clone(),
-            Some(manifest_path_str),
-            Some(out_root.clone()),
-            Some(source_root.clone()),
-        ) {
-            eprintln!("Failed to generate route manifest: {}", e);
-        }
+    if let Err(e) = lithia_native_router::scan_and_process_routes(
+        config.source_root_str(),
+        Some(manifest_path_str.clone()),
+        Some(config.out_root_str()),
+        Some(config.source_root_str()),
+    ) {
+        eprintln!("Failed to generate route manifest: {}", e);
+    } else {
+        println!("Wrote route manifest: {}", manifest_path_str);
     }
 
     Ok(())
-}
-
-fn compile_ts_to_js(input: &str, output: &str, ts_cfg: TsConfigOptions) -> Result<(), String> {
-    let cm: Lrc<SourceMap> = Default::default();
-    let emitter = EmitterWriter::new(Box::new(std::io::stderr()), Some(cm.clone()), false, true);
-    let handler = Handler::with_emitter(true, false, Box::new(emitter));
-
-    let fm = cm
-        .load_file(Path::new(input))
-        .map_err(|e| format!("failed to load input {}: {}", input, e))?;
-
-    let comments = SingleThreadedComments::default();
-
-    // we don't support TSX (no React) — always parse as plain TypeScript
-    let lexer = Lexer::new(
-        Syntax::Typescript(TsSyntax {
-            tsx: false,
-            ..Default::default()
-        }),
-        ts_cfg.target,
-        StringInput::from(&*fm),
-        Some(&comments),
-    );
-
-    let mut parser = Parser::new_from(lexer);
-
-    for e in parser.take_errors() {
-        e.into_diagnostic(&handler).emit();
-    }
-
-    let module = parser.parse_program().map_err(|e| {
-        e.into_diagnostic(&handler).emit();
-        format!("failed to parse {}", input)
-    })?;
-
-    let globals = Globals::default();
-    let res: Result<(), _> = GLOBALS.set(&globals, || {
-        let unresolved_mark = Mark::new();
-        let top_level_mark = Mark::new();
-
-        let module = module.apply(resolver(unresolved_mark, top_level_mark, true));
-        let module = module.apply(strip(unresolved_mark, top_level_mark));
-        let module = module.apply(hygiene());
-
-        let program = module.apply(fixer(Some(&comments)));
-
-        let code = to_code_default(cm, Some(&comments), &program);
-
-        let input_file_name = std::path::Path::new(input)
-            .file_name()
-            .unwrap()
-            .to_string_lossy();
-        let output_file_name = std::path::Path::new(output)
-            .file_name()
-            .unwrap()
-            .to_string_lossy();
-        let src_content =
-            std::fs::read_to_string(input).map_err(|e| format!("read source {}: {}", input, e))?;
-
-        let map = json!({
-            "version": 3,
-            "file": output_file_name,
-            "sources": [input_file_name],
-            "sourcesContent": [src_content],
-            "names": [],
-            "mappings": ""
-        })
-        .to_string();
-
-        if ts_cfg.emit_sourcemap {
-            let map_file_name = format!(
-                "{}.map",
-                std::path::Path::new(output)
-                    .file_name()
-                    .unwrap()
-                    .to_string_lossy()
-            );
-            let code_with_map = format!("{}\n//# sourceMappingURL={}\n", code, map_file_name);
-
-            std::fs::write(output, code_with_map)
-                .map_err(|e| format!("write error {}: {}", output, e))?;
-
-            let map_path = format!("{}.map", output);
-            std::fs::write(&map_path, map)
-                .map_err(|e| format!("write map error {}: {}", map_path, e))?;
-        } else {
-            std::fs::write(output, code).map_err(|e| format!("write error {}: {}", output, e))?;
-        }
-
-        Ok::<(), String>(())
-    });
-
-    match res {
-        Ok(v) => Ok(v),
-        Err(e) => Err(format!("swc error: {:?}", e)),
-    }
 }
