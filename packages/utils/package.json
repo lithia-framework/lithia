@@ -7,6 +7,8 @@
 	"exports": {
 		".": {
 			"import": "./dist/lib.js",
+      "require": "./dist/lib.js",
+      "default": "./dist/lib.js",
 			"types": "./dist/lib.d.ts"
 		}
 	},

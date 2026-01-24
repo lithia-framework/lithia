@@ -7,7 +7,6 @@ use swc_ecma_ast::EsVersion;
 pub struct TsConfigOptions {
     pub emit_sourcemap: bool,
     pub target: EsVersion,
-    pub out_dir: String,
 }
 
 fn normalize_target(s: &str) -> String {
@@ -18,7 +17,6 @@ pub fn parse_tsconfig(path: Option<&Path>) -> Result<TsConfigOptions, String> {
     let default_config = TsConfigOptions {
         emit_sourcemap: true,
         target: EsVersion::EsNext,
-        out_dir: "dist".to_string(),
     };
 
     let path = match path {
@@ -30,7 +28,7 @@ pub fn parse_tsconfig(path: Option<&Path>) -> Result<TsConfigOptions, String> {
     };
 
     if !path.exists() {
-        println!("tsconfig.json not found at {}, using default configuration", path.display());
+        // do not print from native side; using default config
         return Ok(default_config);
     }
 
@@ -40,17 +38,12 @@ pub fn parse_tsconfig(path: Option<&Path>) -> Result<TsConfigOptions, String> {
     let v: Value = serde_json::from_str(&s)
         .map_err(|e| format!("failed to parse tsconfig {}: {}", path.display(), e))?;
 
-    let mut out_dir: String = "dist".to_string();
     let mut emit_sourcemap = true;
     let mut target = EsVersion::Es5;
 
     if let Some(opts) = v.get("compilerOptions") {
         if let Some(sm) = opts.get("sourceMap").and_then(|v| v.as_bool()) {
             emit_sourcemap = sm;
-        }
-
-        if let Some(od) = opts.get("outDir").and_then(|v| v.as_str()) {
-            out_dir = od.to_string();
         }
 
         if let Some(t) = opts.get("target") {
@@ -79,7 +72,6 @@ pub fn parse_tsconfig(path: Option<&Path>) -> Result<TsConfigOptions, String> {
     Ok(TsConfigOptions {
         emit_sourcemap,
         target,
-        out_dir,
     })
 }
 

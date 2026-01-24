@@ -7,7 +7,7 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["packages/**", "!packages/lithia_old", "!**/*.js"]
+		"includes": ["packages/**", "!packages/lithia_old", "!dist/**/*"]
 	},
 	"formatter": {
 		"enabled": true,

@@ -18,6 +18,13 @@ pub struct Route {
     pub regex: String,
 }
 
+#[napi(object)]
+#[derive(Serialize)]
+pub struct RoutesManifest {
+    pub version: String,
+    pub routes: Vec<Route>,
+}
+
 pub struct RouteCore {
     pub method: Option<MatchedMethodSuffix>,
     pub path: String,

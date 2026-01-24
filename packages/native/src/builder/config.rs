@@ -12,12 +12,12 @@ pub struct BuildConfig {
 }
 
 impl BuildConfig {
-    pub fn new() -> Result<Self, String> {
-        let source_root = PathBuf::from("src");
+    pub fn new(source_root: String, out_root: String) -> Result<Self, String> {
         let tsconfig_path = PathBuf::from("tsconfig.json");
         let ts_config = parse_tsconfig(Some(&tsconfig_path))?;
 
-        let out_root = PathBuf::from(&ts_config.out_dir);
+        let source_root = PathBuf::from(source_root);
+        let out_root = PathBuf::from(out_root);
 
         Ok(Self {
             source_root,

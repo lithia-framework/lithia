@@ -32,6 +32,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@lithiajs/core':
+        specifier: workspace:*
+        version: link:../core
       '@lithiajs/native':
         specifier: workspace:*
         version: link:../native

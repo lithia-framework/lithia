@@ -1,4 +1,5 @@
-import { buildProject } from "@lithiajs/native";
+import path from "node:path";
+import { Lithia, parseTsConfig } from "@lithiajs/core";
 import { defineCommand } from "citty";
 
 const build = defineCommand({
@@ -6,8 +7,18 @@ const build = defineCommand({
 		name: "build",
 		description: "Start the build process",
 	},
-	run() {
-		buildProject();
+	async run() {
+		const tsConfig = parseTsConfig();
+		const sourceRoot = path.join(process.cwd(), "src");
+		const outRoot = path.join(process.cwd(), tsConfig.outDir);
+
+		const lithia = await Lithia.create({
+			environment: "production",
+			sourceRoot,
+			outRoot,
+		});
+
+		lithia.build();
 	},
 });
 

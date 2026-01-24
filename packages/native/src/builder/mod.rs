@@ -1,6 +1,9 @@
-use crate::router::{
-    processor::{NativeRouteProcessor, RouteProcessor},
-    Route,
+use crate::{
+    meta::schema_version,
+    router::{
+        processor::{NativeRouteProcessor, RouteProcessor},
+        Route, RoutesManifest,
+    },
 };
 use napi_derive::napi;
 use rayon::prelude::*;
@@ -8,7 +11,6 @@ use std::{fs, time::Instant};
 
 pub mod compiler;
 pub mod config;
-pub mod reporter;
 pub mod sourcemap;
 pub mod tsconfig;
 pub mod types;
@@ -18,12 +20,13 @@ use config::BuildConfig;
 use types::{BuildResult, CompileResult};
 
 #[napi]
-pub fn build_project() -> napi::Result<()> {
+pub fn build_project(source_root: String, out_root: String) -> napi::Result<()> {
     let start = Instant::now();
 
     // Load configuration
-    let config = BuildConfig::new().map_err(|e| napi::Error::from_reason(e))?;
-
+    let config =
+        BuildConfig::new(source_root, out_root).map_err(|e| napi::Error::from_reason(e))?;
+        
     fs::remove_dir_all(&config.out_root).ok();
 
     // Scan TypeScript files using glob patterns
@@ -39,7 +42,6 @@ pub fn build_project() -> napi::Result<()> {
         .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
 
     // Compile files in parallel
-    let compile_start = Instant::now();
     let compiler = TypeScriptCompiler::new(config.ts_config.clone());
 
     let results: Vec<Result<CompileResult, String>> = ts_files
@@ -61,8 +63,6 @@ pub fn build_project() -> napi::Result<()> {
         })
         .collect();
 
-    let compile_duration = compile_start.elapsed();
-
     // Aggregate results
     let mut build_result = BuildResult::new(start.elapsed().as_secs_f64() * 1000.0);
     build_result.files_compiled = ts_files.len();
@@ -74,13 +74,7 @@ pub fn build_project() -> napi::Result<()> {
         }
     }
 
-    // Print build summary
-    println!(
-        "Built {} files in {:.2}ms ({} failures)",
-        build_result.files_compiled,
-        compile_duration.as_secs_f64() * 1000.0,
-        build_result.failures.len()
-    );
+    // Build summary is emitted to the host (Node) via the native API; avoid printing here.
 
     if build_result.has_failures() {
         return Err(napi::Error::from_reason(format!(
@@ -91,7 +85,6 @@ pub fn build_project() -> napi::Result<()> {
     }
 
     build_result.total_duration_ms = start.elapsed().as_secs_f64() * 1000.0;
-    println!("Total build time: {:.2}ms", build_result.total_duration_ms);
 
     let routes_path = config.out_root.join("app").join("routes");
     if routes_path.exists() {
@@ -110,13 +103,17 @@ pub fn build_project() -> napi::Result<()> {
             .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
 
         let processor = NativeRouteProcessor::new(None, None);
+
+        let version = schema_version().to_string();
         let routes: Vec<Route> = route_files
             .iter()
             .map(|file| processor.process_route_file(file))
             .map(Route::from)
             .collect();
 
-        let json = serde_json::to_string_pretty(&routes)
+        let manifest = RoutesManifest { version, routes };
+
+        let json = serde_json::to_string_pretty(&manifest)
             .map_err(|e| napi::Error::from_reason(format!("Failed to serialize routes: {}", e)))?;
 
         fs::write(&config.out_root.join("routes.json"), json)

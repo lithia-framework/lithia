@@ -105,6 +105,12 @@ export class ConfigProvider {
 }
 
 const defaultProvider = new ConfigProvider();
-const loadOptions = defaultProvider.loadConfig.bind(defaultProvider);
+const loadLithiaConfig = async () => {
+	return defaultProvider.loadConfig();
+};
 
-export { loadOptions };
+export function defineConfig(config: LithiaConfig): LithiaConfig {
+	return config;
+}
+
+export { loadLithiaConfig };

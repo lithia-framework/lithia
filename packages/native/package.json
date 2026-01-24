@@ -8,6 +8,7 @@
 		".": {
 			"import": "./index.js",
 			"require": "./index.js",
+      "default": "./index.js",
 			"types": "./index.d.ts"
 		}
 	},
