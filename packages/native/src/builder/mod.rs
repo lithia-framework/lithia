@@ -108,6 +108,7 @@ pub fn build_project(source_root: String, out_root: String) -> napi::Result<()> 
         let routes: Vec<Route> = route_files
             .iter()
             .map(|file| processor.process_route_file(file))
+            .filter(|route| route.method.is_some())
             .map(Route::from)
             .collect();
 

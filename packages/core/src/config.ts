@@ -1,5 +1,10 @@
 import type { DeepPartial } from "@lithiajs/utils";
-import { type C12InputConfig, loadConfig, type WatchConfigOptions } from "c12";
+import {
+	type C12InputConfig,
+	loadConfig,
+	type WatchConfigOptions,
+	watchConfig,
+} from "c12";
 import { klona } from "klona";
 
 export type HookResult = void | Promise<void>;
@@ -58,6 +63,7 @@ export const DEFAULT_CONFIG: LithiaConfig = {
 type LoadConfigOptions = {
 	watch?: boolean;
 	c12?: WatchConfigOptions;
+	overrides?: LithiaConfig;
 };
 
 export class ConfigValidationError extends Error {
@@ -68,6 +74,17 @@ export class ConfigValidationError extends Error {
 		super(message);
 		this.name = "ConfigValidationError";
 	}
+}
+
+export interface ConfigUpdateContext {
+	getDiff: () => Array<{
+		key: string;
+		type: string;
+		newValue: unknown;
+		oldValue: unknown;
+	}>;
+	newConfig: LithiaOptions;
+	oldConfig: LithiaOptions;
 }
 
 export class ConfigProvider {
@@ -87,11 +104,50 @@ export class ConfigProvider {
 		const loadedConfig = await loadConfig<LithiaConfig>(configOptions);
 		const options = klona(loadedConfig.config) as LithiaOptions;
 
-		Object.assign(options, overrides);
+		// overrides are already applied by c12; no need to re-assign here
 
 		this.validateConfig(options);
 
 		return options;
+	}
+
+	async watchConfig(
+		onChange: (ctx: ConfigUpdateContext) => void | Promise<void>,
+		overrides: LithiaConfig = {},
+		opts: LoadConfigOptions = {},
+	) {
+		overrides = klona(overrides);
+
+		const configOptions = {
+			name: "lithia",
+			configFile: "lithia.config",
+			cwd: process.cwd(),
+			dotenv: true,
+			overrides,
+			defaults: DEFAULT_CONFIG,
+			...opts.c12,
+			watch: true,
+			onUpdate: async (context: any) => {
+				const newOptions = klona(context.newConfig.config) as LithiaOptions;
+				this.validateConfig(newOptions);
+
+				await onChange({
+					getDiff: context.getDiff,
+					newConfig: newOptions,
+					oldConfig: context.oldConfig.config as LithiaOptions,
+				});
+			},
+		};
+
+		const handle = await watchConfig<LithiaConfig>(configOptions as any);
+
+		return {
+			close: () => {
+				if (typeof (handle as any)?.close === "function") {
+					(handle as any).close();
+				}
+			},
+		};
 	}
 
 	private validateConfig(config: LithiaOptions): void {
@@ -104,13 +160,6 @@ export class ConfigProvider {
 	}
 }
 
-const defaultProvider = new ConfigProvider();
-const loadLithiaConfig = async () => {
-	return defaultProvider.loadConfig();
-};
-
 export function defineConfig(config: LithiaConfig): LithiaConfig {
 	return config;
 }
-
-export { loadLithiaConfig };

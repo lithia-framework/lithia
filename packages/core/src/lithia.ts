@@ -7,7 +7,7 @@ import {
 	type RoutesManifest,
 	schemaVersion,
 } from "@lithiajs/native";
-import { type LithiaOptions, loadLithiaConfig } from "./config";
+import { ConfigProvider, type LithiaOptions } from "./config";
 import {
 	LithiaError,
 	RouteSchemaVersionMismatchError,
@@ -31,27 +31,55 @@ export class Lithia {
 	private routes: Route[];
 	private config: LithiaOptions;
 	private emitter: EventEmitter;
+	private configProvider: ConfigProvider;
+	private configWatchHandle?: { close?: () => void };
 
 	private constructor() {
 		this.routes = [];
 		this.emitter = new EventEmitter();
+		this.configProvider = new ConfigProvider();
 	}
 
 	static async create(options: LithiaCreateOptions) {
 		if (!Lithia.instance) {
 			const lithia = new Lithia();
-
-			lithia.environment = options.environment;
-			lithia.sourceRoot = options.sourceRoot;
-			lithia.outRoot = options.outRoot;
-			lithia.config = await loadLithiaConfig();
-
-			lithia.configureEventEmitter();
-
+			await lithia.initialize(options);
 			Lithia.instance = lithia;
 		}
 
 		return Lithia.instance;
+	}
+
+	private async initialize(options: LithiaCreateOptions) {
+		this.environment = options.environment;
+		this.sourceRoot = options.sourceRoot;
+		this.outRoot = options.outRoot;
+		this.config = await this.configProvider.loadConfig();
+
+		this.configureEventEmitter();
+
+		if (options.environment === "development") {
+			try {
+				this.configWatchHandle = await this.configProvider.watchConfig(
+					(ctx) => {
+						this.config = ctx.newConfig;
+						this.emit("config:changed", ctx.newConfig);
+						try {
+							const diffs =
+								typeof ctx.getDiff === "function" ? ctx.getDiff() : [];
+							if (diffs && diffs.length > 0) {
+								logger.event(`Config updated — ${diffs.length} change(s)`);
+							}
+						} catch (logErr) {
+							logger.debug("Failed to summarize config diff:", logErr);
+						}
+					},
+					undefined,
+				);
+			} catch (err) {
+				this.emitter.emit("error", err);
+			}
+		}
 	}
 
 	getEnvironment() {
@@ -133,5 +161,18 @@ export class Lithia {
 
 	getEventEmitter() {
 		return this.emitter;
+	}
+
+	emit(event: string, payload?: any) {
+		return this.emitter.emit(event, payload);
+	}
+
+	on(event: string, listener: (...args: any[]) => void) {
+		this.emitter.on(event, listener);
+	}
+
+	close() {
+		this.configWatchHandle?.close?.();
+		this.emitter.removeAllListeners();
 	}
 }

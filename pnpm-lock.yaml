@@ -38,6 +38,9 @@ importers:
       '@lithiajs/native':
         specifier: workspace:*
         version: link:../native
+      chokidar:
+        specifier: ^5.0.0
+        version: 5.0.0
       citty:
         specifier: ^0.2.0
         version: 0.2.0
