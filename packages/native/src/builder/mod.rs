@@ -18,22 +18,22 @@ use config::BuildConfig;
 use types::{BuildResult, CompileResult};
 
 #[napi]
-pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> napi::Result<()> {
+pub fn build_project() -> napi::Result<()> {
     let start = Instant::now();
 
     // Load configuration
-    let config = BuildConfig::new(source_dir, out_dir).map_err(|e| napi::Error::from_reason(e))?;
-
+    let config = BuildConfig::new().map_err(|e| napi::Error::from_reason(e))?;
     // Scan TypeScript files using glob patterns
     use crate::scanner::FileScanner;
-    let ts_files = crate::scanner::NativeFileScanner::new().scan_dir(
-        &[config.source_root_str()],
-        Some(crate::scanner::ScanOptions {
-            include: Some(vec!["**/*.ts".to_string()]),
-            ignore: Some(config.ignore_patterns.clone()),
-        }),
-    )
-    .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
+    let ts_files = crate::scanner::NativeFileScanner::new()
+        .scan_dir(
+            &[config.source_root_str()],
+            Some(crate::scanner::ScanOptions {
+                include: Some(vec!["**/*.ts".to_string()]),
+                ignore: Some(config.ignore_patterns.clone()),
+            }),
+        )
+        .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
 
     // Compile files in parallel
     let compile_start = Instant::now();
@@ -92,18 +92,19 @@ pub fn build_project(source_dir: Option<String>, out_dir: Option<String>) -> nap
 
     let routes_path = config.out_root.join("app").join("routes");
     if routes_path.exists() {
-        let route_files = crate::scanner::NativeFileScanner::new().scan_dir(
-            &[
-                config.output_path_str(),
-                "app".to_string(),
-                "routes".to_string(),
-            ],
-            Some(crate::scanner::ScanOptions {
-                include: Some(vec!["**/*.js".to_string()]),
-                ignore: None,
-            }),
-        )
-        .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
+        let route_files = crate::scanner::NativeFileScanner::new()
+            .scan_dir(
+                &[
+                    config.output_path_str(),
+                    "app".to_string(),
+                    "routes".to_string(),
+                ],
+                Some(crate::scanner::ScanOptions {
+                    include: Some(vec!["**/*.js".to_string()]),
+                    ignore: None,
+                }),
+            )
+            .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
 
         let processor = NativeRouteProcessor::new(None, None);
         let routes: Vec<Route> = route_files

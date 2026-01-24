@@ -4,15 +4,10 @@ import { defineCommand } from "citty";
 const build = defineCommand({
 	meta: {
 		name: "build",
-		description: "Start the build process (uses native-builder)",
+		description: "Start the build process",
 	},
 	run() {
-		try {
-			buildProject();
-			return 0;
-		} catch {
-			return 1;
-		}
+		buildProject();
 	},
 });
 

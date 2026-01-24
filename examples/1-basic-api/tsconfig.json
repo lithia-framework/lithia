@@ -3,7 +3,8 @@
 		"target": "esnext",
 		"module": "esnext",
 		"moduleResolution": "node",
-    "sourceMap": true
+    "sourceMap": true,
+    "outDir": "dist"
 	},
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
