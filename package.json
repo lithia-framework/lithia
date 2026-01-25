@@ -5,13 +5,14 @@
 	"packageManager": "pnpm@10.0.0",
 	"scripts": {
 		"build": "turbo build",
-    "test": "turbo test",
-    "check": "turbo check",
-    "machete": "turbo machete"
+		"test": "turbo test",
+		"check": "turbo check",
+		"machete": "turbo machete"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.0",
 		"@types/node": "^25.0.10",
+		"tsx": "^4.21.0",
 		"turbo": "^2.7.5",
 		"typescript": "^5.9.3"
 	}

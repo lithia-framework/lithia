@@ -5,7 +5,11 @@ import {
 	type ServerResponse,
 } from "node:http";
 import type { LithiaOptions } from "../config";
+import type { Lithia } from "../lithia";
 import { logger } from "../logger";
+import { LithiaRequest } from "./request";
+import { RequestProcessor } from "./request-processor";
+import { LithiaResponse } from "./response";
 
 export interface HttpServerConfig {
 	port: number;
@@ -15,36 +19,46 @@ export interface HttpServerConfig {
 export class HttpServer {
 	private server?: Server;
 	private config: HttpServerConfig;
+	private processor: RequestProcessor;
 
-	constructor(config: HttpServerConfig) {
+	constructor(
+		config: HttpServerConfig,
+		private lithia: Lithia,
+	) {
 		this.config = config;
+		this.processor = new RequestProcessor(lithia);
 	}
 
 	async create(): Promise<Server> {
 		if (this.server) return this.server;
 
-		this.server = createServer((req: IncomingMessage, res: ServerResponse) => {
-			try {
-				// Minimal handler: only respond to /_lithia, otherwise 404
-				const url = req.url || "/";
-				if (url === "/_lithia") {
-					res.writeHead(200, { "Content-Type": "application/json" });
-					res.end(JSON.stringify({ ok: true, ts: Date.now() }));
-					return;
-				}
-
-				res.writeHead(404, { "Content-Type": "text/plain" });
-				res.end("Not Found");
-			} catch (err) {
-				logger.error("HttpServer request handler error:", err);
+		this.server = createServer(
+			async (req: IncomingMessage, res: ServerResponse) => {
 				try {
-					res.writeHead(500, { "Content-Type": "text/plain" });
-					res.end("Internal Server Error");
-				} catch (_) {
-					// ignore
+					// Handle /_lithia internal endpoint
+					const url = req.url || "/";
+					if (url === "/_lithia") {
+						res.writeHead(200, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ ok: true, ts: Date.now() }));
+						return;
+					}
+
+					// Process request through the pipeline
+					const lithiaReq = new LithiaRequest(req, this.lithia);
+					const lithiaRes = new LithiaResponse(res);
+
+					await this.processor.processRequest(lithiaReq, lithiaRes);
+				} catch (err) {
+					logger.error("HttpServer request handler error:", err);
+					try {
+						res.writeHead(500, { "Content-Type": "text/plain" });
+						res.end("Internal Server Error");
+					} catch (_) {
+						// ignore
+					}
 				}
-			}
-		});
+			},
+		);
 
 		return this.server;
 	}
@@ -85,11 +99,14 @@ export class HttpServer {
 	}
 }
 
-export function createHttpServerFromConfig(opts: { options: LithiaOptions }) {
+export function createHttpServerFromConfig(opts: {
+	options: LithiaOptions;
+	lithia: Lithia;
+}) {
 	const cfg: HttpServerConfig = {
 		port: opts.options.http.port,
 		host: opts.options.http.host,
 	};
 
-	return new HttpServer(cfg);
+	return new HttpServer(cfg, opts.lithia);
 }

@@ -3,6 +3,16 @@
 version = 4
 
 [[package]]
+name = "Inflector"
+version = "0.11.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe438c63458706e03479442743baae6c88256498e6431708f6dfc520a26515d3"
+dependencies = [
+ "lazy_static",
+ "regex",
+]
+
+[[package]]
 name = "ahash"
 version = "0.8.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -260,6 +270,19 @@ name = "ctor-proc-macro"
 version = "0.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52560adf09603e58c9a7ee1fe1dcb95a16927b17c127f0ac02d6e768a0e25bc1"
+
+[[package]]
+name = "dashmap"
+version = "5.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "978747c1d849a7d2ee5e8adc0159961c48fb7e5db2f06af6723b80123bb53856"
+dependencies = [
+ "cfg-if",
+ "hashbrown 0.14.5",
+ "lock_api",
+ "once_cell",
+ "parking_lot_core",
+]
 
 [[package]]
 name = "data-encoding"
@@ -691,6 +714,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "lazy_static"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
+
+[[package]]
 name = "libc"
 version = "0.2.180"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -734,6 +763,7 @@ dependencies = [
  "swc_ecma_codegen",
  "swc_ecma_parser",
  "swc_ecma_transforms_base",
+ "swc_ecma_transforms_module",
  "swc_ecma_transforms_typescript",
  "tempfile",
  "walkdir",
@@ -920,6 +950,18 @@ dependencies = [
  "smallvec",
  "windows-link",
 ]
+
+[[package]]
+name = "path-clean"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17359afc20d7ab31fdb42bb844c8b3bb1dabd7dcf7e68428492da7f16966fcef"
+
+[[package]]
+name = "pathdiff"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
 
 [[package]]
 name = "percent-encoding"
@@ -1356,7 +1398,12 @@ checksum = "72e90b52ee734ded867104612218101722ad87ff4cf74fe30383bd244a533f97"
 dependencies = [
  "anyhow",
  "bytes-str",
+ "dashmap",
+ "globset",
  "indexmap",
+ "once_cell",
+ "regex",
+ "rustc-hash",
  "serde",
  "serde_json",
  "swc_config_macro",
@@ -1440,6 +1487,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "swc_ecma_loader"
+version = "18.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b36b38399698e77c3d63838c2e32e40df0d5e55e489bef529a77a349a722c7a"
+dependencies = [
+ "anyhow",
+ "pathdiff",
+ "rustc-hash",
+ "serde",
+ "swc_atoms",
+ "swc_common",
+ "tracing",
+]
+
+[[package]]
 name = "swc_ecma_parser"
 version = "33.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1477,6 +1539,34 @@ dependencies = [
  "swc_common",
  "swc_ecma_ast",
  "swc_ecma_parser",
+ "swc_ecma_utils",
+ "swc_ecma_visit",
+ "tracing",
+]
+
+[[package]]
+name = "swc_ecma_transforms_module"
+version = "39.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ce560526cbd4e3cbd1c9183d099954ebd2399099ab8d6b9651f83728ef1f622"
+dependencies = [
+ "Inflector",
+ "anyhow",
+ "bitflags",
+ "indexmap",
+ "is-macro",
+ "path-clean",
+ "pathdiff",
+ "regex",
+ "rustc-hash",
+ "serde",
+ "swc_atoms",
+ "swc_common",
+ "swc_config",
+ "swc_ecma_ast",
+ "swc_ecma_loader",
+ "swc_ecma_parser",
+ "swc_ecma_transforms_base",
  "swc_ecma_utils",
  "swc_ecma_visit",
  "tracing",

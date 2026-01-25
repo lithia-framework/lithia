@@ -11,6 +11,7 @@ use swc_ecma_codegen::to_code_default;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsSyntax};
 use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
 use swc_ecma_transforms_typescript::strip;
+use swc_ecma_transforms_module::{common_js, path::Resolver};
 
 use super::sourcemap::{generate_sourcemap, write_sourcemap_and_code};
 use super::tsconfig::TsConfigOptions;
@@ -146,8 +147,20 @@ impl TypeScriptCompiler {
         let unresolved_mark = Mark::new();
         let top_level_mark = Mark::new();
 
+        // Apply resolver transform
         let module = module.apply(resolver(unresolved_mark, top_level_mark, true));
+        
+        // Strip TypeScript types
         let module = module.apply(strip(unresolved_mark, top_level_mark));
+        
+        // Transform ESM to CommonJS
+        let module = module.apply(common_js(
+            Resolver::Default,
+            unresolved_mark,
+            swc_ecma_transforms_module::util::Config::default(),
+            swc_ecma_transforms_module::common_js::FeatureFlag::default(),
+        ));
+        
         let module = module.apply(hygiene());
         let program = module.apply(fixer(Some(comments)));
 

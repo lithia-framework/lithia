@@ -4,7 +4,6 @@ import type { Lithia, Params, Route, RouteModule } from "lithia/types";
 import { ManifestManager } from "./manifest-manager";
 import { ParameterExtractor } from "./parameter-extractor";
 import { RouteImporter } from "./route-importer";
-import { RouteMetadataManager } from "./route-metadata";
 import { RouteUtils } from "./utils";
 
 /**

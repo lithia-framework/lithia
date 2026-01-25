@@ -1,5 +1,5 @@
 {
-	"name": "@lithiajs/cli",
+	"name": "@lithiajs/build",
 	"version": "5.0.0",
 	"private": false,
 	"main": "dist/main.js",
@@ -11,20 +11,16 @@
 		}
 	},
 	"bin": {
-		"lithia": "dist/main.js"
+		"lithia-build": "dist/main.js"
 	},
 	"scripts": {
-		"build": "lithia-build",
+		"build": "tsx src/main.ts",
 		"check": "biome check --write"
 	},
-	"dependencies": {
-		"@lithiajs/core": "workspace:*",
-		"@lithiajs/utils": "workspace:*",
-		"citty": "^0.2.0",
-		"chokidar": "^5.0.0"
-	},
 	"devDependencies": {
+		"@lithiajs/native": "workspace:*",
 		"@lithiajs/tsconfig": "workspace:*",
-		"@lithiajs/build": "workspace:*"
+		"citty": "^0.2.0",
+		"tsup": "^8.5.1"
 	}
 }

@@ -1,7 +1,9 @@
 use globset::{Glob, GlobSetBuilder};
+use napi_derive::napi;
 
 use std::io;
 
+#[napi(object)]
 #[derive(Debug, Clone)]
 pub struct FileInfo {
     /**
@@ -15,6 +17,7 @@ pub struct FileInfo {
     pub full_path: String,
 }
 
+#[napi(object)]
 #[derive(Debug, Clone, Default)]
 pub struct ScanOptions {
     pub include: Option<Vec<String>>,

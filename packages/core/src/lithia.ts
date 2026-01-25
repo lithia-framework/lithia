@@ -7,6 +7,7 @@ import {
 	type RoutesManifest,
 	schemaVersion,
 } from "@lithiajs/native";
+import { red } from "@lithiajs/utils";
 import { ConfigProvider, type LithiaOptions } from "./config";
 import {
 	LithiaError,
@@ -103,7 +104,10 @@ export class Lithia {
 	async start() {
 		if (this.serverRunning) return;
 
-		this.httpServer = createHttpServerFromConfig({ options: this.config });
+		this.httpServer = createHttpServerFromConfig({
+			options: this.config,
+			lithia: this,
+		});
 
 		try {
 			await this.httpServer.listen();
@@ -146,21 +150,17 @@ export class Lithia {
 		});
 
 		this.emitter.on("error", (err: any) => {
-			const level =
-				err instanceof LithiaError ? (err.level ?? "error") : "error";
+			const level = err instanceof LithiaError ? err.level : "error";
+
 			logger.error(
-				`${err?.code ?? "UNKNOWN"} - ${err?.message ?? String(err)}`,
+				`[${red(level.toUpperCase())}] ${err?.code ?? "UNKNOWN"} - ${err?.message ?? String(err)}`,
 			);
-			if (err?.suggestions && Array.isArray(err.suggestions)) {
-				for (const s of err.suggestions) {
-					logger.info(`suggestion: ${s}`);
-				}
-			}
+
 			if (err?.cause) {
 				logger.debug(`cause:`, err.cause);
 			}
+
 			if (level === "fatal") {
-				logger.error("fatal error — exiting process");
 				process.exit(1);
 			}
 		});

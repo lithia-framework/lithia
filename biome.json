@@ -9,7 +9,7 @@
 		"ignoreUnknown": false,
 		"includes": [
 			"packages/**",
-			"!packages/lithia_old",
+			"!packages/lithia_old/*",
 			"!packages/native/*",
 			"!**/dist/**/*"
 		]

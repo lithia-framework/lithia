@@ -13,17 +13,20 @@
 		}
 	},
 	"scripts": {
-		"build": "tsc",
+		"build": "lithia-build",
 		"check": "biome check --write"
 	},
 	"devDependencies": {
-		"@lithiajs/tsconfig": "workspace:*"
+		"@lithiajs/tsconfig": "workspace:*",
+    "@lithiajs/build": "workspace:*"
 	},
 	"dependencies": {
 		"@lithiajs/native": "workspace:*",
 		"@lithiajs/utils": "workspace:*",
 		"c12": "^3.3.3",
+		"cookie": "^1.1.1",
 		"hookable": "^6.0.1",
+		"import-fresh": "^3.3.1",
 		"klona": "^2.0.6",
 		"zod": "^4.2.1"
 	}

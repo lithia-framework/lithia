@@ -4,9 +4,8 @@ export class LithiaError extends Error {
 	constructor(
 		public code: string,
 		message: string,
-		public suggestions?: string[],
+		public level: LithiaErrorLevel = "error",
 		public cause?: any,
-		public level?: LithiaErrorLevel,
 	) {
 		super(message);
 		this.name = "LithiaError";
@@ -19,9 +18,8 @@ export class RouteSchemaVersionMismatchError extends LithiaError {
 		super(
 			"ROUTE_SCHEMA_VERSION_MISMATCH",
 			`Routes manifest version ${received} does not match expected version ${expected}`,
-			["Try rebuilding the project to regenerate the routes manifest."],
-			undefined,
 			"fatal",
+			undefined,
 		);
 	}
 }
@@ -31,9 +29,8 @@ export class RoutesManifestLoadError extends LithiaError {
 		super(
 			"ROUTES_MANIFEST_LOAD_ERROR",
 			"Failed to load routes manifest.",
-			["Ensure that the routes.json file exists and is valid."],
-			cause,
 			"fatal",
+			cause,
 		);
 	}
 }
