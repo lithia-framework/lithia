@@ -1,30 +1,63 @@
+//! Utilities for scanning project directories and matching files using glob patterns.
+//!
+//! This module exposes a small, focused file scanner implemented in Rust that is
+//! used by the native builder to discover route files and other project
+//! artifacts. It provides a simple `FileScanner` trait and a `NativeFileScanner`
+//! concrete implementation that walks directories, applies include/ignore glob
+//! patterns and returns structured `FileInfo` results.
+//!
+//! The scanner intentionally keeps behaviour minimal and deterministic:
+//! - Includes are required: if no include patterns are provided, an empty list
+//!   is returned.
+//! - Ignore patterns are optional and applied after include matching.
+//! - Returned file paths are sorted by their relative path to ensure stable
+//!   ordering across runs.
+
 use globset::{Glob, GlobSetBuilder};
 use napi_derive::napi;
 
 use std::io;
 
+/// Information about a discovered file.
+/// - `path` is the path relative to the scanned directory (using `/` as
+///   separator on all platforms).
+/// - `full_path` is the absolute filesystem path to the file.
 #[napi(object)]
 #[derive(Debug, Clone)]
 pub struct FileInfo {
-    /**
-     * Relative path from the scanned directory
-     */
+    /// Relative path from the scanned directory
     pub path: String,
 
-    /**
-     * Absolute path from the filesystem root
-     */
+    /// Absolute path from the filesystem root
     pub full_path: String,
 }
 
+/// Options controlling scanning behaviour.
+/// - `include`: list of glob patterns that select files to include. If
+///   omitted or empty, the scanner returns an empty result set.
+/// - `ignore`: optional list of glob patterns used to exclude matching files
+///   from the previously included set.
 #[napi(object)]
 #[derive(Debug, Clone, Default)]
 pub struct ScanOptions {
+    /// Glob patterns to include files.
     pub include: Option<Vec<String>>,
+
+    /// Glob patterns to ignore (applied after include matching).
     pub ignore: Option<Vec<String>>,
 }
 
+/// Trait that abstracts a directory scanner used by the native build system.
+/// Implementors must return a list of `FileInfo` entries corresponding to the
+/// files discovered under the provided `path_components` directory. This trait
+/// is intentionally small to make testing and mocking straightforward in
+/// higher-level code.
 pub trait FileScanner {
+    /// Scan a directory described by `path_components` and return matching
+    /// `FileInfo` entries.
+    /// `path_components` is a slice of path segments that will be joined onto
+    /// the current working directory to form the target scanning directory.
+    /// `options` may contain include/ignore glob patterns.
     fn scan_dir(
         &self,
         path_components: &[String],
@@ -32,10 +65,15 @@ pub trait FileScanner {
     ) -> io::Result<Vec<FileInfo>>;
 }
 
+/// Native `FileScanner` implementation that walks the filesystem using
+/// `walkdir` and matches paths against glob patterns using `globset`.
+/// This scanner is fast enough for typical project sizes and deterministic
+/// because it sorts results by relative path before returning them.
 #[derive(Debug, Clone)]
 pub struct NativeFileScanner;
 
 impl NativeFileScanner {
+    /// Create a new `NativeFileScanner` instance.
     pub fn new() -> Self {
         Self
     }
@@ -63,13 +101,11 @@ impl FileScanner for NativeFileScanner {
 
         let options = options.unwrap_or_default();
 
-        // Se não houver patterns de include, retorna vazio
         let include_patterns = match options.include {
             Some(patterns) if !patterns.is_empty() => patterns,
             _ => return Ok(Vec::new()),
         };
 
-        // Build include matcher
         let mut include_builder = GlobSetBuilder::new();
         for pattern in &include_patterns {
             let glob = Glob::new(pattern).map_err(|e| {
@@ -87,7 +123,6 @@ impl FileScanner for NativeFileScanner {
             )
         })?;
 
-        // Build ignore matcher (if provided)
         let ignore_matcher = if let Some(ignore_patterns) = options.ignore {
             let mut ignore_builder = GlobSetBuilder::new();
             for pattern in &ignore_patterns {
@@ -123,12 +158,10 @@ impl FileScanner for NativeFileScanner {
                 .to_string_lossy()
                 .replace('\\', "/");
 
-            // Check if matches include patterns
             if !include_matcher.is_match(&relative) {
                 continue;
             }
 
-            // Check if matches ignore patterns
             if let Some(ref ignore) = ignore_matcher {
                 if ignore.is_match(&relative) {
                     continue;

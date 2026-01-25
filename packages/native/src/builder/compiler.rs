@@ -18,7 +18,12 @@ use crate::builder::sourcemap::write_sourcemap_and_code;
 
 use super::tsconfig::TsConfigOptions;
 
-/// Buffer writer that captures error messages
+/// Simple, thread-safe buffer used to capture diagnostics emitted by SWC.
+///
+/// The `ErrorBuffer` implements `std::io::Write` and stores emitted bytes
+/// in a shared `Arc<Mutex<Vec<u8>>>`. The native builder uses this buffer to
+/// capture human-readable error output from SWC and return it to the host
+/// instead of writing directly to stderr.
 #[derive(Clone)]
 struct ErrorBuffer {
     buffer: std::sync::Arc<std::sync::Mutex<Vec<u8>>>,
@@ -56,6 +61,12 @@ impl Write for ErrorBuffer {
     }
 }
 
+/// Small `SourceMapGenConfig` implementation used when emitting source maps.
+///
+/// It provides basic filename resolution and enables inlining the original
+/// sources content into the generated `.map` file. Keeping the original
+/// content in `sourcesContent` simplifies debugging in the runtime where the
+/// physical source files may not be available.
 struct SourceMapConfigImpl;
 
 impl SourceMapGenConfig for SourceMapConfigImpl {
@@ -63,23 +74,34 @@ impl SourceMapGenConfig for SourceMapConfigImpl {
         f.to_string()
     }
 
-    // retorna true para incluir sourcesContent no .map (opcional)
     fn inline_sources_content(&self, _: &FileName) -> bool {
         true
     }
 }
 
-/// TypeScript to JavaScript compiler using SWC
+/// TypeScript to JavaScript compiler backed by SWC.
+///
+/// `TypeScriptCompiler` wraps SWC parsing, transforms and codegen to produce
+/// JavaScript output and an optional source map. It is configured using
+/// `TsConfigOptions` so the host can control whether source maps are
+/// emitted and which ECMAScript target is selected.
 pub struct TypeScriptCompiler {
     ts_config: TsConfigOptions,
 }
 
 impl TypeScriptCompiler {
+    /// Create a new compiler configured by `ts_config`.
     pub fn new(ts_config: TsConfigOptions) -> Self {
         Self { ts_config }
     }
 
-    /// Compile a single TypeScript file to JavaScript
+    /// Compile a single TypeScript file to JavaScript.
+    ///
+    /// `input` is the path to the `.ts` source file and `output` is the
+    /// desired destination for the emitted `.js` file. When source maps are
+    /// enabled in `ts_config`, a `.js.map` file will also be written next to
+    /// the emitted code. Errors are returned as `Err(String)` with a
+    /// human-readable message captured from SWC's diagnostics.
     pub fn compile_file(&self, input: &Path, output: &Path) -> Result<(), String> {
         let cm: Lrc<SourceMap> = Default::default();
 
@@ -137,7 +159,7 @@ impl TypeScriptCompiler {
         // Write output with optional sourcemap
         if self.ts_config.emit_sourcemap {
             if let Some(map) = map_opt {
-                write_sourcemap_and_code(output, code, map)?;
+                write_sourcemap_and_code(output, &code, Some(map))?;
             } else {
                 // No source map generated (e.g., empty file) - just write the code
                 std::fs::write(output, code)
@@ -151,6 +173,12 @@ impl TypeScriptCompiler {
         Ok(())
     }
 
+    /// Apply SWC transforms (resolver, strip, CommonJS conversion, hygiene)
+    /// and perform code generation.
+    ///
+    /// Returns a tuple `(code, optional_source_map)` where `code` contains the
+    /// emitted JavaScript and the optional string contains the JSON source
+    /// map when mappings were produced.
     fn transform_and_generate(
         &self,
         module: swc_ecma_ast::Program,

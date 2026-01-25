@@ -3,9 +3,16 @@ use std::path::Path;
 
 use swc_ecma_ast::EsVersion;
 
+/// Parsed TypeScript configuration options relevant for the native builder.
+/// This struct captures only the small subset of `tsconfig.json` that the
+/// builder needs: whether to emit source maps and the target ECMAScript
+/// version.
 #[derive(Debug, Clone)]
 pub struct TsConfigOptions {
+    /// Whether to generate source maps during compilation.
     pub emit_sourcemap: bool,
+
+    /// SWC `EsVersion` target inferred from `compilerOptions.target`.
     pub target: EsVersion,
 }
 
@@ -13,6 +20,13 @@ fn normalize_target(s: &str) -> String {
     s.trim().to_lowercase().replace('-', "").replace('_', "")
 }
 
+/// Parse a `tsconfig.json` file from `path` (optional) and return
+/// `TsConfigOptions` used by the builder.
+/// 
+/// If `path` is `None`, the function will attempt to read `tsconfig.json`
+/// from the current working directory. If the file does not exist or cannot be
+/// parsed, reasonable defaults are returned and an `Ok` result is produced
+/// (the builder treats missing or invalid config as non-fatal by design).
 pub fn parse_tsconfig(path: Option<&Path>) -> Result<TsConfigOptions, String> {
     let default_config = TsConfigOptions {
         emit_sourcemap: true,
@@ -75,6 +89,11 @@ pub fn parse_tsconfig(path: Option<&Path>) -> Result<TsConfigOptions, String> {
     })
 }
 
+/// Convert a TypeScript `compilerOptions.target` value into SWC's `EsVersion`.
+/// The input may be a string (e.g. `"ES2020"`, `"esnext"`) or a numeric
+/// value (e.g. `2015`). The function performs normalization before matching
+/// known variants and falls back to the default `EsVersion` when the input is
+/// unknown.
 pub fn ts_target_to_esversion<S: AsRef<str>>(input: S) -> EsVersion {
     let s = normalize_target(input.as_ref());
 

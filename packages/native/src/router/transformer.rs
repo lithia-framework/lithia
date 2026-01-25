@@ -1,14 +1,54 @@
+//! Utilities to transform filesystem route file paths into normalized HTTP
+//! route paths and regular expressions used by the router.
+//!
+//! This module exposes the `PathTransformer` trait which defines the
+//! transformations required to convert a filesystem-style route (for example
+//! `users/[id]/route.ts`) into a normalized runtime path (`/users/:id/route`),
+//! a route regex and helper utilities. The `NativePathTransformer` implements
+//! the trait with the typical behaviour expected by the framework.
+//!
+//! Public API:
+//! - `PathTransformer` trait: abstraction used across the codebase to convert
+//!   and normalize paths.
+//! - `NativePathTransformer`: default implementation used by the native router.
+
 use regex::Regex;
 
+/// Trait that defines path transformation utilities used by the router.
+/// Implementors convert filesystem file paths into normalized route paths,
+/// detect dynamic segments, and produce regular expressions suitable for
+/// matching incoming requests.
 pub trait PathTransformer {
+    /// Transform a filesystem file path into a normalized route-like path.
+    ///
+    /// Example: `users/[id]/route.ts` -> `users/:id/route`.
     fn transform_file_path(&self, path: &str) -> String;
+
+    /// Normalize a route path applying a global prefix, ensuring a leading
+    /// slash and removing trailing slashes where appropriate.
+    ///
+    /// Example: `("/users", "/api")` -> `/api/users`.
     fn normalize_path(&self, path: &str, global_prefix: &str) -> String;
+
+    /// Remove a trailing `/index` suffix from a path, returning `/` when the
+    /// result is empty.
     fn remove_index_suffix(&self, path: &str) -> String;
+
+    /// Return true when the supplied path contains dynamic segments (e.g.
+    /// `:id`).
     fn is_dynamic_route(&self, path: &str) -> bool;
+
+    /// Generate a regular expression string from a normalized route path.
+    ///
+    /// Example: `/users/:id` -> `^/users/([^\/]+)$`.
     fn generate_route_regex(&self, path: &str) -> String;
+
+    /// Clone the transformer as a boxed trait object.
     fn clone_box(&self) -> Box<dyn PathTransformer>;
 }
 
+/// Join `base` and `path`, ensuring there is at most one separator between
+/// them. If `base` is empty, `path` is returned unchanged.
 fn with_base(path: &str, base: &str) -> String {
     if base.is_empty() {
         path.to_string()
@@ -21,6 +61,7 @@ fn with_base(path: &str, base: &str) -> String {
     }
 }
 
+/// Ensure the provided `path` starts with a leading slash.
 fn with_leading_slash(path: &str) -> String {
     if path.starts_with('/') {
         path.to_string()
@@ -29,6 +70,7 @@ fn with_leading_slash(path: &str) -> String {
     }
 }
 
+/// Remove a trailing slash from `path` except when the path is `/`.
 fn without_trailing_slash(path: &str) -> String {
     if path.ends_with('/') && path.len() > 1 {
         path.trim_end_matches('/').to_string()
@@ -37,6 +79,10 @@ fn without_trailing_slash(path: &str) -> String {
     }
 }
 
+/// Default `PathTransformer` implementation used by the native router.
+/// It converts filesystem route file names and patterns (including dynamic
+/// segments like `[id]` and catch-all `[...path]`) into normalized runtime
+/// path templates and regexes.
 #[derive(Clone)]
 pub struct NativePathTransformer {
     remove_ext: Regex,
@@ -50,6 +96,8 @@ pub struct NativePathTransformer {
 }
 
 impl NativePathTransformer {
+    /// Construct a new `NativePathTransformer` with precompiled regular
+    /// expressions tuned for route syntax used by the framework.
     pub fn new() -> Self {
         Self {
             remove_ext: Regex::new(r"\.[A-Za-z]+$").unwrap(),

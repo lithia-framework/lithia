@@ -1,3 +1,18 @@
+//! Route file processor utilities.
+//!
+//! This module exposes the `RouteProcessor` trait and a concrete
+//! `NativeRouteProcessor` implementation. The processor is responsible for
+//! converting a scanned filesystem `FileInfo` (a file that follows the route
+//! file conventions) into a `RouteCore` structure used by the router.
+//!
+//! Behaviour highlights:
+//! - Extracts optional HTTP method suffix (e.g. `route.post.ts`).
+//! - Transforms filesystem path patterns into normalized runtime paths
+//!   (e.g. `users/[id]/route.ts` -> `/users/:id`).
+//! - Removes trailing `/index` segments and ensures leading slash.
+//! - Produces a regex string for route matching and indicates whether a
+//!   route is dynamic.
+
 use crate::scanner::FileInfo;
 use crate::router::{
     convention::{NativeRouteConvention, RouteConvention},
@@ -5,16 +20,29 @@ use crate::router::{
     RouteCore,
 };
 
+/// Trait that converts a discovered `FileInfo` into framework `RouteCore`.
+/// Implementations encapsulate how filenames and paths are interpreted as
+/// runtime routes.
 pub trait RouteProcessor {
+    /// Process a scanned `file` and return a `RouteCore` describing the
+    /// route's HTTP method (if any), normalized path, whether it's dynamic,
+    /// the original file path and the generated regex.
     fn process_route_file(&self, file: &FileInfo) -> RouteCore;
 }
 
+/// Native implementation of `RouteProcessor` used by the default router.
+/// `NativeRouteProcessor` composes a `PathTransformer` and a
+/// `RouteConvention` to implement the file -> route conversion logic. Both
+/// components are replaceable for testing or customization.
 pub struct NativeRouteProcessor {
     transformer: Box<dyn PathTransformer>,
     convention: Box<dyn RouteConvention>,
 }
 
 impl NativeRouteProcessor {
+    /// Create a new `NativeRouteProcessor`.
+    /// `opt_transformer` and `opt_convention` are optional boxed trait
+    /// instances. When omitted, default native implementations are used.
     pub fn new(
         opt_transformer: Option<Box<dyn PathTransformer>>,
         opt_convention: Option<Box<dyn RouteConvention>>,
@@ -31,6 +59,13 @@ impl NativeRouteProcessor {
 }
 
 impl RouteProcessor for NativeRouteProcessor {
+    /// Convert a filesystem `FileInfo` into a `RouteCore`.
+    /// Steps:
+    /// 1. Use the `RouteConvention` to extract any method suffix and the
+    ///    canonical path.
+    /// 2. Normalize the path (apply prefix, remove trailing `/index`, ensure
+    ///    leading slash).
+    /// 3. Determine whether the route is dynamic and generate the route regex.
     fn process_route_file(&self, file: &FileInfo) -> RouteCore {
         let extracted = self.convention.extract_method(&file.path);
         let mut path = self.convention.transform_path(&extracted.updated_path);

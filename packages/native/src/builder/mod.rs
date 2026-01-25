@@ -1,9 +1,15 @@
+//! Native builder entrypoints and orchestration.
+//!
+//! This module exposes the `build_project` function which is invoked from the
+//! host (Node) via N-API. It wires together scanning, compilation and route
+//! manifest generation using the Rust-based SWC compiler integration.
+//!
+//! Exposes the native `build_project` entrypoint used by the host.
+
 use crate::{
-    meta::schema_version,
     router::{
-        processor::{NativeRouteProcessor, RouteProcessor},
-        Route, RoutesManifest,
-    },
+        Route, RoutesManifest, processor::{NativeRouteProcessor, RouteProcessor}
+    }, schema_version,
 };
 use napi_derive::napi;
 use rayon::prelude::*;
@@ -20,6 +26,24 @@ use config::BuildConfig;
 use types::{BuildResult, CompileResult};
 
 #[napi]
+/// Build the project located at `source_root` and emit outputs to `out_root`.
+///
+/// This function is exported to the host via N-API and performs the full
+/// native compilation pipeline:
+/// 1. Reads build configuration from `source_root`.
+/// 2. Scans for TypeScript files matching `.ts`.
+/// 3. Compiles files (in parallel) using the embedded SWC-based compiler.
+/// 4. Aggregates compilation results and fails the build if there are errors.
+/// 5. If route files exist in the output, produces a `routes.json` manifest
+///    containing route metadata consumed by the runtime.
+///
+/// Errors are returned as `napi::Error` to be propagated to the host.
+/// High-level build entrypoint for the native TypeScript builder.
+///
+/// `build_project` coordinates scanning the source tree, applying route
+/// conventions, and producing a `RoutesManifest` that can be consumed by the
+/// runtime. Currently this function is a thin wrapper and may be expanded to
+/// run parallel compilation and emit artifacts to disk.
 pub fn build_project(source_root: String, out_root: String) -> napi::Result<()> {
     let start = Instant::now();
 

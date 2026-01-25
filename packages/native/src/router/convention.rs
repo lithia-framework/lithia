@@ -1,12 +1,35 @@
+//! Route filename conventions and helpers.
+//!
+//! This module defines how route filenames are interpreted by the framework.
+//! It provides:
+//! - `RouteConvention` trait used to normalize filesystem paths and extract
+//!   optional HTTP method suffixes.
+//! - `NativeRouteConvention` default implementation that follows the project's
+//!   filename conventions (e.g. `route.get.ts`, route groups, dynamic
+//!   segments).
+//!
+//! The convention is intentionally small and pluggable so the routing
+//! behaviour can be adapted for different project layouts.
+
 use regex::Regex;
 
 use crate::router::transformer::{NativePathTransformer, PathTransformer};
 
+/// Trait that defines how filenames are converted into runtime route paths.
+/// Implementors should remove route-specific filename suffixes and perform
+/// any normalization required before the `PathTransformer` is applied.
 pub trait RouteConvention {
+    /// Transform a filesystem location into a normalized route path.
+    ///
+    /// The returned path should include a leading `/`.
     fn transform_path(&self, path: &str) -> String;
+
+    /// Extract an optional HTTP method suffix from a filename and return the
+    /// sanitized path alongside the detected method.
     fn extract_method(&self, path: &str) -> ExtractedMethod;
 }
 
+/// Supported HTTP method suffixes that can be encoded in filenames.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MatchedMethodSuffix {
     Delete,
@@ -19,6 +42,7 @@ pub enum MatchedMethodSuffix {
 }
 
 impl MatchedMethodSuffix {
+    /// Parse a method name (case-insensitive) into a `MatchedMethodSuffix`.
     pub fn from_str(method: &str) -> Option<Self> {
         match method.to_lowercase().as_str() {
             "delete" => Some(MatchedMethodSuffix::Delete),
@@ -32,6 +56,7 @@ impl MatchedMethodSuffix {
         }
     }
 
+    /// Return the uppercase HTTP method string (e.g. `GET`).
     pub fn as_str(&self) -> &'static str {
         match self {
             MatchedMethodSuffix::Delete => "DELETE",
@@ -45,18 +70,31 @@ impl MatchedMethodSuffix {
     }
 }
 
+/// Result of extracting an optional method suffix from a filename.
 #[derive(Debug)]
 pub struct ExtractedMethod {
+    /// Detected method if the filename contained a method suffix.
     pub method: Option<MatchedMethodSuffix>,
+
+    /// The sanitized path with the method suffix removed. Always starts with
+    /// a leading `/`.
     pub updated_path: String,
 }
 
+/// Default route filename convention implementation.
+/// Recognizes filenames like `/users/route.ts` and `/users/route.post.ts` and
+/// removes the convention-specific suffixes. It delegates general path
+/// transformations (groups, dynamic segments, extension removal) to a
+/// `PathTransformer`.
 pub struct NativeRouteConvention {
     route_regex: Regex,
     transformer: Box<dyn PathTransformer>,
 }
 
 impl NativeRouteConvention {
+    /// Create a new `NativeRouteConvention`.
+    /// `transformer` can be used to inject a custom `PathTransformer`; if
+    /// omitted the default `NativePathTransformer` is used.
     pub fn new(transformer: Option<Box<dyn PathTransformer>>) -> Self {
         Self {
             route_regex: Regex::new(r"/route(\.(delete|get|head|options|patch|post|put))?\.(ts|js)$")
@@ -100,10 +138,7 @@ impl RouteConvention for NativeRouteConvention {
                 updated_path = format!("/{}", updated_path);
             }
 
-            return ExtractedMethod {
-                method,
-                updated_path,
-            };
+            return ExtractedMethod { method, updated_path };
         }
 
         let mut updated_path = path.to_string();
@@ -113,10 +148,7 @@ impl RouteConvention for NativeRouteConvention {
             updated_path = format!("/{}", updated_path);
         }
 
-        ExtractedMethod {
-            method: None,
-            updated_path,
-        }
+        ExtractedMethod { method: None, updated_path }
     }
 }
 
