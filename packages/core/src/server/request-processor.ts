@@ -157,7 +157,7 @@ export class RequestProcessor {
 		logger.error(`[Digest: ${red(digest)}] Request processing error:`);
 		logger.info(`  Path: ${req.method} ${req.pathname}`);
 		if (errorStack) {
-			logger.info(`  Stack:\n${errorStack}`);
+			logger.info(`  ${errorStack}`);
 		}
 
 		// Build error response
