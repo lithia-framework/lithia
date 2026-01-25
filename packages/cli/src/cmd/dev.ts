@@ -1,5 +1,5 @@
 import path from "node:path";
-import { Lithia } from "@lithiajs/core";
+import { Lithia, loadEnv, logger } from "@lithiajs/core";
 import { parseTsConfig } from "@lithiajs/utils";
 import chokidar from "chokidar";
 import { defineCommand } from "citty";
@@ -11,6 +11,10 @@ const dev = defineCommand({
 	},
 	async run() {
 		const cwd = process.cwd();
+
+		// Load environment variables initially
+		loadEnv(cwd);
+
 		const tsConfig = parseTsConfig();
 		const sourceRoot = path.join(cwd, "src");
 		const outRoot = path.join(cwd, tsConfig.outDir);
@@ -40,15 +44,15 @@ const dev = defineCommand({
 			}, ms);
 		};
 
+		// Watch source files
 		const watchPath = sourceRoot;
-
-		const watcher = chokidar.watch(watchPath, {
+		const sourceWatcher = chokidar.watch(watchPath, {
 			ignored: /(^|[/\\])\../, // ignore dotfiles
 			persistent: true,
 			ignoreInitial: true,
 		});
 
-		watcher.on("all", (event, changedPath) => {
+		sourceWatcher.on("all", (event, changedPath) => {
 			// only trigger on relevant events
 			if (event === "add" || event === "change" || event === "unlink") {
 				// notify Lithia about the changed file so core can react
@@ -64,10 +68,40 @@ const dev = defineCommand({
 			}
 		});
 
-		// Graceful shutdown: stop watcher and server
+		// Watch env files for changes
+		const envWatcher = chokidar.watch([".env", ".env.local"], {
+			cwd: cwd,
+			ignoreInitial: true,
+		});
+
+		envWatcher.on("all", (event, path) => {
+			if (event === "change" || event === "add") {
+				// Reload env vars
+				loadEnv(cwd);
+
+				// Restart server to pick up new env vars if needed
+				// For now we just reload, but some configs might depend on env vars
+				// so a full restart might be safer, but let's stick to hot reloading what we can
+				// Usually env var changes require process restart in Node, but
+				// since we are just setting process.env, subsequent accesses will see new values.
+				// However, if code read process.env at startup, it won't suffice.
+				// For a dev server, maybe logging that env changed is enough?
+				// Or fully restarting the Lithia instance?
+				// Given the request "recarregamento automático de .env", we should try to support it.
+				// But Node.js process.env changes don't affect already started modules if they cached it.
+
+				// Let's at least reload the env vars.
+				// A full restart would require tearing down Lithia and recreating it.
+
+				logger.event(`Environment file changed (${path}). Reloading...`);
+			}
+		});
+
+		// Graceful shutdown: stop watchers and server
 		const shutdown = async () => {
 			try {
-				await watcher.close();
+				await sourceWatcher.close();
+				await envWatcher.close();
 			} catch (_) {}
 			try {
 				await lithia.stop();

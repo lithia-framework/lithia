@@ -67,3 +67,25 @@ export class ValidationError extends LithiaError {
 		super("VALIDATION_ERROR", message, "error");
 	}
 }
+
+/** Error raised when a route module does not export a default async function. */
+export class InvalidRouteModuleError extends LithiaError {
+	constructor(filePath: string, reason: string) {
+		super(
+			"INVALID_ROUTE_MODULE",
+			`Invalid route module at '${filePath}': ${reason}. Route modules must export a default async function.`,
+			"error",
+		);
+	}
+}
+
+/** Error raised when the server bootstrap module (_server.ts) is invalid. */
+export class InvalidBootstrapModuleError extends LithiaError {
+	constructor(filePath: string, reason: string) {
+		super(
+			"INVALID_BOOTSTRAP_MODULE",
+			`Invalid server bootstrap module at '${filePath}': ${reason}. The module must export a default async function.`,
+			"fatal",
+		);
+	}
+}

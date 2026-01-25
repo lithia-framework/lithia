@@ -1,5 +1,5 @@
 import path from "node:path";
-import { Lithia } from "@lithiajs/core";
+import { Lithia, loadEnv } from "@lithiajs/core";
 import { parseTsConfig } from "@lithiajs/utils";
 import { defineCommand } from "citty";
 
@@ -10,6 +10,10 @@ const start = defineCommand({
 	},
 	async run() {
 		const cwd = process.cwd();
+
+		// Load environment variables
+		loadEnv(cwd);
+
 		const tsConfig = parseTsConfig();
 		const sourceRoot = path.join(cwd, "src");
 		const outRoot = path.join(cwd, tsConfig.outDir);

@@ -30,10 +30,6 @@ pub trait PathTransformer {
     /// Example: `("/users", "/api")` -> `/api/users`.
     fn normalize_path(&self, path: &str, global_prefix: &str) -> String;
 
-    /// Remove a trailing `/index` suffix from a path, returning `/` when the
-    /// result is empty.
-    fn remove_index_suffix(&self, path: &str) -> String;
-
     /// Return true when the supplied path contains dynamic segments (e.g.
     /// `:id`).
     fn is_dynamic_route(&self, path: &str) -> bool;
@@ -90,7 +86,6 @@ pub struct NativePathTransformer {
     catch_all_named: Regex,
     catch_all: Regex,
     dynamic: Regex,
-    index_suffix: Regex,
     dynamic_detector: Regex,
     route_param: Regex,
 }
@@ -105,7 +100,6 @@ impl NativePathTransformer {
             catch_all_named: Regex::new(r"\[\.\.\.(\w+)\]").unwrap(),
             catch_all: Regex::new(r"\[\.\.\.]").unwrap(),
             dynamic: Regex::new(r"\[([^/\]]+)\]").unwrap(),
-            index_suffix: Regex::new(r"/index$").unwrap(),
             dynamic_detector: Regex::new(r":\w+").unwrap(),
             route_param: Regex::new(r":(\w+)").unwrap(),
         }
@@ -133,15 +127,6 @@ impl PathTransformer for NativePathTransformer {
         let combined = with_base(path, global_prefix);
         let no_trailing = without_trailing_slash(&combined);
         with_leading_slash(&no_trailing)
-    }
-
-    fn remove_index_suffix(&self, path: &str) -> String {
-        let result = self.index_suffix.replace(&path, "").to_string();
-        if result.is_empty() {
-            "/".to_string()
-        } else {
-            result
-        }
     }
 
     fn is_dynamic_route(&self, path: &str) -> bool {
@@ -246,24 +231,6 @@ mod tests {
     fn normalize_path_ensures_leading_slash() {
         let t = transformer();
         assert_eq!(t.normalize_path("users", ""), "/users")
-    }
-
-    #[test]
-    fn remove_index_suffix_simple() {
-        let t = transformer();
-        assert_eq!(t.remove_index_suffix("/users/index"), "/users")
-    }
-
-    #[test]
-    fn remove_index_suffix_root() {
-        let t = transformer();
-        assert_eq!(t.remove_index_suffix("/index"), "/")
-    }
-
-    #[test]
-    fn remove_index_suffix_no_change() {
-        let t = transformer();
-        assert_eq!(t.remove_index_suffix("/users"), "/users")
     }
 
     #[test]

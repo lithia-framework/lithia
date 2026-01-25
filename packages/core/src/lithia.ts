@@ -7,7 +7,7 @@
  * events such as `built` and `error`.
  */
 import { EventEmitter } from "node:events";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import {
 	buildProject,
@@ -19,11 +19,13 @@ import { red } from "@lithiajs/utils";
 import sourceMapSupport from "source-map-support";
 import { ConfigProvider, type LithiaOptions } from "./config";
 import {
+	InvalidBootstrapModuleError,
 	LithiaError,
 	RouteSchemaVersionMismatchError,
 	RoutesManifestLoadError,
 } from "./errors";
 import { logger } from "./logger";
+import { coldImport, isAsyncFunction } from "./module-loader";
 import {
 	createHttpServerFromConfig,
 	type HttpServer,
@@ -102,6 +104,12 @@ export class Lithia {
 		return Lithia.instance;
 	}
 
+	/** Register a global middleware. */
+	use(middleware: LithiaMiddleware) {
+		this.globalMiddlewares.push(middleware);
+		return this;
+	}
+
 	/** Initialize internal state and configuration. */
 	private async initialize(options: LithiaCreateOptions) {
 		this.environment = options.environment;
@@ -124,7 +132,8 @@ export class Lithia {
 								logger.event(`Config updated — ${diffs.length} change(s)`);
 								for (const d of diffs.slice(0, 20)) {
 									const requiresRestart = RESTART_CONFIG_PREFIXES.some(
-										(prefix) => d.key === prefix || d.key.startsWith(`${prefix}.`),
+										(prefix) =>
+											d.key === prefix || d.key.startsWith(`${prefix}.`),
 									);
 
 									if (requiresRestart) {
@@ -148,12 +157,6 @@ export class Lithia {
 		}
 	}
 
-	/** Register a global middleware. */
-	use(middleware: LithiaMiddleware) {
-		this.globalMiddlewares.push(middleware);
-		return this;
-	}
-
 	/**
 	 * Start the HTTP server using current configuration.
 	 *
@@ -162,6 +165,48 @@ export class Lithia {
 	 */
 	async start() {
 		if (this.serverRunning) return;
+
+		// Try to load user custom bootstrapping logic from src/app/_server.ts
+		const bootstrapFile = path.join(this.outRoot, "app", "_server.js");
+		if (existsSync(bootstrapFile)) {
+			try {
+				const mod = await coldImport<any>(
+					bootstrapFile,
+					this.environment === "development",
+				);
+
+				if (!mod.default) {
+					throw new InvalidBootstrapModuleError(
+						bootstrapFile,
+						"missing default export",
+					);
+				}
+
+				if (typeof mod.default !== "function") {
+					throw new InvalidBootstrapModuleError(
+						bootstrapFile,
+						"default export is not a function",
+					);
+				}
+
+				if (!isAsyncFunction(mod.default)) {
+					throw new InvalidBootstrapModuleError(
+						bootstrapFile,
+						"default export is not an async function",
+					);
+				}
+
+				logger.debug("Running custom server bootstrap from _server.ts");
+				await mod.default(this);
+			} catch (err) {
+				// Don't swallow fatal validation errors
+				if (err instanceof InvalidBootstrapModuleError) {
+					this.emitter.emit("error", err);
+					return;
+				}
+				logger.error(`Failed to load _server.ts: ${err}`);
+			}
+		}
 
 		this.httpServer = createHttpServerFromConfig({
 			options: this.config,

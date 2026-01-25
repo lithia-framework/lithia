@@ -1,17 +1,17 @@
 import { createHash } from "node:crypto";
 import { statSync } from "node:fs";
 import { extname, join } from "node:path";
-import { pathToFileURL } from "node:url";
 import type { Route } from "@lithiajs/native";
 import { cyan, green, red, yellow } from "@lithiajs/utils";
-import importFresh from "import-fresh";
 import {
+	InvalidRouteModuleError,
 	LithiaError,
 	StaticFileMimeMissingError,
 	ValidationError,
 } from "../errors";
 import type { Lithia } from "../lithia";
 import { logger } from "../logger";
+import { coldImport, isAsyncFunction } from "../module-loader";
 import type { LithiaRequest, Params } from "./request";
 import type { LithiaResponse } from "./response";
 
@@ -145,7 +145,7 @@ export class RequestProcessor {
 			if (!res._ended) {
 				res.end();
 			}
-			
+
 			this.logRequest(req, res, start);
 		} catch (err) {
 			this.handleError(err, req, res, start);
@@ -449,31 +449,34 @@ export class RequestProcessor {
 		try {
 			const isDevelopment = this.lithia.getEnvironment() === "development";
 
-			let mod: any;
+			const mod = await coldImport<RouteModule>(route.filePath, isDevelopment);
 
-			if (isDevelopment) {
-				// Use import-fresh in development for cache-free imports
-				mod = await importFresh(route.filePath);
-			} else {
-				// Production: use normal import
-				const importUrl = pathToFileURL(route.filePath).href;
-				mod = await import(importUrl);
+			if (!mod.default) {
+				throw new InvalidRouteModuleError(
+					route.filePath,
+					"missing default export",
+				);
 			}
 
-			// Normalize CommonJS module structure
-			// When importing CommonJS via dynamic import, it can return:
-			// { default: { default: fn, middlewares: [...] } }
-			// We need to unwrap it to: { default: fn, middlewares: [...] }
-			if (
-				mod.default &&
-				typeof mod.default === "object" &&
-				mod.default.default
-			) {
-				return mod.default as RouteModule;
+			if (typeof mod.default !== "function") {
+				throw new InvalidRouteModuleError(
+					route.filePath,
+					"default export is not a function",
+				);
 			}
 
-			return mod as RouteModule;
+			if (!isAsyncFunction(mod.default)) {
+				throw new InvalidRouteModuleError(
+					route.filePath,
+					"default export is not an async function",
+				);
+			}
+
+			return mod;
 		} catch (err) {
+			if (err instanceof InvalidRouteModuleError) {
+				throw err;
+			}
 			logger.error(`Failed to import route module ${route.filePath}:`, err);
 			throw new Error(`Failed to import route: ${route.path}`);
 		}

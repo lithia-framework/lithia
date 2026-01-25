@@ -3,6 +3,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { scanDir } from "@lithiajs/native";
+import { compilerOptions } from "@lithiajs/tsconfig/base.json";
 import { defineCommand, runMain } from "citty";
 import { build } from "tsup";
 import { version } from "./meta";
@@ -26,13 +27,13 @@ const main = defineCommand({
 		await build({
 			name,
 			entry: entries.map((e) => e.fullPath),
-			target: "es2021",
+			target: compilerOptions.target,
 			platform: "node",
 			bundle: false,
 			dts: true,
 			minify: false,
 			keepNames: true,
-      sourcemap: true,
+			sourcemap: true,
 			treeshake: { preset: "recommended" },
 			format: ["cjs"],
 			clean: true,

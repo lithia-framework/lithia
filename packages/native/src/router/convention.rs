@@ -97,8 +97,11 @@ impl NativeRouteConvention {
     /// omitted the default `NativePathTransformer` is used.
     pub fn new(transformer: Option<Box<dyn PathTransformer>>) -> Self {
         Self {
-            route_regex: Regex::new(r"/route(\.(delete|get|head|options|patch|post|put))?\.(ts|js)$")
-                .unwrap(),
+            // Allow matching "route.get.ts" at the start of string OR after a slash
+            route_regex: Regex::new(
+                r"(^|/)route(\.(delete|get|head|options|patch|post|put))?\.(ts|js)$",
+            )
+            .unwrap(),
             transformer: transformer.unwrap_or_else(|| Box::new(NativePathTransformer::new())),
         }
     }
@@ -128,7 +131,7 @@ impl RouteConvention for NativeRouteConvention {
     fn extract_method(&self, path: &str) -> ExtractedMethod {
         if let Some(caps) = self.route_regex.captures(path) {
             let method = caps
-                .get(2)
+                .get(3) // Capture group 3 is the method name (without dot)
                 .and_then(|m| MatchedMethodSuffix::from_str(m.as_str()));
 
             let mut updated_path = self.route_regex.replace(path, "").to_string();

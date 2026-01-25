@@ -71,7 +71,6 @@ impl RouteProcessor for NativeRouteProcessor {
         let mut path = self.convention.transform_path(&extracted.updated_path);
 
         path = self.transformer.normalize_path(&path, "");
-        path = self.transformer.remove_index_suffix(&path);
 
         let dynamic = self.transformer.is_dynamic_route(&path);
         let regex = self.transformer.generate_route_regex(&path);
@@ -153,21 +152,18 @@ mod tests {
     }
 
     #[test]
-    fn processes_index_routes() {
+    fn processes_index_routes_as_regular_routes() {
         let p = processor();
         
-        // Root index
+        // Root "index" is just "index" now
         let route = p.process_route_file(&file_info("index/route.ts", "/project/src/index/route.ts"));
-        assert_eq!(route.path, "/");
+        assert_eq!(route.path, "/index");
         assert_eq!(route.method, None);
         assert!(!route.dynamic);
-        assert_eq!(route.file_path, "/project/src/index/route.ts");
 
         // Nested index
         let route = p.process_route_file(&file_info("users/index/route.ts", "/project/src/users/index/route.ts"));
-        assert_eq!(route.path, "/users");
-        assert_eq!(route.method, None);
-        assert_eq!(route.file_path, "/project/src/users/index/route.ts");
+        assert_eq!(route.path, "/users/index");
     }
 
     #[test]
