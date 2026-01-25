@@ -32,6 +32,7 @@ const main = defineCommand({
 			dts: true,
 			minify: false,
 			keepNames: true,
+      sourcemap: true,
 			treeshake: { preset: "recommended" },
 			format: ["cjs"],
 			clean: true,

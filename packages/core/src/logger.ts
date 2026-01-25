@@ -1,4 +1,4 @@
-import { blue, bold, cyan, green, red, white, yellow } from "@lithiajs/utils";
+import { blue, bold, green, red, white, yellow } from "@lithiajs/utils";
 
 export type LogLevel =
 	| "info"
@@ -22,9 +22,8 @@ function formatMeta(meta: any) {
 
 export class Logger {
 	info(msg: any, meta?: any) {
-		const symbol = cyan(bold("•"));
 		const m = formatMeta(meta);
-		console.log(`${symbol} ${msg}${m ? ` — ${m}` : ""}`);
+		console.log(`  ${msg}${m ? ` — ${m}` : ""}`);
 	}
 
 	warn(msg: any, meta?: any) {

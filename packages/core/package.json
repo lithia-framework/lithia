@@ -16,8 +16,9 @@
 		"check": "biome check --write"
 	},
 	"devDependencies": {
+		"@lithiajs/build": "workspace:*",
 		"@lithiajs/tsconfig": "workspace:*",
-		"@lithiajs/build": "workspace:*"
+		"@types/source-map-support": "^0.5.10"
 	},
 	"dependencies": {
 		"@lithiajs/native": "workspace:*",
@@ -27,6 +28,7 @@
 		"hookable": "^6.0.1",
 		"import-fresh": "^3.3.1",
 		"klona": "^2.0.6",
+		"source-map-support": "^0.5.21",
 		"zod": "^4.2.1"
 	}
 }

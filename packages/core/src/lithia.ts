@@ -8,6 +8,7 @@ import {
 	schemaVersion,
 } from "@lithiajs/native";
 import { red } from "@lithiajs/utils";
+import sourceMapSupport from "source-map-support";
 import { ConfigProvider, type LithiaOptions } from "./config";
 import {
 	LithiaError,
@@ -19,6 +20,12 @@ import {
 	createHttpServerFromConfig,
 	type HttpServer,
 } from "./server/http-server";
+
+// Install source map support for better stack traces
+sourceMapSupport.install({
+	environment: "node",
+	handleUncaughtExceptions: false,
+});
 
 export type Environment = "production" | "development";
 
