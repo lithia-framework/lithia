@@ -11,58 +11,68 @@ import { LithiaRequest } from "./request";
 import { RequestProcessor } from "./request-processor";
 import { LithiaResponse } from "./response";
 
+/** Configuration used to create the HTTP server. */
 export interface HttpServerConfig {
+	/** Port to listen on. */
 	port: number;
+	/** Hostname or IP to bind. */
 	host: string;
 }
 
+/**
+ * Lightweight HTTP server wrapper used by Lithia.
+ *
+ * This class creates a Node HTTP server that wires incoming requests into
+ * the internal `RequestProcessor` pipeline. It also exposes convenience
+ * methods to `listen()` and `close()` the server.
+ */
 export class HttpServer {
 	private server?: Server;
 	private config: HttpServerConfig;
 	private processor: RequestProcessor;
 
-	constructor(
-		config: HttpServerConfig,
-		private lithia: Lithia,
-	) {
+	constructor(config: HttpServerConfig, private lithia: Lithia) {
 		this.config = config;
 		this.processor = new RequestProcessor(lithia);
 	}
 
+	/** Create (or return) the underlying Node `Server` instance. */
 	async create(): Promise<Server> {
 		if (this.server) return this.server;
 
-		this.server = createServer(
-			async (req: IncomingMessage, res: ServerResponse) => {
-				try {
-					// Handle /_lithia internal endpoint
-					const url = req.url || "/";
-					if (url === "/_lithia") {
-						res.writeHead(200, { "Content-Type": "application/json" });
-						res.end(JSON.stringify({ ok: true, ts: Date.now() }));
-						return;
-					}
-
-					// Process request through the pipeline
-					const lithiaReq = new LithiaRequest(req, this.lithia);
-					const lithiaRes = new LithiaResponse(res);
-
-					await this.processor.processRequest(lithiaReq, lithiaRes);
-				} catch (err) {
-					logger.error("HttpServer request handler error:", err);
-					try {
-						res.writeHead(500, { "Content-Type": "text/plain" });
-						res.end("Internal Server Error");
-					} catch (_) {
-						// ignore
-					}
+		this.server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+			try {
+				// Handle /_lithia internal endpoint
+				const url = req.url || "/";
+				if (url === "/_lithia") {
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({ ok: true, ts: Date.now() }));
+					return;
 				}
-			},
-		);
+
+				// Process request through the pipeline
+				const lithiaReq = new LithiaRequest(req, this.lithia);
+				const lithiaRes = new LithiaResponse(res);
+
+				await this.processor.processRequest(lithiaReq, lithiaRes);
+			} catch (err) {
+				logger.error("HttpServer request handler error:", err);
+				try {
+					res.writeHead(500, { "Content-Type": "text/plain" });
+					res.end("Internal Server Error");
+				} catch (_) {
+					// ignore
+				}
+			}
+		});
 
 		return this.server;
 	}
 
+	/**
+	 * Start listening according to configured host and port. Resolves when
+	 * the server starts listening. Rejects if an error occurs during startup.
+	 */
 	async listen(): Promise<void> {
 		if (!this.server) await this.create();
 
@@ -73,9 +83,7 @@ export class HttpServer {
 			if ((this.server as any).listening) return resolve();
 
 			this.server.listen(this.config.port, this.config.host, () => {
-				logger.event(
-					`Server listening on http://${this.config.host}:${this.config.port}`,
-				);
+				logger.event(`Server listening on http://${this.config.host}:${this.config.port}`);
 
 				resolve();
 			});
@@ -87,6 +95,7 @@ export class HttpServer {
 		});
 	}
 
+	/** Close the server and free the listening socket. */
 	async close(): Promise<void> {
 		if (!this.server) return;
 		await new Promise<void>((resolve, reject) => {
@@ -99,10 +108,13 @@ export class HttpServer {
 	}
 }
 
-export function createHttpServerFromConfig(opts: {
-	options: LithiaOptions;
-	lithia: Lithia;
-}) {
+/**
+ * Helper that creates an `HttpServer` from a `LithiaOptions` object.
+ *
+ * Primarily used by the runtime to create a server instance with the
+ * configured host/port.
+ */
+export function createHttpServerFromConfig(opts: { options: LithiaOptions; lithia: Lithia }) {
 	const cfg: HttpServerConfig = {
 		port: opts.options.http.port,
 		host: opts.options.http.host,
@@ -110,3 +122,4 @@ export function createHttpServerFromConfig(opts: {
 
 	return new HttpServer(cfg, opts.lithia);
 }
+

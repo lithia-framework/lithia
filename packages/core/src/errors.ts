@@ -1,18 +1,29 @@
+/** Possible severity levels for a `LithiaError`. */
 export type LithiaErrorLevel = "fatal" | "error" | "warning" | "info";
 
+/** Base error class for Lithia runtime errors.
+ *
+ * All custom runtime errors extend `LithiaError` and provide a machine
+ * readable `code` and a `level` used for logging and control-flow (for
+ * instance `fatal` errors may terminate the process).
+ */
 export class LithiaError extends Error {
 	constructor(
+		/** Machine-readable error code. */
 		public code: string,
 		message: string,
+		/** Severity level. */
 		public level: LithiaErrorLevel = "error",
+		/** Optional underlying cause. */
 		public cause?: any,
 	) {
 		super(message);
 		this.name = "LithiaError";
-		Error.captureStackTrace?.(this, this.constructor);
+		Error.captureStackTrace?.(this, this.constructor as any);
 	}
 }
 
+/** Error raised when the routes manifest version does not match the native schema. */
 export class RouteSchemaVersionMismatchError extends LithiaError {
 	constructor(expected: string, received: string) {
 		super(
@@ -24,6 +35,7 @@ export class RouteSchemaVersionMismatchError extends LithiaError {
 	}
 }
 
+/** Error used when reading or parsing the `routes.json` manifest fails. */
 export class RoutesManifestLoadError extends LithiaError {
 	constructor(cause: any) {
 		super(

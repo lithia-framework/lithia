@@ -1,3 +1,11 @@
+/** Core runtime entry for Lithia.
+ *
+ * This module exposes the `Lithia` class which orchestrates building the
+ * project with the native compiler, loading the generated routes manifest,
+ * and starting/stopping the HTTP server according to the runtime
+ * configuration. It also wires a small event emitter used for lifecycle
+ * events such as `built` and `error`.
+ */
 import { EventEmitter } from "node:events";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -27,14 +35,27 @@ sourceMapSupport.install({
 	handleUncaughtExceptions: false,
 });
 
+/** The runtime environment. Influences logging and error output. */
 export type Environment = "production" | "development";
 
+/** Options used to create a `Lithia` instance. */
 export interface LithiaCreateOptions {
+	/** `production` or `development`. */
 	environment: Environment;
+	/** Source directory containing the application code. */
 	sourceRoot: string;
+	/** Output directory where compiled JS will be emitted. */
 	outRoot: string;
 }
 
+/** Lithia runtime controller.
+ *
+ * Use `Lithia.create()` to obtain a singleton instance. The instance can
+ * build the project (`build()`), load the route manifest (`loadRoutes()`),
+ * and start/stop the HTTP server (`start()` / `stop()`). It emits events
+ * via an internal `EventEmitter` and exposes convenience helpers for
+ * listening to lifecycle events.
+ */
 export class Lithia {
 	private static instance: Lithia;
 	private environment: Environment;
@@ -54,6 +75,12 @@ export class Lithia {
 		this.configProvider = new ConfigProvider();
 	}
 
+	/**
+	 * Create (or return) the global `Lithia` singleton.
+	 *
+	 * This initializes configuration and (in development) sets up a
+	 * configuration watcher that emits `config:changed` events.
+	 */
 	static async create(options: LithiaCreateOptions) {
 		if (!Lithia.instance) {
 			const lithia = new Lithia();
@@ -64,6 +91,7 @@ export class Lithia {
 		return Lithia.instance;
 	}
 
+	/** Initialize internal state and configuration. */
 	private async initialize(options: LithiaCreateOptions) {
 		this.environment = options.environment;
 		this.sourceRoot = options.sourceRoot;
@@ -107,6 +135,9 @@ export class Lithia {
 
 	/**
 	 * Start the HTTP server using current configuration.
+	 *
+	 * Safe to call multiple times; subsequent calls are no-ops while the
+	 * server is running.
 	 */
 	async start() {
 		if (this.serverRunning) return;
@@ -126,6 +157,8 @@ export class Lithia {
 
 	/**
 	 * Stop the HTTP server.
+	 *
+	 * No-op if the server isn't running.
 	 */
 	async stop() {
 		if (!this.serverRunning) return;
@@ -137,18 +170,22 @@ export class Lithia {
 		}
 	}
 
+	/** Return the configured environment. */
 	getEnvironment() {
 		return this.environment;
 	}
 
+	/** Return the currently loaded routes. */
 	getRoutes() {
 		return this.routes;
 	}
 
+	/** Return the current runtime configuration. */
 	getConfig() {
 		return this.config;
 	}
 
+	/** Wire internal event handlers for build and error lifecycle. */
 	private configureEventEmitter() {
 		// wire build -> loadRoutes on the already-initialized emitter
 		this.emitter.on("built", (durationMs: number) => {
@@ -173,6 +210,12 @@ export class Lithia {
 		});
 	}
 
+	/**
+	 * Run a synchronous build using the native compiler.
+	 *
+	 * Emits the `built` event on success with the build duration in
+	 * milliseconds, or `error` on failure.
+	 */
 	build() {
 		const start = process.hrtime.bigint();
 		try {
@@ -184,6 +227,7 @@ export class Lithia {
 		}
 	}
 
+	/** Load and validate the `routes.json` manifest emitted by the native builder. */
 	loadRoutes() {
 		const manifestPath = path.join(this.outRoot, "routes.json");
 
@@ -210,18 +254,22 @@ export class Lithia {
 		}
 	}
 
+	/** Return the internal `EventEmitter` used by Lithia. */
 	getEventEmitter() {
 		return this.emitter;
 	}
 
+	/** Emit a lifecycle event. */
 	emit(event: string, payload?: any) {
 		return this.emitter.emit(event, payload);
 	}
 
+	/** Register an event listener. */
 	on(event: string, listener: (...args: any[]) => void) {
 		this.emitter.on(event, listener);
 	}
 
+	/** Clean up resources and remove listeners. */
 	close() {
 		this.configWatchHandle?.close?.();
 		this.emitter.removeAllListeners();

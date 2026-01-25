@@ -13,14 +13,18 @@ export type LithiaHandler = (
 	res: LithiaResponse,
 ) => Promise<void>;
 
+/** Middleware function signature used by route modules. Call `next()` to continue. */
 export type LithiaMiddleware = (
 	req: LithiaRequest,
 	res: LithiaResponse,
 	next: () => void,
 ) => Promise<void>;
 
+/** Shape of a route module loaded from disk. */
 export interface RouteModule {
+	/** Default exported handler for the route. */
 	default?: LithiaHandler;
+	/** Optional array of middlewares executed before the handler. */
 	middlewares?: Array<LithiaMiddleware>;
 }
 
@@ -35,9 +39,21 @@ interface ErrorResponse {
 	};
 }
 
+/**
+ * Responsible for processing incoming requests against the currently loaded
+ * routes. This class handles route lookup, module loading (with development
+ * cache busting), middleware execution and consistent error handling.
+ */
 export class RequestProcessor {
 	constructor(private lithia: Lithia) {}
 
+	/**
+	 * Main entry point for processing an incoming request.
+	 *
+	 * This performs route matching, dynamic param extraction, middleware
+	 * execution and finally invokes the route handler. Any thrown errors are
+	 * converted into structured JSON error responses by `handleError`.
+	 */
 	async processRequest(req: LithiaRequest, res: LithiaResponse): Promise<void> {
 		try {
 			// Add basic headers
@@ -90,6 +106,11 @@ export class RequestProcessor {
 		}
 	}
 
+	/**
+	 * Execute an array of middlewares sequentially. Each middleware must call
+	 * `next()` to continue; skipping `next()` ends the chain. Returns an
+	 * `Error` if any middleware throws.
+	 */
 	private async executeMiddlewares(
 		middlewares: Array<LithiaMiddleware>,
 		req: LithiaRequest,
@@ -123,6 +144,7 @@ export class RequestProcessor {
 		}
 	}
 
+	/** Send a structured 404 JSON response for unmatched routes. */
 	private sendNotFound(req: LithiaRequest, res: LithiaResponse): void {
 		const response: ErrorResponse = {
 			error: {
@@ -137,6 +159,11 @@ export class RequestProcessor {
 		res.status(404).json(response);
 	}
 
+	/**
+	 * Centralized error handling. Logs the error and returns a structured
+	 * JSON response. In development detailed messages and stacks are
+	 * returned; in production only a generic message and digest are exposed.
+	 */
 	private handleError(err: unknown, req: LithiaRequest, res: LithiaResponse) {
 		const isDevelopment = this.lithia.getEnvironment() === "development";
 
@@ -149,8 +176,7 @@ export class RequestProcessor {
 		const digest = this.generateErrorDigest(err);
 
 		// Build error details
-		const errorMessage =
-			err instanceof Error ? err.message : "Internal Server Error";
+		const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
 		const errorStack = err instanceof Error ? err.stack : undefined;
 
 		// Log error with digest (same format for both environments)
@@ -163,9 +189,7 @@ export class RequestProcessor {
 		// Build error response
 		const response: ErrorResponse = {
 			error: {
-				message: isDevelopment
-					? errorMessage
-					: "An internal server error occurred",
+				message: isDevelopment ? errorMessage : "An internal server error occurred",
 				statusCode: 500,
 				timestamp: new Date().toISOString(),
 				path: req.pathname,
@@ -177,29 +201,27 @@ export class RequestProcessor {
 		res.status(500).json(response);
 	}
 
+	/**
+	 * Generate a short hexadecimal digest for an error. This helps correlate
+	 * logs and client-visible error identifiers.
+	 */
 	private generateErrorDigest(err: unknown): string {
 		// Create a unique digest based on error message, timestamp, and random factor
-		const errorString =
-			err instanceof Error ? `${err.message}${err.stack}` : String(err);
+		const errorString = err instanceof Error ? `${err.message}${err.stack}` : String(err);
 
-		const hash = createHash("sha256")
-			.update(`${errorString}${Date.now()}${Math.random()}`)
-			.digest("hex");
+		const hash = createHash("sha256").update(`${errorString}${Date.now()}${Math.random()}`).digest("hex");
 
 		// Return first 8 characters (similar to Next.js)
 		return hash.substring(0, 8);
 	}
 
-	private findMatchingRoute(
-		pathname: string,
-		method: string,
-	): Route | undefined {
+	/** Find a route matching the given `pathname` and HTTP `method`. */
+	private findMatchingRoute(pathname: string, method: string): Route | undefined {
 		const routes = this.lithia.getRoutes();
 
 		return routes.find((route) => {
 			// Check method match
-			const methodMatches =
-				!route.method || route.method.toUpperCase() === method.toUpperCase();
+			const methodMatches = !route.method || route.method.toUpperCase() === method.toUpperCase();
 
 			// Check path match using regex
 			const pathMatches = this.matchesPath(pathname, route);
@@ -208,6 +230,7 @@ export class RequestProcessor {
 		});
 	}
 
+	/** Test whether a pathname matches a route's regex. */
 	private matchesPath(pathname: string, route: Route): boolean {
 		try {
 			const regex = new RegExp(route.regex);
@@ -218,6 +241,11 @@ export class RequestProcessor {
 		}
 	}
 
+	/**
+	 * Import a route module from disk. In development `import-fresh` is used to
+	 * bypass module cache; in production a normal dynamic import is performed.
+	 * The function also normalizes CommonJS wrappers produced by some bundlers.
+	 */
 	private async importRouteModule(route: Route): Promise<RouteModule> {
 		try {
 			const isDevelopment = this.lithia.getEnvironment() === "development";
@@ -237,11 +265,7 @@ export class RequestProcessor {
 			// When importing CommonJS via dynamic import, it can return:
 			// { default: { default: fn, middlewares: [...] } }
 			// We need to unwrap it to: { default: fn, middlewares: [...] }
-			if (
-				mod.default &&
-				typeof mod.default === "object" &&
-				mod.default.default
-			) {
+			if (mod.default && typeof mod.default === "object" && mod.default.default) {
 				return mod.default as RouteModule;
 			}
 
@@ -252,6 +276,7 @@ export class RequestProcessor {
 		}
 	}
 
+	/** Extract named params from the pathname using the route's regex and path pattern. */
 	private extractParams(pathname: string, route: Route): Params {
 		const params: Params = {};
 
@@ -262,9 +287,7 @@ export class RequestProcessor {
 			if (!match) return params;
 
 			// Extract parameter names from the route path
-			const paramNames = (route.path.match(/:([^/]+)/g) || []).map((p) =>
-				p.slice(1),
-			);
+			const paramNames = (route.path.match(/:([^/]+)/g) || []).map((p) => p.slice(1));
 
 			// Match groups start at index 1 (index 0 is full match)
 			paramNames.forEach((name, idx) => {

@@ -7,13 +7,18 @@ import {
 } from "c12";
 import { klona } from "klona";
 
+/** Result type for lifecycle hooks — may be synchronous or async. */
 export type HookResult = void | Promise<void>;
 
+/** Available lifecycle hooks supported by the runtime. */
 export interface LithiaHooks {
+	/** Called before the HTTP server starts. */
 	"before:start": () => HookResult;
+	/** Called after the HTTP server has started. */
 	"after:start": () => HookResult;
 }
 
+/** Shape of the runtime configuration used by Lithia. */
 export interface LithiaOptions {
 	debug: boolean;
 	http: {
@@ -36,10 +41,12 @@ export interface LithiaOptions {
 	};
 }
 
+/** Partial configuration accepted by `defineConfig` and the config loader. */
 export interface LithiaConfig
 	extends DeepPartial<LithiaOptions>,
 		C12InputConfig<LithiaConfig> {}
 
+/** Default runtime configuration used when no overrides are provided. */
 export const DEFAULT_CONFIG: LithiaConfig = {
 	debug: false,
 	http: {
@@ -66,6 +73,7 @@ type LoadConfigOptions = {
 	overrides?: LithiaConfig;
 };
 
+/** Error thrown when configuration validation fails. */
 export class ConfigValidationError extends Error {
 	constructor(
 		message: string,
@@ -76,18 +84,29 @@ export class ConfigValidationError extends Error {
 	}
 }
 
+/** Context passed to `watchConfig` callbacks describing the updated config. */
 export interface ConfigUpdateContext {
+	/** Returns a list of diffs between old and new config. */
 	getDiff: () => Array<{
 		key: string;
 		type: string;
 		newValue: unknown;
 		oldValue: unknown;
 	}>;
+	/** The new fully materialized config. */
 	newConfig: LithiaOptions;
+	/** The previous config prior to the update. */
 	oldConfig: LithiaOptions;
 }
 
+/** Provider responsible for loading and optionally watching the runtime config. */
 export class ConfigProvider {
+	/**
+	 * Load the configuration, applying optional overrides.
+	 *
+	 * This delegates to `c12` for reading configuration files and defaults
+	 * and validates the resulting `LithiaOptions` before returning them.
+	 */
 	async loadConfig(overrides: LithiaConfig = {}, opts: LoadConfigOptions = {}) {
 		overrides = klona(overrides);
 
@@ -111,6 +130,11 @@ export class ConfigProvider {
 		return options;
 	}
 
+	/**
+	 * Watch the configuration for changes and invoke `onChange` when updates occur.
+	 *
+	 * Returns a handle with a `close()` method to stop watching.
+	 */
 	async watchConfig(
 		onChange: (ctx: ConfigUpdateContext) => void | Promise<void>,
 		overrides: LithiaConfig = {},
@@ -160,6 +184,7 @@ export class ConfigProvider {
 	}
 }
 
+/** Utility helper used by users to define their config with IDE type hints. */
 export function defineConfig(config: LithiaConfig): LithiaConfig {
 	return config;
 }
