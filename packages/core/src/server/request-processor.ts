@@ -3,9 +3,13 @@ import { statSync } from "node:fs";
 import { extname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Route } from "@lithiajs/native";
-import { red } from "@lithiajs/utils";
+import { cyan, green, red, yellow } from "@lithiajs/utils";
 import importFresh from "import-fresh";
-import { LithiaError, StaticFileMimeMissingError } from "../errors";
+import {
+	LithiaError,
+	StaticFileMimeMissingError,
+	ValidationError,
+} from "../errors";
 import type { Lithia } from "../lithia";
 import { logger } from "../logger";
 import type { LithiaRequest, Params } from "./request";
@@ -39,6 +43,7 @@ interface ErrorResponse {
 		path: string;
 		method: string;
 		digest?: string;
+		issues?: any[];
 	};
 }
 
@@ -58,9 +63,12 @@ export class RequestProcessor {
 	 * converted into structured JSON error responses by `handleError`.
 	 */
 	async processRequest(req: LithiaRequest, res: LithiaResponse): Promise<void> {
+		const start = process.hrtime.bigint();
+
 		try {
 			// Handle CORS
 			if (this.handleCors(req, res)) {
+				this.logRequest(req, res, start);
 				return;
 			}
 
@@ -69,6 +77,7 @@ export class RequestProcessor {
 
 			// Serve static files
 			if (await this.serveStaticFile(req, res)) {
+				this.logRequest(req, res, start);
 				return;
 			}
 
@@ -77,6 +86,7 @@ export class RequestProcessor {
 
 			if (!route) {
 				this.sendNotFound(req, res);
+				this.logRequest(req, res, start);
 				return;
 			}
 
@@ -103,6 +113,7 @@ export class RequestProcessor {
 					if (globalMiddlewareError) {
 						throw globalMiddlewareError;
 					}
+					this.logRequest(req, res, start);
 					return;
 				}
 			}
@@ -120,6 +131,7 @@ export class RequestProcessor {
 					if (middlewareError) {
 						throw middlewareError;
 					}
+					this.logRequest(req, res, start);
 					return;
 				}
 			}
@@ -133,8 +145,10 @@ export class RequestProcessor {
 			if (!res._ended) {
 				res.end();
 			}
+			
+			this.logRequest(req, res, start);
 		} catch (err) {
-			this.handleError(err, req, res);
+			this.handleError(err, req, res, start);
 		}
 	}
 
@@ -196,11 +210,17 @@ export class RequestProcessor {
 	 * JSON response. In development detailed messages and stacks are
 	 * returned; in production only a generic message and digest are exposed.
 	 */
-	private handleError(err: unknown, req: LithiaRequest, res: LithiaResponse) {
+	private handleError(
+		err: unknown,
+		req: LithiaRequest,
+		res: LithiaResponse,
+		start: bigint,
+	) {
 		const isDevelopment = this.lithia.getEnvironment() === "development";
 
 		// Don't send error response if already sent
 		if (res._ended) {
+			this.logRequest(req, res, start);
 			return;
 		}
 
@@ -211,29 +231,61 @@ export class RequestProcessor {
 		const errorMessage =
 			err instanceof Error ? err.message : "Internal Server Error";
 		const errorStack = err instanceof Error ? err.stack : undefined;
+		let statusCode = 500;
+		let clientMessage = isDevelopment
+			? errorMessage
+			: "An internal server error occurred";
+		let issues: any[] | undefined;
 
-		// Log error with digest (same format for both environments)
-		logger.error(`[Digest: ${red(digest)}] Request processing error:`);
-		logger.info(`  Path: ${req.method} ${req.pathname}`);
-		if (errorStack) {
-			logger.info(`  ${errorStack}`);
+		if (err instanceof ValidationError) {
+			statusCode = 400;
+			clientMessage = err.message;
+			issues = err.issues;
+		}
+
+		if (statusCode >= 500) {
+			// Log error with digest (same format for both environments)
+			logger.error(`[Digest: ${red(digest)}] ${errorStack}`);
 		}
 
 		// Build error response
 		const response: ErrorResponse = {
 			error: {
-				message: isDevelopment
-					? errorMessage
-					: "An internal server error occurred",
-				statusCode: 500,
+				message: clientMessage,
+				statusCode,
 				timestamp: new Date().toISOString(),
 				path: req.pathname,
 				method: req.method,
 				digest: digest,
+				issues,
 			},
 		};
 
-		res.status(500).json(response);
+		res.status(statusCode).json(response);
+		this.logRequest(req, res, start);
+	}
+
+	private logRequest(req: LithiaRequest, res: LithiaResponse, start: bigint) {
+		const end = process.hrtime.bigint();
+		const duration = Number(end - start) / 1_000_000;
+		const durationStr = `${duration.toFixed(2)}ms`;
+
+		const status = res.statusCode || 200;
+		let statusStr = status.toString();
+
+		if (status >= 500) {
+			statusStr = red(statusStr);
+		} else if (status >= 400) {
+			statusStr = yellow(statusStr);
+		} else if (status >= 300) {
+			statusStr = cyan(statusStr);
+		} else {
+			statusStr = green(statusStr);
+		}
+
+		logger.info(
+			`[${statusStr}] ${req.method} ${req.pathname} - ${durationStr}`,
+		);
 	}
 
 	/**

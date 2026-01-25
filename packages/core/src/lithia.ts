@@ -30,6 +30,9 @@ import {
 } from "./server/http-server";
 import type { LithiaMiddleware } from "./server/request-processor";
 
+// Config keys that require a server restart when changed
+const RESTART_CONFIG_PREFIXES = ["http.port", "http.host", "http.ssl"];
+
 // Install source map support for better stack traces
 sourceMapSupport.install({
 	environment: "node",
@@ -120,7 +123,11 @@ export class Lithia {
 							if (diffs && diffs.length > 0) {
 								logger.event(`Config updated — ${diffs.length} change(s)`);
 								for (const d of diffs.slice(0, 20)) {
-									if (d.key === "http.port" || d.key === "http.host") {
+									const requiresRestart = RESTART_CONFIG_PREFIXES.some(
+										(prefix) => d.key === prefix || d.key.startsWith(`${prefix}.`),
+									);
+
+									if (requiresRestart) {
 										logger.warn(
 											`  • ${d.key}: ${d.oldValue} → ${d.newValue} (requires server restart)`,
 										);

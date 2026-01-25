@@ -1,12 +1,21 @@
 import type { IncomingHttpHeaders, IncomingMessage } from "node:http";
+import busboy, { type FileInfo } from "busboy";
 import { type Cookies, parse as parseCookie } from "cookie";
 import type { Lithia } from "../lithia";
 
 /** Route parameters extracted from the route matcher. */
-export type Params = Record<string, string>;
+export type Params = Record<string, any>;
 
 /** Parsed query parameters. Values may be a string or an array for repeated keys. */
-export type Query = Record<string, string | string[]>;
+export type Query = Record<string, any>;
+
+/** Represents an uploaded file. */
+export interface UploadedFile extends FileInfo {
+	/** Field name in the form. */
+	fieldname: string;
+	/** File buffer. */
+	buffer: Buffer;
+}
 
 /** Request wrapper passed to route handlers.
  *
@@ -17,12 +26,13 @@ export type Query = Record<string, string | string[]>;
 export class LithiaRequest {
 	headers: Readonly<IncomingHttpHeaders>;
 	method: Readonly<string>;
-	params: Readonly<Params>;
+	params: Params;
 	pathname: Readonly<string>;
-	query: Readonly<Query>;
+	query: Query;
 
 	private storage = new Map<string, unknown>();
 	private _bodyCache: unknown | null = null;
+	private _filesCache: UploadedFile[] | null = null;
 	private _cookies: Cookies | null = null;
 
 	/**
@@ -31,9 +41,13 @@ export class LithiaRequest {
 	 * `lithia` is the runtime instance and is stored in request-local
 	 * storage under the `lithia` key for handlers that need access.
 	 */
-	constructor(private readonly req: IncomingMessage, private readonly lithia: Lithia) {
+	constructor(
+		private readonly req: IncomingMessage,
+		private readonly lithia: Lithia,
+	) {
 		const protocol =
-			(req.headers["x-forwarded-proto"] as string) === "https" || (req.socket as any)?.encrypted === true
+			(req.headers["x-forwarded-proto"] as string) === "https" ||
+			(req.socket as any)?.encrypted === true
 				? "https"
 				: "http";
 		const host = req.headers.host || "unknown";
@@ -43,7 +57,7 @@ export class LithiaRequest {
 		this.pathname = url.pathname;
 		this.method = (req.method || "GET").toUpperCase();
 		this.headers = req.headers;
-		this.query = Object.fromEntries(url.searchParams.entries());
+		this.query = parseQueryToObject(url.searchParams);
 		this.params = {};
 
 		this.storage.set("lithia", this.lithia);
@@ -54,7 +68,7 @@ export class LithiaRequest {
 	 * parsed object; for other content types it returns the raw string. The
 	 * result is cached and subsequent calls return the cached value.
 	 */
-	async body<T>(): Promise<Readonly<T>> {
+	async body<T>(): Promise<T> {
 		if (!["POST", "PUT", "PATCH", "DELETE"].includes(this.method)) {
 			return {} as T;
 		}
@@ -62,7 +76,16 @@ export class LithiaRequest {
 		if (this._bodyCache !== null) return this._bodyCache as T;
 
 		const contentType = (this.headers["content-type"] || "") as string;
-		const contentLength = parseInt((this.headers["content-length"] as string) || "0", 10);
+
+		if (contentType.includes("multipart/form-data")) {
+			await this.parseMultipart();
+			return this._bodyCache as T;
+		}
+
+		const contentLength = parseInt(
+			(this.headers["content-length"] as string) || "0",
+			10,
+		);
 		const maxBodySize = this.lithia.options.http.maxBodySize || 1024 * 1024;
 
 		if (contentLength > maxBodySize) {
@@ -97,6 +120,61 @@ export class LithiaRequest {
 		this._bodyCache = body;
 		this.storage.set("body", body);
 		return body;
+	}
+
+	/**
+	 * Get uploaded files from a multipart/form-data request.
+	 */
+	async files(): Promise<UploadedFile[]> {
+		const contentType = (this.headers["content-type"] || "") as string;
+		if (!contentType.includes("multipart/form-data")) return [];
+
+		if (this._filesCache !== null) return this._filesCache;
+
+		await this.parseMultipart();
+		return this._filesCache!;
+	}
+
+	/** Set the request body manually (e.g. after validation/sanitization). */
+	setBody(value: unknown) {
+		this._bodyCache = value;
+		this.storage.set("body", value);
+	}
+
+	private async parseMultipart(): Promise<void> {
+		if (this._bodyCache !== null && this._filesCache !== null) return;
+
+		return new Promise((resolve, reject) => {
+			const bb = busboy({ headers: this.headers });
+			const fields: Record<string, any> = {};
+			const files: UploadedFile[] = [];
+
+			bb.on("file", (name, file, info) => {
+				const chunks: Buffer[] = [];
+				file.on("data", (data) => chunks.push(data));
+				file.on("end", () => {
+					files.push({
+						fieldname: name,
+						buffer: Buffer.concat(chunks),
+						...info,
+					});
+				});
+			});
+
+			bb.on("field", (name, val) => {
+				fields[name] = val;
+			});
+
+			bb.on("close", () => {
+				this._bodyCache = fields;
+				this._filesCache = files;
+				resolve();
+			});
+
+			bb.on("error", (err) => reject(err));
+
+			this.req.pipe(bb);
+		});
 	}
 
 	/** Retrieve a value from per-request storage. */

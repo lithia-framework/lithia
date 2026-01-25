@@ -57,3 +57,13 @@ export class StaticFileMimeMissingError extends LithiaError {
 		);
 	}
 }
+
+/** Error raised when request data validation fails. */
+export class ValidationError extends LithiaError {
+	constructor(
+		message: string,
+		public issues?: any[],
+	) {
+		super("VALIDATION_ERROR", message, "error");
+	}
+}
