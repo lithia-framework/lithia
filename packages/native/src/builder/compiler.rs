@@ -116,12 +116,13 @@ impl TypeScriptCompiler {
         let module = parser.parse_program().map_err(|e| {
             e.into_diagnostic(&handler).emit();
 
-            // Get error message from buffer
+            // Get error message from buffer and format it properly
             let error_msg = error_buffer_clone.get_content();
             if error_msg.is_empty() {
                 format!("Failed to parse {}", input.display())
             } else {
-                error_msg
+                // Return error without escaping - it will be displayed properly
+                format!("\n{}", error_msg.trim())
             }
         })?;
 
@@ -135,9 +136,13 @@ impl TypeScriptCompiler {
 
         // Write output with optional sourcemap
         if self.ts_config.emit_sourcemap {
-            // map_opt should be Some(map_string) when sourcemap was emitted by codegen
-            let map = map_opt.ok_or_else(|| "Source map not generated".to_string())?;
-            write_sourcemap_and_code(output, code, map)?;
+            if let Some(map) = map_opt {
+                write_sourcemap_and_code(output, code, map)?;
+            } else {
+                // No source map generated (e.g., empty file) - just write the code
+                std::fs::write(output, code)
+                    .map_err(|e| format!("Failed to write output {}: {}", output.display(), e))?;
+            }
         } else {
             std::fs::write(output, code)
                 .map_err(|e| format!("Failed to write output {}: {}", output.display(), e))?;

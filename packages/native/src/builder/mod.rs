@@ -77,10 +77,17 @@ pub fn build_project(source_root: String, out_root: String) -> napi::Result<()> 
     // Build summary is emitted to the host (Node) via the native API; avoid printing here.
 
     if build_result.has_failures() {
+        let failures_msg = build_result.failures
+            .iter()
+            .take(5)
+            .map(|e| e.as_str())
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        
         return Err(napi::Error::from_reason(format!(
-            "Build completed with {} failures: {:?}",
+            "Build completed with {} failures:\n\n{}",
             build_result.failures.len(),
-            build_result.failures.iter().take(5).collect::<Vec<_>>()
+            failures_msg
         )));
     }
 
