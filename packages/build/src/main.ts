@@ -31,7 +31,7 @@ const main = defineCommand({
 			bundle: false,
 			dts: true,
 			minify: false,
-      keepNames: true,
+			keepNames: true,
 			treeshake: { preset: "recommended" },
 			format: ["cjs"],
 			clean: true,

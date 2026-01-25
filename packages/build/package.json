@@ -2,14 +2,6 @@
 	"name": "@lithiajs/build",
 	"version": "5.0.0",
 	"private": false,
-	"main": "dist/main.js",
-	"exports": {
-		".": {
-			"import": "./dist/main.js",
-			"require": "./dist/main.js",
-			"default": "./dist/main.js"
-		}
-	},
 	"bin": {
 		"lithia-build": "dist/main.js"
 	},

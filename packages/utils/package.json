@@ -17,6 +17,6 @@
 	},
 	"devDependencies": {
 		"@lithiajs/tsconfig": "workspace:*",
-    "@lithiajs/build": "workspace:*"
+		"@lithiajs/build": "workspace:*"
 	}
 }

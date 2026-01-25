@@ -114,7 +114,7 @@ pub fn build_project(source_root: String, out_root: String) -> napi::Result<()> 
 
         let manifest = RoutesManifest { version, routes };
 
-        let json = serde_json::to_string_pretty(&manifest)
+        let json = serde_json::to_string(&manifest)
             .map_err(|e| napi::Error::from_reason(format!("Failed to serialize routes: {}", e)))?;
 
         fs::write(&config.out_root.join("routes.json"), json)

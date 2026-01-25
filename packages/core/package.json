@@ -6,10 +6,9 @@
 	"types": "dist/lib.d.ts",
 	"exports": {
 		".": {
-			"import": "./dist/lib.js",
+			"types": "./dist/lib.d.ts",
 			"require": "./dist/lib.js",
-			"default": "./dist/lib.js",
-			"types": "./dist/lib.d.ts"
+			"import": "./dist/lib.js"
 		}
 	},
 	"scripts": {
@@ -18,7 +17,7 @@
 	},
 	"devDependencies": {
 		"@lithiajs/tsconfig": "workspace:*",
-    "@lithiajs/build": "workspace:*"
+		"@lithiajs/build": "workspace:*"
 	},
 	"dependencies": {
 		"@lithiajs/native": "workspace:*",
