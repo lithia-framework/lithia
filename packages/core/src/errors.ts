@@ -46,3 +46,14 @@ export class RoutesManifestLoadError extends LithiaError {
 		);
 	}
 }
+
+/** Error raised when serving a static file but no MIME type is configured for its extension. */
+export class StaticFileMimeMissingError extends LithiaError {
+	constructor(extension: string, filePath: string) {
+		super(
+			"STATIC_FILE_MIME_MISSING",
+			`No MIME type configured for extension '${extension}' when serving '${filePath}'. Please configure a MIME type for this extension in your Lithia config.`,
+			"error",
+		);
+	}
+}

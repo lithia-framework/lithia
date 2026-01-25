@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
+import { statSync } from "node:fs";
+import { extname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Route } from "@lithiajs/native";
 import { red } from "@lithiajs/utils";
 import importFresh from "import-fresh";
+import { LithiaError, StaticFileMimeMissingError } from "../errors";
 import type { Lithia } from "../lithia";
 import { logger } from "../logger";
 import type { LithiaRequest, Params } from "./request";
@@ -56,8 +59,18 @@ export class RequestProcessor {
 	 */
 	async processRequest(req: LithiaRequest, res: LithiaResponse): Promise<void> {
 		try {
+			// Handle CORS
+			if (this.handleCors(req, res)) {
+				return;
+			}
+
 			// Add basic headers
 			res.addHeader("X-Powered-By", "Lithia");
+
+			// Serve static files
+			if (await this.serveStaticFile(req, res)) {
+				return;
+			}
 
 			// Find matching route
 			const route = this.findMatchingRoute(req.pathname, req.method);
@@ -74,6 +87,25 @@ export class RequestProcessor {
 
 			// Import route module
 			const module = await this.importRouteModule(route);
+
+			// Execute global middlewares
+			if (
+				this.lithia.globalMiddlewares &&
+				this.lithia.globalMiddlewares.length > 0
+			) {
+				const globalMiddlewareError = await this.executeMiddlewares(
+					this.lithia.globalMiddlewares,
+					req,
+					res,
+				);
+
+				if (res._ended || globalMiddlewareError) {
+					if (globalMiddlewareError) {
+						throw globalMiddlewareError;
+					}
+					return;
+				}
+			}
 
 			// Execute middlewares if present
 			if (module.middlewares && module.middlewares.length > 0) {
@@ -176,7 +208,8 @@ export class RequestProcessor {
 		const digest = this.generateErrorDigest(err);
 
 		// Build error details
-		const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
+		const errorMessage =
+			err instanceof Error ? err.message : "Internal Server Error";
 		const errorStack = err instanceof Error ? err.stack : undefined;
 
 		// Log error with digest (same format for both environments)
@@ -189,7 +222,9 @@ export class RequestProcessor {
 		// Build error response
 		const response: ErrorResponse = {
 			error: {
-				message: isDevelopment ? errorMessage : "An internal server error occurred",
+				message: isDevelopment
+					? errorMessage
+					: "An internal server error occurred",
 				statusCode: 500,
 				timestamp: new Date().toISOString(),
 				path: req.pathname,
@@ -207,21 +242,133 @@ export class RequestProcessor {
 	 */
 	private generateErrorDigest(err: unknown): string {
 		// Create a unique digest based on error message, timestamp, and random factor
-		const errorString = err instanceof Error ? `${err.message}${err.stack}` : String(err);
+		const errorString =
+			err instanceof Error ? `${err.message}${err.stack}` : String(err);
 
-		const hash = createHash("sha256").update(`${errorString}${Date.now()}${Math.random()}`).digest("hex");
+		const hash = createHash("sha256")
+			.update(`${errorString}${Date.now()}${Math.random()}`)
+			.digest("hex");
 
 		// Return first 8 characters (similar to Next.js)
 		return hash.substring(0, 8);
 	}
 
+	/**
+	 * Apply CORS headers and handle options requests.
+	 * Returns true if request was handled (OPTIONS).
+	 */
+	private handleCors(req: LithiaRequest, res: LithiaResponse): boolean {
+		const cors = this.lithia.options.http.cors;
+		if (!cors) return false;
+
+		const origin = req.headers.origin as string;
+
+		// Check if origin is allowed
+		let allowedOrigin: string | undefined;
+
+		// Handle credentials with wildcard origin
+		if (cors.credentials && cors.origin?.includes("*")) {
+			allowedOrigin = origin;
+		} else if (cors.origin?.includes("*")) {
+			allowedOrigin = "*";
+		} else if (origin && cors.origin?.includes(origin)) {
+			allowedOrigin = origin;
+		}
+
+		if (allowedOrigin) {
+			res.addHeader("Access-Control-Allow-Origin", allowedOrigin);
+			res.addHeader("Vary", "Origin");
+
+			if (cors.credentials) {
+				res.addHeader("Access-Control-Allow-Credentials", "true");
+			}
+
+			if (req.method === "OPTIONS") {
+				if (cors.methods) {
+					res.addHeader(
+						"Access-Control-Allow-Methods",
+						cors.methods.join(", "),
+					);
+				}
+				if (cors.allowedHeaders) {
+					res.addHeader(
+						"Access-Control-Allow-Headers",
+						cors.allowedHeaders.join(", "),
+					);
+				}
+				if (cors.maxAge) {
+					res.addHeader("Access-Control-Max-Age", cors.maxAge.toString());
+				}
+				res.status(204).end();
+				return true;
+			}
+
+			if (cors.exposedHeaders) {
+				res.addHeader(
+					"Access-Control-Expose-Headers",
+					cors.exposedHeaders.join(", "),
+				);
+			}
+		}
+
+		return false;
+	}
+
+	/** Serve static files if configured and file exists. */
+	private async serveStaticFile(
+		req: LithiaRequest,
+		res: LithiaResponse,
+	): Promise<boolean> {
+		const staticConfig = this.lithia.options.static;
+		if (!staticConfig || !staticConfig.root) return false;
+
+		// Skip if method is not GET or HEAD
+		if (req.method !== "GET" && req.method !== "HEAD") return false;
+
+		let filePath = req.pathname;
+
+		// Handle prefix stripping
+		if (staticConfig.prefix) {
+			if (!filePath.startsWith(staticConfig.prefix)) return false;
+			filePath = filePath.slice(staticConfig.prefix.length);
+		}
+
+		// Prevent directory traversal
+		const normalizedPath = join(staticConfig.root, filePath);
+		if (filePath.includes("..")) return false;
+
+		try {
+			const stats = statSync(normalizedPath);
+			if (stats.isFile()) {
+				const ext = extname(normalizedPath).toLowerCase();
+				const mime = this.lithia.options.http.mimeTypes?.[ext];
+
+				if (!mime) {
+					throw new StaticFileMimeMissingError(ext, filePath);
+				}
+
+				res.addHeader("Content-Type", mime);
+				res.sendFile(normalizedPath);
+				return true;
+			}
+		} catch (e) {
+			if (e instanceof LithiaError) throw e;
+			// file not found or other error, fallback to routes
+		}
+		return false;
+	}
+
 	/** Find a route matching the given `pathname` and HTTP `method`. */
-	private findMatchingRoute(pathname: string, method: string): Route | undefined {
+	private findMatchingRoute(
+		pathname: string,
+		method: string,
+	): Route | undefined {
 		const routes = this.lithia.getRoutes();
 
 		return routes.find((route) => {
 			// Check method match
-			const methodMatches = !route.method || route.method.toUpperCase() === method.toUpperCase();
+			const methodMatches =
+				!route.method || route.method.toUpperCase() === method.toUpperCase();
 
 			// Check path match using regex
 			const pathMatches = this.matchesPath(pathname, route);
@@ -265,7 +412,11 @@ export class RequestProcessor {
 			// When importing CommonJS via dynamic import, it can return:
 			// { default: { default: fn, middlewares: [...] } }
 			// We need to unwrap it to: { default: fn, middlewares: [...] }
-			if (mod.default && typeof mod.default === "object" && mod.default.default) {
+			if (
+				mod.default &&
+				typeof mod.default === "object" &&
+				mod.default.default
+			) {
 				return mod.default as RouteModule;
 			}
 
@@ -287,7 +438,9 @@ export class RequestProcessor {
 			if (!match) return params;
 
 			// Extract parameter names from the route path
-			const paramNames = (route.path.match(/:([^/]+)/g) || []).map((p) => p.slice(1));
+			const paramNames = (route.path.match(/:([^/]+)/g) || []).map((p) =>
+				p.slice(1),
+			);
 
 			// Match groups start at index 1 (index 0 is full match)
 			paramNames.forEach((name, idx) => {

@@ -24,6 +24,12 @@ export interface LithiaOptions {
 	http: {
 		port: number;
 		host: string;
+		maxBodySize?: number;
+		ssl?: {
+			key: string;
+			cert: string;
+			passphrase?: string;
+		};
 		cors: {
 			origin?: string[];
 			methods?: string[];
@@ -32,6 +38,11 @@ export interface LithiaOptions {
 			credentials?: boolean;
 			maxAge?: number;
 		};
+		mimeTypes?: Record<string, string>;
+	};
+	static?: {
+		root: string;
+		prefix?: string;
 	};
 	studio: {
 		enabled: boolean;
@@ -52,6 +63,7 @@ export const DEFAULT_CONFIG: LithiaConfig = {
 	http: {
 		port: 3000,
 		host: "localhost",
+		maxBodySize: 1024 * 1024,
 		cors: {
 			origin: ["*"],
 			methods: ["*"],

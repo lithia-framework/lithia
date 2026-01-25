@@ -28,6 +28,7 @@ import {
 	createHttpServerFromConfig,
 	type HttpServer,
 } from "./server/http-server";
+import type { LithiaMiddleware } from "./server/request-processor";
 
 // Install source map support for better stack traces
 sourceMapSupport.install({
@@ -68,6 +69,13 @@ export class Lithia {
 	private httpServer?: HttpServer;
 	private serverRunning = false;
 	private configWatchHandle?: { close?: () => void };
+
+	/** Global middlewares executed for every request */
+	public globalMiddlewares: LithiaMiddleware[] = [];
+
+	public get options(): LithiaOptions {
+		return this.config;
+	}
 
 	private constructor() {
 		this.routes = [];
@@ -131,6 +139,12 @@ export class Lithia {
 				this.emitter.emit("error", err);
 			}
 		}
+	}
+
+	/** Register a global middleware. */
+	use(middleware: LithiaMiddleware) {
+		this.globalMiddlewares.push(middleware);
+		return this;
 	}
 
 	/**

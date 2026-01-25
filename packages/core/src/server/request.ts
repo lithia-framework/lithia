@@ -63,7 +63,7 @@ export class LithiaRequest {
 
 		const contentType = (this.headers["content-type"] || "") as string;
 		const contentLength = parseInt((this.headers["content-length"] as string) || "0", 10);
-		const maxBodySize = 1024 * 1024; // 1MB default
+		const maxBodySize = this.lithia.options.http.maxBodySize || 1024 * 1024;
 
 		if (contentLength > maxBodySize) {
 			throw new Error("Request body too large");

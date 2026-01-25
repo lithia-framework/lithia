@@ -4,6 +4,11 @@ import {
 	type Server,
 	type ServerResponse,
 } from "node:http";
+import {
+	createServer as createHttpsServer,
+	type Server as HttpsServer,
+} from "node:https";
+import type { Socket } from "node:net";
 import type { LithiaOptions } from "../config";
 import type { Lithia } from "../lithia";
 import { logger } from "../logger";
@@ -17,6 +22,12 @@ export interface HttpServerConfig {
 	port: number;
 	/** Hostname or IP to bind. */
 	host: string;
+	/** SSL configuration. */
+	ssl?: {
+		key: string;
+		cert: string;
+		passphrase?: string;
+	};
 }
 
 /**
@@ -27,20 +38,24 @@ export interface HttpServerConfig {
  * methods to `listen()` and `close()` the server.
  */
 export class HttpServer {
-	private server?: Server;
+	private server?: Server | HttpsServer;
 	private config: HttpServerConfig;
 	private processor: RequestProcessor;
+	private sockets = new Set<Socket>();
 
-	constructor(config: HttpServerConfig, private lithia: Lithia) {
+	constructor(
+		config: HttpServerConfig,
+		private lithia: Lithia,
+	) {
 		this.config = config;
 		this.processor = new RequestProcessor(lithia);
 	}
 
 	/** Create (or return) the underlying Node `Server` instance. */
-	async create(): Promise<Server> {
+	async create(): Promise<Server | HttpsServer> {
 		if (this.server) return this.server;
 
-		this.server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+		const handler = async (req: IncomingMessage, res: ServerResponse) => {
 			try {
 				// Handle /_lithia internal endpoint
 				const url = req.url || "/";
@@ -64,6 +79,20 @@ export class HttpServer {
 					// ignore
 				}
 			}
+		};
+
+		if (this.config.ssl) {
+			this.server = createHttpsServer(this.config.ssl, handler);
+		} else {
+			this.server = createServer(handler);
+		}
+
+		// Track connections for graceful shutdown
+		this.server.on("connection", (socket: Socket) => {
+			this.sockets.add(socket);
+			socket.on("close", () => {
+				this.sockets.delete(socket);
+			});
 		});
 
 		return this.server;
@@ -83,7 +112,9 @@ export class HttpServer {
 			if ((this.server as any).listening) return resolve();
 
 			this.server.listen(this.config.port, this.config.host, () => {
-				logger.event(`Server listening on http://${this.config.host}:${this.config.port}`);
+				logger.event(
+					`Server listening on http://${this.config.host}:${this.config.port}`,
+				);
 
 				resolve();
 			});
@@ -98,13 +129,22 @@ export class HttpServer {
 	/** Close the server and free the listening socket. */
 	async close(): Promise<void> {
 		if (!this.server) return;
-		await new Promise<void>((resolve, reject) => {
-			this.server?.close((err) => {
-				if (err) reject(err);
-				else resolve();
+
+		return new Promise((resolve, reject) => {
+			if (!this.server) return resolve();
+
+			// Stop accepting new connections
+			this.server.close((err) => {
+				if (err) return reject(err);
+				resolve();
 			});
+
+			// Close existing connections
+			for (const socket of this.sockets) {
+				socket.destroy();
+			}
+			this.sockets.clear();
 		});
-		this.server = undefined;
 	}
 }
 
@@ -114,12 +154,15 @@ export class HttpServer {
  * Primarily used by the runtime to create a server instance with the
  * configured host/port.
  */
-export function createHttpServerFromConfig(opts: { options: LithiaOptions; lithia: Lithia }) {
+export function createHttpServerFromConfig(opts: {
+	options: LithiaOptions;
+	lithia: Lithia;
+}) {
 	const cfg: HttpServerConfig = {
 		port: opts.options.http.port,
 		host: opts.options.http.host,
+		ssl: opts.options.http.ssl,
 	};
 
 	return new HttpServer(cfg, opts.lithia);
 }
-
