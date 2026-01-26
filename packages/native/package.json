@@ -20,12 +20,15 @@
 		"README.md"
 	],
 	"scripts": {
-		"build:rust": "napi build --platform --release",
+		"napi:build": "napi build --platform --release",
     "test": "cargo test",
     "check": "cargo check",
     "machete": "cargo machete --fix"
 	},
 	"devDependencies": {
 		"@napi-rs/cli": "^3.5.1"
-	}
+	},
+  "engines": {
+    "node": ">=22"
+  }
 }

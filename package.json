@@ -22,5 +22,8 @@
 	},
 	"dependencies": {
 		"dotenv": "^17.2.3"
-	}
+	},
+  "engines": {
+    "node": ">=22"
+  }
 }

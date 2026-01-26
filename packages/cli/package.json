@@ -18,5 +18,8 @@
 	"devDependencies": {
 		"@lithia.js/tsconfig": "workspace:*",
 		"@lithia.js/build": "workspace:*"
-	}
+	},
+  "engines": {
+    "node": ">=22"
+  }
 }

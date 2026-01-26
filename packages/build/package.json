@@ -14,5 +14,8 @@
 		"@lithia.js/tsconfig": "workspace:*",
 		"citty": "^0.2.0",
 		"tsup": "^8.5.1"
-	}
+	},
+  "engines": {
+    "node": ">=22"
+  }
 }

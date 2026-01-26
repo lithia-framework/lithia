@@ -144,7 +144,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Setup Rust
@@ -178,7 +178,7 @@ jobs:
           options: -v ${{ env.HOME }}/.cargo/git:/root/.cargo/git -v ${{ env.HOME }}/.cargo/registry:/root/.cargo/registry -v ${{ github.workspace }}:/build -w /build
           shell: bash
           run: |
-            npm install -g pnpm@8
+            npm install -g pnpm@10
             pnpm install --frozen-lockfile
             ${{ matrix.settings.build }}
 
@@ -209,8 +209,6 @@ jobs:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
         node:
-          - "18"
-          - "20"
           - "22"
     
     runs-on: ${{ matrix.settings.host }}
@@ -221,7 +219,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 8
+          version: 10
 
       - name: Setup Node.js ${{ matrix.node }}
         uses: actions/setup-node@v4
@@ -259,12 +257,12 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 8
+          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
