@@ -27,7 +27,7 @@ jobs:
   # Build native bindings for all platforms
   build-native:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         settings:
           # macOS x64
