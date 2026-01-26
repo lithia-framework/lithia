@@ -2,11 +2,9 @@
 	"$schema": "https://turborepo.dev/schema.json",
 	"tasks": {
 		"build": {
-      "cache": false,
 			"dependsOn": ["^build"]
 		},
     "napi:build": {
-      "cache": true,
       "outputs": ["*.node", "*.js", "*.d.ts"]
     },
     "test": {},
