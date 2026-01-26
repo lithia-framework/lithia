@@ -146,17 +146,6 @@ jobs:
         with:
           version: 0.13.0
 
-      - name: Install Alpine dependencies (musl aarch64)
-        if: ${{ matrix.settings.docker }}
-        run: |
-          apk add --no-cache \
-            clang-static \
-            llvm-dev \
-            libc-dev \
-            build-base \
-            python3 \
-            make
-
       - name: Cache cargo
         uses: actions/cache@v4
         with:
