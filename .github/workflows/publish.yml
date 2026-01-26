@@ -139,6 +139,12 @@ jobs:
         with:
           version: 0.13.0
 
+      - name: Configure Zig as C compiler (aarch64 musl)
+        if: ${{ matrix.settings.target == 'aarch64-unknown-linux-musl' }}
+        run: |
+          echo "CC=zig cc -target aarch64-linux-musl" >> $GITHUB_ENV
+          echo "CXX=zig c++ -target aarch64-linux-musl" >> $GITHUB_ENV
+
       - name: Cache cargo
         uses: actions/cache@v4
         with:
