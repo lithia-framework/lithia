@@ -1,6 +1,6 @@
 {
 	"name": "@lithia.js/utils",
-	"version": "4.0.3",
+	"version": "5.0.0",
 	"private": false,
 	"main": "dist/lib.js",
 	"types": "dist/lib.d.ts",
@@ -14,9 +14,6 @@
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",
 		"check": "biome check --write"
-	},
-	"devDependencies": {
-		"@lithia.js/tsconfig": "workspace:*"
 	},
 	"engines": {
 		"node": ">=20"

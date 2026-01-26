@@ -1,5 +1,5 @@
 {
-	"extends": "@lithia.js/tsconfig/base.json",
+	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"rootDir": "src",
 		"outDir": "dist"

@@ -1,6 +1,6 @@
 {
 	"name": "@lithia.js/cli",
-	"version": "4.0.3",
+	"version": "5.0.0",
 	"private": false,
 	"bin": {
 		"lithia": "dist/main.js"
@@ -14,9 +14,6 @@
 		"@lithia.js/utils": "workspace:*",
 		"citty": "^0.2.0",
 		"chokidar": "^5.0.0"
-	},
-	"devDependencies": {
-		"@lithia.js/tsconfig": "workspace:*"
 	},
 	"engines": {
 		"node": ">=20"

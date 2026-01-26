@@ -1,37 +1,38 @@
 {
-	"name": "@lithia.js/native",
-	"version": "4.0.3",
-	"private": false,
+  "name": "@lithia.js/native",
+  "version": "5.0.0",
+  "private": false,
   "main": "index.js",
   "types": "index.d.ts",
-	"exports": {
-		".": {
-			"import": "./index.js",
-			"require": "./index.js",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "require": "./index.js",
       "default": "./index.js",
-			"types": "./index.d.ts"
-		}
-	},
-	"files": [
-		"index.js",
-		"index.d.ts",
-		"*.node",
-		"package.json",
-		"README.md"
-	],
-	"scripts": {
-		"napi:build": "napi build --platform --release",
+      "types": "./index.d.ts"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.node",
+    "package.json",
+    "README.md"
+  ],
+  "scripts": {
+    "napi:build": "napi build --platform --release",
     "test": "cargo test",
     "check": "cargo check",
     "machete": "cargo machete --fix"
-	},
-	"devDependencies": {
-		"@napi-rs/cli": "^3.5.1"
-	},
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.5.1"
+  },
   "engines": {
     "node": ">=20"
   },
   "napi": {
     "binaryName": "lithia"
-  }
+  },
+  "optionalDependencies": {}
 }

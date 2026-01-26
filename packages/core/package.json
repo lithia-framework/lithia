@@ -1,6 +1,6 @@
 {
 	"name": "@lithia.js/core",
-	"version": "4.0.3",
+	"version": "5.0.0",
 	"private": false,
 	"main": "dist/lib.js",
 	"types": "dist/lib.d.ts",
@@ -16,7 +16,6 @@
 		"check": "biome check --write"
 	},
 	"devDependencies": {
-		"@lithia.js/tsconfig": "workspace:*",
 		"@types/busboy": "^1.5.4",
 		"@types/source-map-support": "^0.5.10"
 	},
