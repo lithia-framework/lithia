@@ -21,6 +21,9 @@ pub mod sourcemap;
 pub mod tsconfig;
 pub mod types;
 
+#[cfg(test)]
+mod tests;
+
 use compiler::TypeScriptCompiler;
 use config::BuildConfig;
 use types::{BuildResult, CompileResult};
