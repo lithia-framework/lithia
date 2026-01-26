@@ -7,10 +7,14 @@
 		"build": "turbo build",
 		"test": "turbo test",
 		"check": "turbo check",
-		"machete": "turbo machete"
+		"machete": "turbo machete",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.0",
+		"@changesets/cli": "^2.29.8",
 		"@types/node": "^25.0.10",
 		"tsx": "^4.21.0",
 		"turbo": "^2.7.6",
