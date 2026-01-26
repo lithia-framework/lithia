@@ -8,4 +8,4 @@ target/
 # Build output
 .lithia/
 dist/
-tsconfig.tsbuildinfo
+tsconfig.build.tsbuildinfo
