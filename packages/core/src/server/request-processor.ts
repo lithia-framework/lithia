@@ -3,6 +3,7 @@ import { statSync } from "node:fs";
 import { extname, join } from "node:path";
 import type { Route } from "@lithiajs/native";
 import { cyan, green, red, yellow } from "@lithiajs/utils";
+import { type RequestContext, requestContext } from "../context";
 import {
 	InvalidRouteModuleError,
 	LithiaError,
@@ -65,91 +66,103 @@ export class RequestProcessor {
 	async processRequest(req: LithiaRequest, res: LithiaResponse): Promise<void> {
 		const start = process.hrtime.bigint();
 
-		try {
-			// Handle CORS
-			if (this.handleCors(req, res)) {
-				this.logRequest(req, res, start);
-				return;
-			}
+		// Initialize context for hooks
+		const ctx: RequestContext = {
+			req,
+			res,
+			dependencies: new Map(this.lithia.globalDependencies),
+		};
 
-			// Add basic headers
-			res.addHeader("X-Powered-By", "Lithia");
-
-			// Serve static files
-			if (await this.serveStaticFile(req, res)) {
-				this.logRequest(req, res, start);
-				return;
-			}
-
-			// Find matching route
-			const route = this.findMatchingRoute(req.pathname, req.method);
-
-			if (!route) {
-				this.sendNotFound(req, res);
-				this.logRequest(req, res, start);
-				return;
-			}
-
-			// Extract params if dynamic route
-			if (route.dynamic) {
-				(req as any).params = this.extractParams(req.pathname, route);
-			}
-
-			// Import route module
-			const module = await this.importRouteModule(route);
-
-			// Execute global middlewares
-			if (
-				this.lithia.globalMiddlewares &&
-				this.lithia.globalMiddlewares.length > 0
-			) {
-				const globalMiddlewareError = await this.executeMiddlewares(
-					this.lithia.globalMiddlewares,
-					req,
-					res,
-				);
-
-				if (res._ended || globalMiddlewareError) {
-					if (globalMiddlewareError) {
-						throw globalMiddlewareError;
-					}
+		requestContext.run(ctx, async () => {
+			try {
+				// Handle CORS
+				if (this.handleCors(req, res)) {
 					this.logRequest(req, res, start);
 					return;
 				}
-			}
 
-			// Execute middlewares if present
-			if (module.middlewares && module.middlewares.length > 0) {
-				const middlewareError = await this.executeMiddlewares(
-					module.middlewares,
-					req,
-					res,
-				);
+				// Add basic headers
+				res.addHeader("X-Powered-By", "Lithia");
 
-				// If middleware ended response or errored, stop processing
-				if (res._ended || middlewareError) {
-					if (middlewareError) {
-						throw middlewareError;
-					}
+				// Serve static files
+				if (await this.serveStaticFile(req, res)) {
 					this.logRequest(req, res, start);
 					return;
 				}
-			}
 
-			// Execute route handler
-			if (module.default) {
-				await module.default(req, res);
-			}
+				// Find matching route
+				const route = this.findMatchingRoute(req.pathname, req.method);
 
-			// End response if not already ended
-			if (!res._ended) {
-				res.end();
-			}
+				if (!route) {
+					this.sendNotFound(req, res);
+					this.logRequest(req, res, start);
+					return;
+				}
 
-			this.logRequest(req, res, start);
-		} catch (err) {
-			this.handleError(err, req, res, start);
-		}
+				// Update context with matched route
+				ctx.route = route;
+
+				// Extract params if dynamic route
+				if (route.dynamic) {
+					(req as any).params = this.extractParams(req.pathname, route);
+				}
+
+				// Import route module
+				const module = await this.importRouteModule(route);
+
+				// Execute global middlewares
+				if (
+					this.lithia.globalMiddlewares &&
+					this.lithia.globalMiddlewares.length > 0
+				) {
+					const globalMiddlewareError = await this.executeMiddlewares(
+						this.lithia.globalMiddlewares,
+						req,
+						res,
+					);
+
+					if (res._ended || globalMiddlewareError) {
+						if (globalMiddlewareError) {
+							throw globalMiddlewareError;
+						}
+						this.logRequest(req, res, start);
+						return;
+					}
+				}
+
+				// Execute middlewares if present
+				if (module.middlewares && module.middlewares.length > 0) {
+					const middlewareError = await this.executeMiddlewares(
+						module.middlewares,
+						req,
+						res,
+					);
+
+					// If middleware ended response or errored, stop processing
+					if (res._ended || middlewareError) {
+						if (middlewareError) {
+							throw middlewareError;
+						}
+						this.logRequest(req, res, start);
+						return;
+					}
+				}
+
+				// Execute route handler
+				if (module.default) {
+					await module.default(req, res);
+				}
+
+				// End response if not already ended
+				if (!res._ended) {
+					res.end();
+				}
+
+				this.logRequest(req, res, start);
+			} catch (err) {
+				this.handleError(err, req, res, start);
+			}
+		});
 	}
 
 	/**

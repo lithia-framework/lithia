@@ -1,11 +1,14 @@
-import type { LithiaRequest, LithiaResponse } from "@lithiajs/core";
+import { useRequest, useResponse, useRoute } from "@lithiajs/core";
 
-export default async function (req: LithiaRequest, res: LithiaResponse) {
-	// Access injected user from middleware
-	const user = (req as any).user;
-
-	res.json({
-		message: "Hello from Advanced Features!",
-		injected_middleware_data: user,
-	});
+export default async function () {
+	const req = useRequest();
+  const res = useResponse();
+  const route = useRoute();
+  
+  res.json({
+    message: "Advanced Features Route GET",
+    method: req.method,
+    url: req.url(),
+    routePath: route ? route.path : null,
+  })
 }

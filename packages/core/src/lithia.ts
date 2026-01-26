@@ -6,6 +6,7 @@
  * configuration. It also wires a small event emitter used for lifecycle
  * events such as `built` and `error`.
  */
+
 import { EventEmitter } from "node:events";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -24,6 +25,7 @@ import {
 	RouteSchemaVersionMismatchError,
 	RoutesManifestLoadError,
 } from "./errors";
+import type { InjectionKey } from "./hooks";
 import { logger } from "./logger";
 import { coldImport, isAsyncFunction } from "./module-loader";
 import {
@@ -78,6 +80,9 @@ export class Lithia {
 	/** Global middlewares executed for every request */
 	public globalMiddlewares: LithiaMiddleware[] = [];
 
+	/** Global dependency container */
+	public globalDependencies = new Map<any, any>();
+
 	public get options(): LithiaOptions {
 		return this.config;
 	}
@@ -107,6 +112,12 @@ export class Lithia {
 	/** Register a global middleware. */
 	use(middleware: LithiaMiddleware) {
 		this.globalMiddlewares.push(middleware);
+		return this;
+	}
+
+	/** Register a global dependency. */
+	provide<T>(key: InjectionKey<T>, value: T) {
+		this.globalDependencies.set(key, value);
 		return this;
 	}
 
@@ -196,7 +207,6 @@ export class Lithia {
 					);
 				}
 
-				logger.debug("Running custom server bootstrap from _server.ts");
 				await mod.default(this);
 			} catch (err) {
 				// Don't swallow fatal validation errors

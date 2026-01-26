@@ -1,6 +1,6 @@
 import path from "node:path";
 import { Lithia, loadEnv, logger } from "@lithiajs/core";
-import { parseTsConfig } from "@lithiajs/utils";
+import { green, parseTsConfig } from "@lithiajs/utils";
 import chokidar from "chokidar";
 import { defineCommand } from "citty";
 
@@ -55,6 +55,13 @@ const dev = defineCommand({
 		sourceWatcher.on("all", (event, changedPath) => {
 			// only trigger on relevant events
 			if (event === "add" || event === "change" || event === "unlink") {
+				const filename = path.basename(changedPath);
+				if (filename === "_server.ts") {
+					logger.warn(
+						`Detected change in ${green(filename)} file. Please restart the dev server to apply changes.`,
+					);
+				}
+
 				// notify Lithia about the changed file so core can react
 				try {
 					lithia.emit("file:changed", { event, path: changedPath });
