@@ -17,5 +17,7 @@
     "@lithia-js/native-win32-x64-msvc": "0.1.0",
     "@lithia-js/utils": "0.1.0"
   },
-  "changesets": []
+  "changesets": [
+    "tame-bushes-shake"
+  ]
 }
