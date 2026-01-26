@@ -134,7 +134,7 @@ jobs:
           targets: ${{ matrix.settings.target }}
 
       - name: Setup Zig
-        if: ${{ matrix.settings.target == 'armv7-unknown-linux-gnueabihf' }}
+        if: ${{ matrix.settings.target == 'armv7-unknown-linux-gnueabihf' || matrix.settings.target == 'aarch64-unknown-linux-musl' }}
         uses: mlugg/setup-zig@v1
         with:
           version: 0.13.0
@@ -152,14 +152,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y musl-tools
-
-      - name: Install aarch64 musl cross toolchain
-        if: ${{ matrix.settings.target == 'aarch64-unknown-linux-musl' }}
-        run: |
-          curl -fL https://github.com/messense/musl-cross/releases/download/20210928/aarch64-linux-musl-cross.tar.gz -o musl-cross.tar.gz
-          tar -xzf musl-cross.tar.gz
-          sudo mv aarch64-linux-musl-cross /opt/
-          echo "/opt/aarch64-linux-musl-cross/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
