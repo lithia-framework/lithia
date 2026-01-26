@@ -1,12 +1,12 @@
 import {
-  createServer,
-  type IncomingMessage,
-  type Server,
-  type ServerResponse,
+	createServer,
+	type IncomingMessage,
+	type Server,
+	type ServerResponse,
 } from "node:http";
 import {
-  createServer as createHttpsServer,
-  type Server as HttpsServer,
+	createServer as createHttpsServer,
+	type Server as HttpsServer,
 } from "node:https";
 import type { Socket } from "node:net";
 import { Server as SocketIOServer } from "socket.io";
@@ -107,9 +107,9 @@ export class HttpServer {
 		this.eventProcessor = new EventProcessor(lithia);
 	}
 
-  get socketIO(): SocketIOServer | undefined {
-    return this.io;
-  }
+	get socketIO(): SocketIOServer | undefined {
+		return this.io;
+	}
 
 	/**
 	 * Creates the HTTP request handler function.

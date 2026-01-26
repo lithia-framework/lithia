@@ -52,13 +52,15 @@ export class LithiaResponse {
 	on: (event: string, listener: (chunk: unknown) => void) => void;
 
 	private checkIfEnded(): void {
-		if (this._ended) throw new Error("Cannot modify response after it was sent");
+		if (this._ended)
+			throw new Error("Cannot modify response after it was sent");
 	}
 
 	/** Set the numeric HTTP status code. */
 	status(status: number): LithiaResponse {
 		this.checkIfEnded();
-		if (status < 100 || status > 599) throw new Error("Invalid HTTP status code");
+		if (status < 100 || status > 599)
+			throw new Error("Invalid HTTP status code");
 		this.res.statusCode = status;
 		return this;
 	}
@@ -147,12 +149,14 @@ export class LithiaResponse {
 			}
 
 			if (Buffer.isBuffer(data)) {
-				if (!this.res.getHeader("Content-Type")) this.addHeader("Content-Type", "application/octet-stream");
+				if (!this.res.getHeader("Content-Type"))
+					this.addHeader("Content-Type", "application/octet-stream");
 				this.res.end(data);
 			} else if (typeof data === "object") {
 				this.json(data as object);
 			} else {
-				if (!this.res.getHeader("Content-Type")) this.addHeader("Content-Type", "text/plain; charset=utf-8");
+				if (!this.res.getHeader("Content-Type"))
+					this.addHeader("Content-Type", "text/plain; charset=utf-8");
 				this.res.end(String(data));
 			}
 		} finally {
@@ -161,7 +165,11 @@ export class LithiaResponse {
 	}
 
 	/** Queue a cookie to be set on the response. */
-	cookie(name: string, value: string, options: CookieOptions = {}): LithiaResponse {
+	cookie(
+		name: string,
+		value: string,
+		options: CookieOptions = {},
+	): LithiaResponse {
 		this.checkIfEnded();
 		this._cookies.push({ name, value, options });
 		return this;
@@ -184,7 +192,9 @@ export class LithiaResponse {
 			this.addHeader("Content-Length", String(stats.size));
 			const stream = createReadStream(full);
 			stream.pipe(this.res);
-			stream.on("error", () => this.status(404).send({ error: "File not found" }));
+			stream.on("error", () =>
+				this.status(404).send({ error: "File not found" }),
+			);
 		} catch {
 			this.status(404).send({ error: "File not found" });
 		} finally {

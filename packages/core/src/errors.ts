@@ -38,12 +38,7 @@ export class SchemaVersionMismatchError extends LithiaError {
 /** Error used when reading or parsing the manifest fails. */
 export class ManifestLoadError extends LithiaError {
 	constructor(cause: any) {
-		super(
-			"MANIFEST_LOAD_ERROR",
-			"Failed to load manifest.",
-			"fatal",
-			cause,
-		);
+		super("MANIFEST_LOAD_ERROR", "Failed to load manifest.", "fatal", cause);
 	}
 }
 
@@ -80,13 +75,13 @@ export class InvalidRouteModuleError extends LithiaError {
 }
 
 export class InvalidEventModuleError extends LithiaError {
-  constructor(filePath: string, reason: string) {
-    super(
-      "INVALID_EVENT_MODULE",
-      `Invalid event module at '${filePath}': ${reason}. Event modules must export a default function that accepts a Lithia instance.`,
-      "error",
-    );
-  }
+	constructor(filePath: string, reason: string) {
+		super(
+			"INVALID_EVENT_MODULE",
+			`Invalid event module at '${filePath}': ${reason}. Event modules must export a default function that accepts a Lithia instance.`,
+			"error",
+		);
+	}
 }
 
 /** Error raised when the server bootstrap module (_server.ts) is invalid. */

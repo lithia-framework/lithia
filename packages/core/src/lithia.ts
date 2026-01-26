@@ -310,37 +310,33 @@ export class Lithia {
 	 */
 	private async setupConfigWatcher() {
 		try {
-			this.configWatchHandle = await this.configProvider.watchConfig(
-				(ctx) => {
-					this.config = ctx.newConfig;
-					this.emit("config:changed", ctx.newConfig);
+			this.configWatchHandle = await this.configProvider.watchConfig((ctx) => {
+				this.config = ctx.newConfig;
+				this.emit("config:changed", ctx.newConfig);
 
-					try {
-						const diffs =
-							typeof ctx.getDiff === "function" ? ctx.getDiff() : [];
+				try {
+					const diffs = typeof ctx.getDiff === "function" ? ctx.getDiff() : [];
 
-						if (diffs && diffs.length > 0) {
-							logger.event(`Config updated — ${diffs.length} change(s)`);
+					if (diffs && diffs.length > 0) {
+						logger.event(`Config updated — ${diffs.length} change(s)`);
 
-							// Log first 20 changes to avoid spam
-							for (const d of diffs.slice(0, 20)) {
-								const requiresRestart = this.configChangeRequiresRestart(d.key);
+						// Log first 20 changes to avoid spam
+						for (const d of diffs.slice(0, 20)) {
+							const requiresRestart = this.configChangeRequiresRestart(d.key);
 
-								if (requiresRestart) {
-									logger.warn(
-										`  • ${d.key}: ${d.oldValue} → ${d.newValue} (requires server restart)`,
-									);
-								} else {
-									logger.info(`  • ${d.key}: ${d.oldValue} → ${d.newValue}`);
-								}
+							if (requiresRestart) {
+								logger.warn(
+									`  • ${d.key}: ${d.oldValue} → ${d.newValue} (requires server restart)`,
+								);
+							} else {
+								logger.info(`  • ${d.key}: ${d.oldValue} → ${d.newValue}`);
 							}
 						}
-					} catch (logErr) {
-						logger.debug("Failed to summarize config diff:", logErr);
 					}
-				},
-				undefined,
-			);
+				} catch (logErr) {
+					logger.debug("Failed to summarize config diff:", logErr);
+				}
+			}, undefined);
 		} catch (err) {
 			this.emitter.emit("error", err);
 		}
@@ -411,10 +407,7 @@ export class Lithia {
 	 */
 	private validateBootstrapModule(mod: any, filePath: string): void {
 		if (!mod.default) {
-			throw new InvalidBootstrapModuleError(
-				filePath,
-				"missing default export",
-			);
+			throw new InvalidBootstrapModuleError(filePath, "missing default export");
 		}
 
 		if (typeof mod.default !== "function") {
@@ -642,9 +635,9 @@ export class Lithia {
 	): T | null {
 		const manifestPath = path.join(this.outRoot, fileName);
 
-    if (!existsSync(manifestPath)) {
-      return null;
-    }
+		if (!existsSync(manifestPath)) {
+			return null;
+		}
 
 		const raw = readFileSync(manifestPath, "utf-8");
 		const manifest = JSON.parse(raw) as T;
@@ -669,10 +662,10 @@ export class Lithia {
 	loadRoutes() {
 		try {
 			const manifest = this.loadManifest<RoutesManifest>("routes.json");
-      
-      if (!manifest) {
-        return;
-      }
+
+			if (!manifest) {
+				return;
+			}
 
 			this.routes = manifest.routes;
 		} catch (err) {
@@ -698,9 +691,9 @@ export class Lithia {
 		try {
 			const manifest = this.loadManifest<EventsManifest>("events.json");
 
-      if (!manifest) {
-        return;
-      }
+			if (!manifest) {
+				return;
+			}
 
 			this.events = manifest.events;
 		} catch (err) {
