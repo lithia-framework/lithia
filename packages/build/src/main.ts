@@ -2,8 +2,8 @@
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { scanDir } from "@lithiajs/native";
-import { compilerOptions } from "@lithiajs/tsconfig/base.json";
+import { scanDir } from "@lithia.js/native";
+import { compilerOptions } from "@lithia.js/tsconfig/base.json";
 import { defineCommand, runMain } from "citty";
 import { build } from "tsup";
 import { version } from "./meta";

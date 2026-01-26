@@ -17,7 +17,7 @@ First off, thank you for considering contributing to Lithia! We're building some
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by respect, professionalism, and inclusivity. By participating, you are expected to uphold these values. Please report unacceptable behavior to [support@lithiajs.com](mailto:support@lithiajs.com).
+This project and everyone participating in it is governed by respect, professionalism, and inclusivity. By participating, you are expected to uphold these values. Please report unacceptable behavior to [support@lithia.js.com](mailto:support@lithia.js.com).
 
 ## Branch Strategy
 
@@ -624,7 +624,7 @@ When adding features or making changes, update:
 
 - **GitHub Discussions**: [Ask questions](https://github.com/lithia-framework/lithia/discussions)
 - **GitHub Issues**: For bug reports and feature requests
-- **Email**: [support@lithiajs.com](mailto:support@lithiajs.com)
+- **Email**: [support@lithia.js.com](mailto:support@lithia.js.com)
 
 Don't hesitate to ask for help! We're all learning together.
 

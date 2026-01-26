@@ -1,6 +1,6 @@
 import path from "node:path";
-import { Lithia, loadEnv, logger } from "@lithiajs/core";
-import { green, parseTsConfig } from "@lithiajs/utils";
+import { Lithia, loadEnv, logger } from "@lithia.js/core";
+import { green, parseTsConfig } from "@lithia.js/utils";
 import chokidar from "chokidar";
 import { defineCommand } from "citty";
 

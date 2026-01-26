@@ -1,6 +1,6 @@
 import { CreateUserInput, CreateUserSchema } from "@/lib/users/schema";
 import { createUser } from "@/lib/users/service";
-import { LithiaHandler, LithiaMiddleware, validate } from "@lithiajs/core";
+import { LithiaHandler, LithiaMiddleware, validate } from "@lithia.js/core";
 
 export const middlewares: LithiaMiddleware[] = [
   validate({ body: CreateUserSchema})

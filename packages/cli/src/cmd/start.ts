@@ -1,6 +1,6 @@
 import path from "node:path";
-import { Lithia, loadEnv } from "@lithiajs/core";
-import { parseTsConfig } from "@lithiajs/utils";
+import { Lithia, loadEnv } from "@lithia.js/core";
+import { parseTsConfig } from "@lithia.js/utils";
 import { defineCommand } from "citty";
 
 const start = defineCommand({

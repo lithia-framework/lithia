@@ -7,8 +7,8 @@
 		"e:start": "lithia start"
 	},
 	"dependencies": {
-		"@lithiajs/cli": "workspace:*",
-		"@lithiajs/core": "workspace:*",
+		"@lithia.js/cli": "workspace:*",
+		"@lithia.js/core": "workspace:*",
 		"zod": "^4.2.1"
 	}
 }

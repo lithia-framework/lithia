@@ -1,4 +1,4 @@
-import { defineConfig } from '@lithiajs/core';
+import { defineConfig } from '@lithia.js/core';
 
 export default defineConfig({
   debug: true,

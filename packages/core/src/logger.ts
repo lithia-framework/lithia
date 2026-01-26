@@ -1,4 +1,4 @@
-import { blue, bold, green, red, white, yellow } from "@lithiajs/utils";
+import { blue, bold, green, red, white, yellow } from "@lithia.js/utils";
 
 export type LogLevel =
 	| "info"

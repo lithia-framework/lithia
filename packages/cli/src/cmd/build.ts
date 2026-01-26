@@ -1,6 +1,6 @@
 import path from "node:path";
-import { Lithia } from "@lithiajs/core";
-import { parseTsConfig } from "@lithiajs/utils";
+import { Lithia } from "@lithia.js/core";
+import { parseTsConfig } from "@lithia.js/utils";
 import { defineCommand } from "citty";
 
 const build = defineCommand({
