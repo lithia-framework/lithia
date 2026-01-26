@@ -269,11 +269,11 @@ jobs:
         with:
           version: pnpm changeset version
           publish: |
-            pnpm build
-            cd packages/native
-            pnpm artifacts
-            pnpm prepack
-            cd ../..
+            pnpm build &&
+            cd packages/native &&
+            pnpm artifacts &&
+            pnpm prepack &&
+            cd ../.. &&
             pnpm changeset publish
           commit: "chore: version packages"
           title: "chore: version packages"
