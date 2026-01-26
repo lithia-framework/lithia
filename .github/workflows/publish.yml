@@ -176,8 +176,10 @@ jobs:
           shell: bash
           run: >-
             cd ./packages/native &&
-            apk add --no-cache nodejs-current npm &&
+            apk add --no-cache nodejs-current npm icu-libs &&
+            export PATH="/usr/bin:$PATH" &&
             node -v &&
+            npm -v &&
             npm install -f -g pnpm@10 &&
             npm i -g wasm-pack &&
             ${{ matrix.settings.build }}
