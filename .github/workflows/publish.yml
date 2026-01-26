@@ -156,7 +156,7 @@ jobs:
       - name: Install aarch64 musl cross toolchain
         if: ${{ matrix.settings.target == 'aarch64-unknown-linux-musl' }}
         run: |
-          curl -L https://musl.cc/aarch64-linux-musl-cross.tgz | tar -xz
+          curl -L https://github.com/messense/musl-cross/releases/download/20210928/aarch64-linux-musl-cross.tgz | tar -xz
           sudo mv aarch64-linux-musl-cross /opt/
           echo "/opt/aarch64-linux-musl-cross/bin" >> $GITHUB_PATH
 
