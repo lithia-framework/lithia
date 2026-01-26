@@ -15,8 +15,7 @@
 		"url": "https://github.com/lithia-framework/lithia/issues"
 	},
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
-		"publish": ""
+		"build": "tsc -p tsconfig.build.json"
 	},
 	"devDependencies": {
 		"@types/busboy": "^1.5.4",
