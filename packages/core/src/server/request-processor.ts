@@ -15,8 +15,8 @@
 import { createHash } from "node:crypto";
 import { statSync } from "node:fs";
 import { extname, join } from "node:path";
-import type { Route } from "@lithia.js/native";
-import { cyan, green, red, yellow } from "@lithia.js/utils";
+import type { Route } from "@lithia-js/native";
+import { cyan, green, red, yellow } from "@lithia-js/utils";
 import { type RouteContext, routeContext } from "../context/route-context";
 import {
 	InvalidRouteModuleError,

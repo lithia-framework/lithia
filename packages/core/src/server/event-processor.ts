@@ -11,8 +11,8 @@
  */
 
 import { createHash } from "node:crypto";
-import type { Event } from "@lithia.js/native";
-import { green, red } from "@lithia.js/utils";
+import type { Event } from "@lithia-js/native";
+import { green, red } from "@lithia-js/utils";
 import type { Socket } from "socket.io";
 import { type EventContext, eventContext } from "../context/event-context";
 import { InvalidEventModuleError } from "../errors";

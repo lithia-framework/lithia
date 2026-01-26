@@ -26,7 +26,7 @@
  *
  * @example
  * ```typescript
- * import { useParams, inject } from '@lithia.js/core';
+ * import { useParams, inject } from '@lithia-js/core';
  *
  * export default async function handler() {
  *   const { id } = useParams<{ id: string }>();

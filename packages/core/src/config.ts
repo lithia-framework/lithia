@@ -1,4 +1,4 @@
-import type { DeepPartial } from "@lithia.js/utils";
+import type { DeepPartial } from "@lithia-js/utils";
 import {
 	type C12InputConfig,
 	loadConfig,

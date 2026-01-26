@@ -23,8 +23,8 @@ import {
 	type Route,
 	type RoutesManifest,
 	schemaVersion,
-} from "@lithia.js/native";
-import { red } from "@lithia.js/utils";
+} from "@lithia-js/native";
+import { red } from "@lithia-js/utils";
 import sourceMapSupport from "source-map-support";
 import { ConfigProvider, type LithiaOptions } from "./config";
 import { type LithiaContext, lithiaContext } from "./context/lithia-context";

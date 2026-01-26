@@ -11,19 +11,19 @@ function scanDir(
 	const entries: string[] = [];
 	const files = readdirSync(dir, { recursive: true, withFileTypes: true });
 
-  console.log(`Scanning directory: ${dir}\n`);
+	console.log(`Scanning directory: ${dir}\n`);
 
 	for (const file of files) {
 		if (file.isFile()) {
 			const filePath = path.join(file.parentPath, file.name);
 
 			if (options.ignore.some((pattern) => filePath.match(pattern))) {
-        console.log(`Ignoring file: ${filePath}`);
+				console.log(`Ignoring file: ${filePath}`);
 				continue;
 			}
 
 			if (options.include.some((pattern) => filePath.match(pattern))) {
-        console.log(`Including file: ${filePath}`);
+				console.log(`Including file: ${filePath}`);
 				entries.push(filePath);
 			}
 		}

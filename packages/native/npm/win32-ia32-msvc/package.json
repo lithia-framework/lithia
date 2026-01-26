@@ -1,0 +1,32 @@
+{
+  "name": "@lithia-js/native-win32-ia32-msvc",
+  "version": "5.0.0",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "lithia.win32-ia32-msvc.node",
+  "files": [
+    "lithia.win32-ia32-msvc.node"
+  ],
+  "author": "Lucas Arch <luketsx@icloud.com>",
+  "homepage": "https://lithiajs.com",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lithia-framework/lithia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lithia-framework/lithia/issues"
+  }
+}

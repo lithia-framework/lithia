@@ -1,17 +1,19 @@
 {
-	"name": "@lithia.js/cli",
+	"name": "@lithia-js/cli",
 	"version": "5.0.0",
 	"private": false,
 	"bin": {
 		"lithia": "dist/main.js"
 	},
+	"files": [
+		"dist"
+	],
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
-		"check": "biome check --write"
+		"build": "tsc -p tsconfig.build.json"
 	},
 	"dependencies": {
-		"@lithia.js/core": "workspace:*",
-		"@lithia.js/utils": "workspace:*",
+		"@lithia-js/core": "workspace:*",
+		"@lithia-js/utils": "workspace:*",
 		"citty": "^0.2.0",
 		"chokidar": "^5.0.0"
 	},

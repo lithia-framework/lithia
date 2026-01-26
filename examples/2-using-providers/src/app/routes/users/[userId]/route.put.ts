@@ -1,6 +1,6 @@
 import { FindUserParams, FindUserParamsSchema, UpdateUserInput, UpdateUserSchema } from "@/lib/users/schema";
 import { UserService } from "@/lib/users/service";
-import { inject, LithiaHandler, LithiaMiddleware, useParams, validate } from "@lithia.js/core";
+import { inject, LithiaHandler, LithiaMiddleware, useParams, validate } from "@lithia-js/core";
 
 export const middlewares: LithiaMiddleware[] = [
   validate({

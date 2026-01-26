@@ -8,7 +8,7 @@
  */
 
 import type { IncomingHttpHeaders } from "node:http";
-import type { Route } from "@lithia.js/native";
+import type { Route } from "@lithia-js/native";
 import type { Server } from "socket.io";
 import { getRouteContext } from "../context/route-context";
 import type { LithiaRequest, Params, Query } from "../server/request";

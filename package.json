@@ -6,8 +6,7 @@
 	"scripts": {
 		"build": "turbo build",
 		"test": "turbo test",
-		"check": "turbo check",
-		"machete": "turbo machete",
+		"check": "biome check --write",
 		"changeset": "changeset",
 		"version-packages": "changeset version",
 		"release": "changeset publish"

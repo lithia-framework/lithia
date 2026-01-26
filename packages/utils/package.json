@@ -1,5 +1,5 @@
 {
-	"name": "@lithia.js/utils",
+	"name": "@lithia-js/utils",
 	"version": "5.0.0",
 	"private": false,
 	"main": "dist/lib.js",
@@ -11,9 +11,11 @@
 			"import": "./dist/lib.js"
 		}
 	},
+	"files": [
+		"dist"
+	],
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
-		"check": "biome check --write"
+		"build": "tsc -p tsconfig.build.json"
 	},
 	"engines": {
 		"node": ">=20"

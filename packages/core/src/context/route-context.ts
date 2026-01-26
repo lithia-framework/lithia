@@ -8,7 +8,7 @@
  */
 
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { Route } from "@lithia.js/native";
+import type { Route } from "@lithia-js/native";
 import type { Server } from "socket.io";
 import type { LithiaRequest } from "../server/request";
 import type { LithiaResponse } from "../server/response";

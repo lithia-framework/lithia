@@ -1,29 +1,20 @@
 {
-  "name": "@lithia.js/native",
+  "name": "@lithia-js/native",
   "version": "5.0.0",
   "private": false,
   "main": "index.js",
   "types": "index.d.ts",
   "exports": {
     ".": {
-      "import": "./index.js",
-      "require": "./index.js",
-      "default": "./index.js",
-      "types": "./index.d.ts"
+      "types": "./dist/lib.d.ts",
+      "require": "./dist/lib.js",
+      "import": "./dist/lib.js"
     }
   },
-  "files": [
-    "index.js",
-    "index.d.ts",
-    "*.node",
-    "package.json",
-    "README.md"
-  ],
   "scripts": {
-    "napi:build": "napi build --platform --release",
-    "test": "cargo test",
-    "check": "cargo check",
-    "machete": "cargo machete --fix"
+    "artifacts": "napi artifacts --npm-dir npm",
+    "prepack": "napi prepublish -p npm --tag-style npm",
+    "build:rs": "napi build --platform --release"
   },
   "devDependencies": {
     "@napi-rs/cli": "^3.5.1"
@@ -32,7 +23,24 @@
     "node": ">=20"
   },
   "napi": {
-    "binaryName": "lithia"
+    "binaryName": "lithia",
+    "targets": [
+      "x86_64-apple-darwin",
+      "x86_64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "armv7-unknown-linux-gnueabihf",
+      "aarch64-unknown-linux-gnu",
+      "aarch64-apple-darwin",
+      "i686-pc-windows-msvc",
+      "aarch64-unknown-linux-musl",
+      "aarch64-pc-windows-msvc"
+    ]
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "provenance": true
   },
   "optionalDependencies": {}
 }

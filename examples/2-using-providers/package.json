@@ -7,8 +7,8 @@
 		"start": "lithia start"
 	},
 	"dependencies": {
-		"@lithia.js/cli": "file:../../packages/cli",
-		"@lithia.js/core": "file:../../packages/core",
+		"@lithia-js/cli": "file:../../packages/cli",
+		"@lithia-js/core": "file:../../packages/core",
 		"zod": "^4.2.1"
 	}
 }
