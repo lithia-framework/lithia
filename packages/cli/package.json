@@ -6,7 +6,7 @@
 		"lithia": "dist/main.js"
 	},
 	"scripts": {
-		"build": "lithia-build",
+		"build": "tsx ../../build.ts",
 		"check": "biome check --write"
 	},
 	"dependencies": {
@@ -16,10 +16,9 @@
 		"chokidar": "^5.0.0"
 	},
 	"devDependencies": {
-		"@lithia.js/tsconfig": "workspace:*",
-		"@lithia.js/build": "workspace:*"
+		"@lithia.js/tsconfig": "workspace:*"
 	},
-  "engines": {
-    "node": ">=20"
-  }
+	"engines": {
+		"node": ">=20"
+	}
 }

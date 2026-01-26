@@ -12,11 +12,10 @@
 		}
 	},
 	"scripts": {
-		"build": "lithia-build",
+		"build": "tsx ../../build.ts",
 		"check": "biome check --write"
 	},
 	"devDependencies": {
-		"@lithia.js/build": "workspace:*",
 		"@lithia.js/tsconfig": "workspace:*",
 		"@types/busboy": "^1.5.4",
 		"@types/source-map-support": "^0.5.10"
@@ -34,7 +33,7 @@
 		"source-map-support": "^0.5.21",
 		"zod": "^4.2.1"
 	},
-  "engines": {
-    "node": ">=20"
-  }
+	"engines": {
+		"node": ">=20"
+	}
 }

@@ -8,6 +8,7 @@
 	"files": {
 		"ignoreUnknown": false,
 		"includes": [
+			"build.ts",
 			"packages/**",
 			"!packages/lithia_old/*",
 			"!packages/native/*",
@@ -25,9 +26,9 @@
 			"suspicious": {
 				"noExplicitAny": "off"
 			},
-      "style": {
-        "noNonNullAssertion": "off"
-      }
+			"style": {
+				"noNonNullAssertion": "off"
+			}
 		}
 	},
 	"javascript": {

@@ -7,10 +7,10 @@
 		"esModuleInterop": true,
 		"noLib": false,
 		"skipLibCheck": true,
-    "allowJs": false,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "strictPropertyInitialization": false,
+		"allowJs": false,
+		"strict": true,
+		"forceConsistentCasingInFileNames": true,
+		"strictPropertyInitialization": false,
 		"types": ["node"]
 	}
 }
