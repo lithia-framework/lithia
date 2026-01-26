@@ -6,5 +6,8 @@
   "linked": [],
   "access": "public",
   "baseBranch": "canary",
-  "updateInternalDependencies": "patch"
+  "updateInternalDependencies": "patch",
+  "privatePackages": {
+    "version": true
+  }
 }

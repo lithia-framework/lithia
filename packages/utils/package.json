@@ -26,5 +26,10 @@
       "require": "./dist/lib.js",
       "import": "./dist/lib.js"
     }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "provenance": true
   }
 }

@@ -12,8 +12,8 @@
     }
   },
   "scripts": {
+    "prepublishOnly": "napi prepublish -p npm --tag-style npm",
     "artifacts": "napi artifacts --npm-dir npm",
-    "prepack": "napi prepublish -p npm --tag-style npm",
     "build:rs": "napi build --platform --release"
   },
   "devDependencies": {
@@ -24,6 +24,7 @@
   },
   "napi": {
     "binaryName": "lithia",
+    "ghRelease": false,
     "targets": [
       "x86_64-apple-darwin",
       "x86_64-pc-windows-msvc",

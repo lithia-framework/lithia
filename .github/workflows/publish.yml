@@ -280,11 +280,6 @@ jobs:
           pnpm build
           cd packages/native
           pnpm artifacts
-          pnpm prepack
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish packages
         if: steps.changesets.outputs.hasChangesets == 'false'

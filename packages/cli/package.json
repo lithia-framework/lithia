@@ -26,5 +26,10 @@
 	},
 	"engines": {
 		"node": ">=20"
-	}
+	},
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "provenance": true
+  }
 }
