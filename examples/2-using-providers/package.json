@@ -1,5 +1,5 @@
 {
-	"name": "1-basic-api",
+	"name": "2-using-providers",
 	"version": "1.0.0",
 	"scripts": {
 		"e:dev": "lithia dev",

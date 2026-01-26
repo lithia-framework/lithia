@@ -40,7 +40,7 @@ importers:
         specifier: ^4.2.1
         version: 4.3.6
 
-  examples/2-features-test:
+  examples/2-using-providers:
     dependencies:
       '@lithiajs/cli':
         specifier: workspace:*
@@ -49,24 +49,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/core
       zod:
-        specifier: ^4.3.6
+        specifier: ^4.2.1
         version: 4.3.6
-
-  examples/3-advanced-features:
-    dependencies:
-      '@lithiajs/cli':
-        specifier: workspace:*
-        version: link:../../packages/cli
-      '@lithiajs/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@lithiajs/utils':
-        specifier: workspace:*
-        version: link:../../packages/utils
-    devDependencies:
-      '@types/node':
-        specifier: ^25.0.10
-        version: 25.0.10
 
   packages/build:
     devDependencies:
