@@ -9,6 +9,7 @@
 		"skipLibCheck": true,
 		"allowJs": false,
 		"strict": true,
+    "sourceMap": true,
 		"forceConsistentCasingInFileNames": true,
 		"strictPropertyInitialization": false,
 		"types": ["node"]

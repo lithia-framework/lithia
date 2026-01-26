@@ -12,7 +12,7 @@
 		}
 	},
 	"scripts": {
-		"build": "tsx ../../build.ts",
+		"build": "tsc -p tsconfig.build.json",
 		"check": "biome check --write"
 	},
 	"devDependencies": {
