@@ -15,8 +15,8 @@ use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
 use swc_ecma_transforms_module::{common_js, path::Resolver as PathResolverEnum};
 use swc_ecma_transforms_typescript::strip;
 
-use swc_ecma_visit::{VisitMut, VisitMutWith};
 use swc_ecma_ast::{CallExpr, Callee, Expr, ExprOrSpread, Lit, Module, ModuleDecl, ModuleItem};
+use swc_ecma_visit::{VisitMut, VisitMutWith};
 
 use crate::builder::sourcemap::write_sourcemap_and_code;
 
@@ -53,14 +53,14 @@ impl Write for ErrorBuffer {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         self.buffer
             .lock()
-            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Lock failed"))?
+            .map_err(|_| std::io::Error::other("Lock failed"))?
             .write(buf)
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
         self.buffer
             .lock()
-            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Lock failed"))?
+            .map_err(|_| std::io::Error::other("Lock failed"))?
             .flush()
     }
 }
@@ -138,7 +138,9 @@ impl PathsRewriter {
                     // return "./replaced" even if file not found (matches JS tests expectation).
                     if to_list.len() == 1 && !prefix.is_empty() {
                         let mut replaced_for_import = replaced.clone();
-                        if !replaced_for_import.starts_with("./") && !replaced_for_import.starts_with('/') {
+                        if !replaced_for_import.starts_with("./")
+                            && !replaced_for_import.starts_with('/')
+                        {
                             replaced_for_import = format!("./{}", replaced_for_import);
                         }
                         return Some(replaced_for_import);
@@ -195,35 +197,33 @@ impl VisitMut for PathsRewriter {
 
     fn visit_mut_module_item(&mut self, n: &mut ModuleItem) {
         match n {
-            ModuleItem::ModuleDecl(decl) => {
-                match decl {
-                    ModuleDecl::Import(import_decl) => {
-                        let orig = import_decl.src.value.to_string_lossy().to_string();
-                        if let Some(new_spec) = self.resolve_using_paths(&orig) {
-                            import_decl.src.value = Wtf8Atom::from(new_spec);
-                            import_decl.src.raw = None;
-                        }
+            ModuleItem::ModuleDecl(decl) => match decl {
+                ModuleDecl::Import(import_decl) => {
+                    let orig = import_decl.src.value.to_string_lossy().to_string();
+                    if let Some(new_spec) = self.resolve_using_paths(&orig) {
+                        import_decl.src.value = Wtf8Atom::from(new_spec);
+                        import_decl.src.raw = None;
                     }
-                    ModuleDecl::ExportAll(export_all) => {
-                        let orig = export_all.src.value.to_string_lossy().to_string();
-                        if let Some(new_spec) = self.resolve_using_paths(&orig) {
-                            export_all.src.value = Wtf8Atom::from(new_spec);
-                            export_all.src.raw = None;
-                        }
-                    }
-                    ModuleDecl::ExportDecl(_) => {}
-                    ModuleDecl::ExportNamed(named) => {
-                        if let Some(src) = &mut named.src {
-                            let orig = src.value.to_string_lossy().to_string();
-                            if let Some(new_spec) = self.resolve_using_paths(&orig) {
-                                src.value = Wtf8Atom::from(new_spec);
-                                src.raw = None;
-                            }
-                        }
-                    }
-                    _ => {}
                 }
-            }
+                ModuleDecl::ExportAll(export_all) => {
+                    let orig = export_all.src.value.to_string_lossy().to_string();
+                    if let Some(new_spec) = self.resolve_using_paths(&orig) {
+                        export_all.src.value = Wtf8Atom::from(new_spec);
+                        export_all.src.raw = None;
+                    }
+                }
+                ModuleDecl::ExportDecl(_) => {}
+                ModuleDecl::ExportNamed(named) => {
+                    if let Some(src) = &mut named.src {
+                        let orig = src.value.to_string_lossy().to_string();
+                        if let Some(new_spec) = self.resolve_using_paths(&orig) {
+                            src.value = Wtf8Atom::from(new_spec);
+                            src.raw = None;
+                        }
+                    }
+                }
+                _ => {}
+            },
             ModuleItem::Stmt(stmt) => {
                 // For statements, we still need to inspect call expressions (require)
                 stmt.visit_mut_children_with(self);
@@ -235,6 +235,7 @@ impl VisitMut for PathsRewriter {
         // dynamic import: import("x")
         if let Expr::Call(CallExpr { callee, args, .. }) = n {
             // CommonJS require: require("x")
+            #[allow(clippy::collapsible_match)]
             if let Callee::Expr(callee_expr) = callee {
                 if let Expr::Ident(ident) = &**callee_expr {
                     if &*ident.sym == "require" {
@@ -275,7 +276,7 @@ fn try_find_file_on_disk(candidate: &Path) -> Option<PathBuf> {
         }
         p.set_extension(ext);
         if p.exists() && p.is_file() {
-            return Some(std::fs::canonicalize(&p).unwrap_or_else(|_| p));
+            return Some(std::fs::canonicalize(&p).unwrap_or(p));
         }
     }
 
@@ -285,7 +286,7 @@ fn try_find_file_on_disk(candidate: &Path) -> Option<PathBuf> {
             let mut idx = candidate.to_path_buf();
             idx.push(format!("index.{}", ext));
             if idx.exists() && idx.is_file() {
-                return Some(std::fs::canonicalize(&idx).unwrap_or_else(|_| idx));
+                return Some(std::fs::canonicalize(&idx).unwrap_or(idx));
             }
         }
     }
@@ -302,8 +303,9 @@ fn make_relative_or_prefixed(file_dir: &Path, target: &Path) -> String {
     let file_dir_abs = std::fs::canonicalize(file_dir).unwrap_or_else(|_| file_dir.to_path_buf());
 
     // Try to compute a relative path from file_dir to target
-    let rel = pathdiff::diff_paths(&target_abs, &file_dir_abs).unwrap_or_else(|| target_abs.clone());
-    
+    let rel =
+        pathdiff::diff_paths(&target_abs, &file_dir_abs).unwrap_or_else(|| target_abs.clone());
+
     let mut s = rel.to_string_lossy().to_string().replace('\\', "/");
 
     // Ensure relative paths start with ./
@@ -432,7 +434,10 @@ impl TypeScriptCompiler {
                 let rewriter = PathsRewriter {
                     base_url: base_url.clone(),
                     paths: compiled_paths.clone(),
-                    file_dir: input.parent().map(PathBuf::from).unwrap_or_else(|| PathBuf::from(".")),
+                    file_dir: input
+                        .parent()
+                        .map(PathBuf::from)
+                        .unwrap_or_else(|| PathBuf::from(".")),
                 };
 
                 // visit mutably to rewrite specifiers
@@ -442,8 +447,7 @@ impl TypeScriptCompiler {
         }
 
         // agora aplique as transforms normais
-        let module = program
-            .apply(resolver(unresolved_mark, top_level_mark, true));
+        let module = program.apply(resolver(unresolved_mark, top_level_mark, true));
         let module = module.apply(strip(unresolved_mark, top_level_mark));
         let module = module.apply(common_js(
             PathResolverEnum::Default,

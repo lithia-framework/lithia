@@ -111,7 +111,7 @@ pub fn write_routes_manifest(config: &BuildConfig) -> Result<(), String> {
     let json = serde_json::to_string(&manifest)
         .map_err(|e| format!("Failed to serialize routes: {}", e))?;
 
-    fs::write(&config.out_root.join("routes.json"), json)
+    fs::write(config.out_root.join("routes.json"), json)
         .map_err(|e| format!("Failed to write file: {}", e))?;
 
     Ok(())

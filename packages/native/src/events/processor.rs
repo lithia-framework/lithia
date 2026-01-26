@@ -41,7 +41,7 @@ impl NativeEventProcessor {
     }
 
     /// Convenience: process a collection of files into events.
-    pub fn process(&self, files: &Vec<FileInfo>) -> Vec<Event> {
+    pub fn process(&self, files: &[FileInfo]) -> Vec<Event> {
         files.iter().map(|f| self.process_event_file(f)).collect()
     }
 }

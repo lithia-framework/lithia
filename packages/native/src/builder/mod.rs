@@ -47,7 +47,7 @@ pub fn build_project(source_root: String, out_root: String) -> napi::Result<()> 
 
     // Load configuration
     let config =
-        BuildConfig::new(source_root, out_root).map_err(|e| napi::Error::from_reason(e))?;
+        BuildConfig::new(source_root, out_root).map_err(napi::Error::from_reason)?;
 
     fs::remove_dir_all(&config.out_root).ok();
 
@@ -77,7 +77,7 @@ pub fn build_project(source_root: String, out_root: String) -> napi::Result<()> 
 
             let file_start = Instant::now();
             compiler
-                .compile_file(&std::path::Path::new(&file.full_path), &output_path)
+                .compile_file(std::path::Path::new(&file.full_path), &output_path)
                 .map(|_| CompileResult {
                     output_path: output_path.to_string_lossy().to_string(),
                     duration_ms: file_start.elapsed().as_secs_f64() * 1000.0,
@@ -117,10 +117,10 @@ pub fn build_project(source_root: String, out_root: String) -> napi::Result<()> 
     build_result.total_duration_ms = start.elapsed().as_secs_f64() * 1000.0;
 
     // Generate routes manifest using helper
-    crate::router::write_routes_manifest(&config).map_err(|e| napi::Error::from_reason(e))?;
+    crate::router::write_routes_manifest(&config).map_err(napi::Error::from_reason)?;
 
     // Events manifest: build from already-scanned `ts_files` (no extra scan)
-    crate::events::write_events_manifest(&config).map_err(|e| napi::Error::from_reason(e))?;
+    crate::events::write_events_manifest(&config).map_err(napi::Error::from_reason)?;
 
     Ok(())
 }
