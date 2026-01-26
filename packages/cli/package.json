@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/cli",
-	"version": "5.0.0",
+	"version": "0.1.0",
 	"private": false,
 	"bin": {
 		"lithia": "dist/main.js"

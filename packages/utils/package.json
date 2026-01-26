@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/utils",
-	"version": "5.0.0",
+	"version": "0.1.0",
 	"private": false,
 	"main": "dist/lib.js",
 	"types": "dist/lib.d.ts",
