@@ -4,26 +4,26 @@
 	"private": false,
 	"main": "dist/lib.js",
 	"types": "dist/lib.d.ts",
-	"exports": {
-		".": {
-			"types": "./dist/lib.d.ts",
-			"require": "./dist/lib.js",
-			"import": "./dist/lib.js"
-		}
-	},
-	"files": [
-		"dist"
-	],
+   "author": "Lucas Arch <luketsx@icloud.com>",
+  "homepage": "https://lithiajs.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lithia-framework/lithia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lithia-framework/lithia/issues"
+  },
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
-    "publish": ""
+    "build": "tsc -p tsconfig.build.json",
+		"publish": ""
 	},
 	"devDependencies": {
 		"@types/busboy": "^1.5.4",
 		"@types/source-map-support": "^0.5.10"
 	},
 	"dependencies": {
-		"@lithia-js/native": "workspace:*",
+    "@lithia-js/native": "workspace:*",
 		"@lithia-js/utils": "workspace:*",
 		"busboy": "^1.6.0",
 		"c12": "^3.3.3",
@@ -35,6 +35,13 @@
 		"zod": "^4.2.1"
 	},
 	"engines": {
-		"node": ">=20"
-	}
+    "node": ">=20"
+	},
+  "exports": {
+    ".": {
+      "types": "./dist/lib.d.ts",
+      "require": "./dist/lib.js",
+      "import": "./dist/lib.js"
+    }
+  }
 }

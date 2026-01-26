@@ -5,9 +5,16 @@
 	"bin": {
 		"lithia": "dist/main.js"
 	},
-	"files": [
-		"dist"
-	],
+	"author": "Lucas Arch <luketsx@icloud.com>",
+	"homepage": "https://lithiajs.com",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/lithia-framework/lithia.git"
+	},
+	"bugs": {
+		"url": "https://github.com/lithia-framework/lithia/issues"
+	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json"
 	},

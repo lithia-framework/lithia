@@ -3,7 +3,18 @@
 	"version": "0.0.0",
 	"private": true,
 	"packageManager": "pnpm@10.0.0",
-	"scripts": {
+  "author": "Lucas Arch <luketsx@icloud.com>",
+  "homepage": "https://lithiajs.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lithia-framework/lithia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lithia-framework/lithia/issues"
+  },
+  "keywords": [],
+  "scripts": {
 		"build": "turbo build",
 		"build:rs": "turbo build:rs",
 		"test": "turbo test",
