@@ -106,7 +106,6 @@ jobs:
               export JEMALLOC_SYS_WITH_LG_PAGE=16 &&
               rustup toolchain install stable &&
               rustup target add aarch64-unknown-linux-musl &&
-              cd packages/native &&
               pnpm napi:build --target aarch64-unknown-linux-musl &&
               /usr/bin/aarch64-linux-musl-strip *.node
           
