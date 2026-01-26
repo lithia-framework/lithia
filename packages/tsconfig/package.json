@@ -6,6 +6,6 @@
 		"base.json"
 	],
   "engines": {
-    "node": ">=22"
+    "node": ">=20"
   }
 }

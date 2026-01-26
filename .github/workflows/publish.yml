@@ -178,7 +178,8 @@ jobs:
           options: -v ${{ env.HOME }}/.cargo/git:/root/.cargo/git -v ${{ env.HOME }}/.cargo/registry:/root/.cargo/registry -v ${{ github.workspace }}:/build -w /build
           shell: bash
           run: |
-            npm install -g pnpm@10
+            corepack enable
+            corepack prepare pnpm@10 --activate
             pnpm install --frozen-lockfile
             ${{ matrix.settings.build }}
 

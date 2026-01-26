@@ -20,6 +20,6 @@
 		"@lithia.js/build": "workspace:*"
 	},
   "engines": {
-    "node": ">=22"
+    "node": ">=20"
   }
 }
