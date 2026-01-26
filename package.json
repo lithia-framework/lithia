@@ -5,6 +5,7 @@
 	"packageManager": "pnpm@10.0.0",
 	"scripts": {
 		"build": "turbo build",
+    "build:rs": "turbo build:rs",
 		"test": "turbo test",
 		"check": "biome check --write",
 		"changeset": "changeset",

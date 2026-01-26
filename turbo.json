@@ -4,6 +4,7 @@
 		"build": {
 			"dependsOn": ["^build"]
 		},
+    "build:rs": {},
     "test": {},
     "check": {},
     "machete": {}
