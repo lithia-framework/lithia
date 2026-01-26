@@ -1,9 +1,7 @@
-**/node_modules
-pnpm-lock.json
-
-# Build artifacts
-
+.turbo
+node_modules/
 npm/
+pnpm-lock.json
 *.node
 tsconfig.build.json
-.tsbuildinfo
+tsconfig.build.tsbuildinfo
