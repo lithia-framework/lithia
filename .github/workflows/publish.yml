@@ -177,7 +177,6 @@ jobs:
           run: >-
             cd ./packages/${{ inputs.package }} &&
             npm install -f -g pnpm@10 &&
-            corepack enable &&
             npm i -g wasm-pack &&
             ${{ matrix.settings.build }}
 
