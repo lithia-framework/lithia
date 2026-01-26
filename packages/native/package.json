@@ -1,6 +1,6 @@
 {
   "name": "@lithia-js/native",
-  "version": "1.0.0-canary.1",
+  "version": "1.0.0-canary.2",
   "private": false,
   "main": "index.js",
   "types": "index.d.ts",
@@ -43,15 +43,15 @@
     "provenance": true
   },
   "optionalDependencies": {
-    "@lithia-js/native-darwin-x64": "1.0.0-canary.1",
-    "@lithia-js/native-win32-x64-msvc": "1.0.0-canary.1",
-    "@lithia-js/native-linux-x64-gnu": "1.0.0-canary.1",
-    "@lithia-js/native-linux-x64-musl": "1.0.0-canary.1",
-    "@lithia-js/native-linux-arm-gnueabihf": "1.0.0-canary.1",
-    "@lithia-js/native-linux-arm64-gnu": "1.0.0-canary.1",
-    "@lithia-js/native-darwin-arm64": "1.0.0-canary.1",
-    "@lithia-js/native-win32-ia32-msvc": "1.0.0-canary.1",
-    "@lithia-js/native-linux-arm64-musl": "1.0.0-canary.1",
-    "@lithia-js/native-win32-arm64-msvc": "1.0.0-canary.1"
+    "@lithia-js/native-darwin-x64": "1.0.0-canary.2",
+    "@lithia-js/native-win32-x64-msvc": "1.0.0-canary.2",
+    "@lithia-js/native-linux-x64-gnu": "1.0.0-canary.2",
+    "@lithia-js/native-linux-x64-musl": "1.0.0-canary.2",
+    "@lithia-js/native-linux-arm-gnueabihf": "1.0.0-canary.2",
+    "@lithia-js/native-linux-arm64-gnu": "1.0.0-canary.2",
+    "@lithia-js/native-darwin-arm64": "1.0.0-canary.2",
+    "@lithia-js/native-win32-ia32-msvc": "1.0.0-canary.2",
+    "@lithia-js/native-linux-arm64-musl": "1.0.0-canary.2",
+    "@lithia-js/native-win32-arm64-msvc": "1.0.0-canary.2"
   }
 }

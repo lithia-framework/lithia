@@ -1,6 +1,6 @@
 {
   "name": "@lithia-js/native-linux-x64-musl",
-  "version": "1.0.0-canary.1",
+  "version": "1.0.0-canary.2",
   "private": true,
   "os": [
     "linux"

@@ -1,5 +1,11 @@
 # @lithia-js/utils
 
+## 1.0.0-canary.2
+
+### Patch Changes
+
+- .npmignore update
+
 ## 1.0.0-canary.1
 
 ### Patch Changes

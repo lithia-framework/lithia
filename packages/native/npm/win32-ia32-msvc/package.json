@@ -1,6 +1,6 @@
 {
   "name": "@lithia-js/native-win32-ia32-msvc",
-  "version": "1.0.0-canary.1",
+  "version": "1.0.0-canary.2",
   "private": true,
   "os": [
     "win32"
