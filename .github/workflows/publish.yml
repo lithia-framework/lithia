@@ -99,9 +99,11 @@ jobs:
           # Linux ARM64 MUSL
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |
               cd packages/native
-              pnpm napi:build --target aarch64-unknown-linux-musl --use-napi-cross
+              pnpm napi:build --target aarch64-unknown-linux-musl
+
           
           # Linux ARMv7
           - host: ubuntu-latest
@@ -134,22 +136,21 @@ jobs:
           targets: ${{ matrix.settings.target }}
 
       - name: Setup Zig
-        if: ${{ matrix.settings.target == 'armv7-unknown-linux-gnueabihf' || matrix.settings.target == 'aarch64-unknown-linux-musl' }}
+        if: ${{ matrix.settings.target == 'armv7-unknown-linux-gnueabihf' }}
         uses: mlugg/setup-zig@v1
         with:
           version: 0.13.0
 
-      - name: Configure Zig as C compiler (aarch64 musl)
-        if: ${{ matrix.settings.target == 'aarch64-unknown-linux-musl' }}
+      - name: Install Alpine dependencies (musl aarch64)
+        if: ${{ matrix.settings.docker }}
         run: |
-          echo "CC=zig cc" >> $GITHUB_ENV
-          echo "CXX=zig c++" >> $GITHUB_ENV
-
-      - name: Configure cc-rs target (aarch64 musl)
-        if: ${{ matrix.settings.target == 'aarch64-unknown-linux-musl' }}
-        run: |
-          echo "CFLAGS_aarch64_unknown_linux_musl=--target=aarch64-linux-musl" >> $GITHUB_ENV
-          echo "CXXFLAGS_aarch64_unknown_linux_musl=--target=aarch64-linux-musl" >> $GITHUB_ENV
+          apk add --no-cache \
+            clang-static \
+            llvm-dev \
+            libc-dev \
+            build-base \
+            python3 \
+            make
 
       - name: Cache cargo
         uses: actions/cache@v4
