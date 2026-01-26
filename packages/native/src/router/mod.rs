@@ -7,10 +7,12 @@
 //! - `RoutesManifest`: top-level manifest object sent to the host.
 //! - `RouteCore`: internal representation used inside the Rust codebase.
 
+use std::fs;
+
 use napi_derive::napi;
 use serde::Serialize;
 
-use crate::router::convention::MatchedMethodSuffix;
+use crate::{builder::config::BuildConfig, router::{convention::MatchedMethodSuffix, processor::{NativeRouteProcessor, RouteProcessor}}, scanner::FileScanner, schema_version};
 
 pub mod convention;
 pub mod processor;
@@ -71,4 +73,46 @@ impl From<RouteCore> for Route {
             regex: core.regex,
         }
     }
+}
+
+
+pub fn write_routes_manifest(config: &BuildConfig) -> Result<(), String> {
+    let routes_path = config.out_root.join("app").join("routes");
+    if !routes_path.exists() {
+        return Ok(());
+    }
+
+    let route_files = crate::scanner::NativeFileScanner::new()
+        .scan_dir(
+            &[
+                config.output_path_str(),
+                "app".to_string(),
+                "routes".to_string(),
+            ],
+            Some(crate::scanner::ScanOptions {
+                include: Some(vec!["**/*.js".to_string()]),
+                ignore: None,
+            }),
+        )
+        .map_err(|e| format!("scan failed: {}", e))?;
+
+    let processor = NativeRouteProcessor::new(None, None);
+
+    let version = schema_version().to_string();
+    let routes: Vec<Route> = route_files
+        .iter()
+        .map(|file| processor.process_route_file(file))
+        .filter(|route| route.method.is_some())
+        .map(Route::from)
+        .collect();
+
+    let manifest = RoutesManifest { version, routes };
+
+    let json = serde_json::to_string(&manifest)
+        .map_err(|e| format!("Failed to serialize routes: {}", e))?;
+
+    fs::write(&config.out_root.join("routes.json"), json)
+        .map_err(|e| format!("Failed to write file: {}", e))?;
+
+    Ok(())
 }

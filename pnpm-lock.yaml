@@ -52,6 +52,18 @@ importers:
         specifier: ^4.2.1
         version: 4.3.6
 
+  examples/3-using-events:
+    dependencies:
+      '@lithiajs/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@lithiajs/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      zod:
+        specifier: ^4.2.1
+        version: 4.3.6
+
   packages/build:
     devDependencies:
       '@lithiajs/native':

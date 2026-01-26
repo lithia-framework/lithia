@@ -10,6 +10,7 @@ use napi_derive::napi;
 mod builder;
 mod router;
 mod scanner;
+mod events;
 
 /// Compile the project and emit artifacts.
 ///

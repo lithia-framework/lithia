@@ -1,0 +1,14 @@
+{
+	"name": "3-using-events",
+	"version": "1.0.0",
+	"scripts": {
+		"e:dev": "lithia dev",
+		"e:build": "lithia build",
+		"e:start": "lithia start"
+	},
+	"dependencies": {
+		"@lithiajs/cli": "workspace:*",
+		"@lithiajs/core": "workspace:*",
+		"zod": "^4.2.1"
+	}
+}

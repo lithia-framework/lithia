@@ -6,11 +6,6 @@
 //!
 //! Exposes the native `build_project` entrypoint used by the host.
 
-use crate::{
-    router::{
-        Route, RoutesManifest, processor::{NativeRouteProcessor, RouteProcessor}
-    }, schema_version,
-};
 use napi_derive::napi;
 use rayon::prelude::*;
 use std::{fs, time::Instant};
@@ -53,7 +48,7 @@ pub fn build_project(source_root: String, out_root: String) -> napi::Result<()> 
     // Load configuration
     let config =
         BuildConfig::new(source_root, out_root).map_err(|e| napi::Error::from_reason(e))?;
-        
+
     fs::remove_dir_all(&config.out_root).ok();
 
     // Scan TypeScript files using glob patterns
@@ -104,13 +99,14 @@ pub fn build_project(source_root: String, out_root: String) -> napi::Result<()> 
     // Build summary is emitted to the host (Node) via the native API; avoid printing here.
 
     if build_result.has_failures() {
-        let failures_msg = build_result.failures
+        let failures_msg = build_result
+            .failures
             .iter()
             .take(5)
             .map(|e| e.as_str())
             .collect::<Vec<_>>()
             .join("\n\n");
-        
+
         return Err(napi::Error::from_reason(format!(
             "Build completed with {} failures:\n\n{}",
             build_result.failures.len(),
@@ -120,40 +116,11 @@ pub fn build_project(source_root: String, out_root: String) -> napi::Result<()> 
 
     build_result.total_duration_ms = start.elapsed().as_secs_f64() * 1000.0;
 
-    let routes_path = config.out_root.join("app").join("routes");
-    if routes_path.exists() {
-        let route_files = crate::scanner::NativeFileScanner::new()
-            .scan_dir(
-                &[
-                    config.output_path_str(),
-                    "app".to_string(),
-                    "routes".to_string(),
-                ],
-                Some(crate::scanner::ScanOptions {
-                    include: Some(vec!["**/*.js".to_string()]),
-                    ignore: None,
-                }),
-            )
-            .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))?;
+    // Generate routes manifest using helper
+    crate::router::write_routes_manifest(&config).map_err(|e| napi::Error::from_reason(e))?;
 
-        let processor = NativeRouteProcessor::new(None, None);
-
-        let version = schema_version().to_string();
-        let routes: Vec<Route> = route_files
-            .iter()
-            .map(|file| processor.process_route_file(file))
-            .filter(|route| route.method.is_some())
-            .map(Route::from)
-            .collect();
-
-        let manifest = RoutesManifest { version, routes };
-
-        let json = serde_json::to_string(&manifest)
-            .map_err(|e| napi::Error::from_reason(format!("Failed to serialize routes: {}", e)))?;
-
-        fs::write(&config.out_root.join("routes.json"), json)
-            .map_err(|e| napi::Error::from_reason(format!("Failed to write file: {}", e)))?;
-    }
+    // Events manifest: build from already-scanned `ts_files` (no extra scan)
+    crate::events::write_events_manifest(&config).map_err(|e| napi::Error::from_reason(e))?;
 
     Ok(())
 }
