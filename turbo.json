@@ -4,6 +4,10 @@
 		"build": {
 			"dependsOn": ["^build"]
 		},
+    "napi:build": {
+      "cache": true,
+      "outputs": ["*.node", "*.js", "*.d.ts"]
+    },
     "test": {},
     "check": {},
     "machete": {}

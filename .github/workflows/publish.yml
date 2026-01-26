@@ -224,6 +224,18 @@ jobs:
           name: native-${{ matrix.settings.target }}
           path: packages/native
 
+      - name: Move native binary into npm folder
+        run: |
+          cd packages/native
+          mkdir -p npm/${{ matrix.settings.target }}
+          cp ./*.node npm/${{ matrix.settings.target }}/ 2>/dev/null || true
+          ls -R npm/
+
+      - name: Prepare native package
+        run: |
+          cd packages/native
+          pnpm napi prepublish -t npm --tag-style npm
+
       - name: Build TypeScript packages
         run: pnpm build
 
