@@ -78,50 +78,30 @@ jobs:
           # Linux x64 GNU
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
             build: |
-              set -e &&
-              cd packages/native &&
-              pnpm napi:build --target x86_64-unknown-linux-gnu &&
-              strip *.node
+              cd packages/native
+              pnpm napi:build --target x86_64-unknown-linux-gnu --use-napi-cross
           
           # Linux x64 MUSL
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |
-              set -e &&
-              apk update &&
-              cd packages/native &&
-              pnpm napi:build --target x86_64-unknown-linux-musl &&
-              strip *.node
+              cd packages/native
+              pnpm napi:build --target x86_64-unknown-linux-musl --use-napi-cross
           
           # Linux ARM64 GNU
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
             build: |
-              set -e &&
-              export JEMALLOC_SYS_WITH_LG_PAGE=16 &&
-              rustup target add aarch64-unknown-linux-gnu &&
-              export CC_aarch64_unknown_linux_gnu=clang &&
-              cd packages/native &&
-              pnpm napi:build --target aarch64-unknown-linux-gnu &&
-              aarch64-unknown-linux-gnu-strip *.node
+              cd packages/native
+              pnpm napi:build --target aarch64-unknown-linux-gnu --use-napi-cross
           
           # Linux ARM64 MUSL
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |
-              set -e &&
-              apk update &&
-              export JEMALLOC_SYS_WITH_LG_PAGE=16 &&
-              rustup toolchain install stable &&
-              rustup target add aarch64-unknown-linux-musl &&
-              cd packages/native &&
-              pnpm napi:build --target aarch64-unknown-linux-musl &&
-              /usr/bin/aarch64-linux-musl-strip *.node
+              cd packages/native
+              pnpm napi:build --target aarch64-unknown-linux-musl --use-napi-cross
           
           # Linux ARMv7
           - host: ubuntu-latest
@@ -170,21 +150,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build in Docker
-        if: ${{ matrix.settings.docker }}
-        uses: addnab/docker-run-action@v3
-        with:
-          image: ${{ matrix.settings.docker }}
-          options: -v ${{ env.HOME }}/.cargo/git:/root/.cargo/git -v ${{ env.HOME }}/.cargo/registry:/root/.cargo/registry -v ${{ github.workspace }}:/build -w /build
-          shell: bash
-          run: |
-            corepack enable
-            corepack prepare pnpm@10 --activate
-            pnpm install --frozen-lockfile
-            ${{ matrix.settings.build }}
-
       - name: Build
-        if: ${{ !matrix.settings.docker }}
         run: ${{ matrix.settings.build }}
         shell: bash
 
