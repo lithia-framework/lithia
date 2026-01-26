@@ -2,9 +2,9 @@
 	"name": "3-using-events",
 	"version": "1.0.0",
 	"scripts": {
-		"e:dev": "lithia dev",
-		"e:build": "lithia build",
-		"e:start": "lithia start"
+		"dev": "lithia dev",
+		"build": "lithia build",
+		"start": "lithia start"
 	},
 	"dependencies": {
 		"@lithia.js/cli": "file:../../packages/cli",
