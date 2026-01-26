@@ -1,0 +1,11 @@
+{
+  "mode": "pre",
+  "tag": "canary",
+  "initialVersions": {
+    "@lithia-js/cli": "5.0.0",
+    "@lithia-js/core": "5.0.0",
+    "@lithia-js/native": "5.0.0",
+    "@lithia-js/utils": "5.0.0"
+  },
+  "changesets": []
+}

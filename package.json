@@ -5,19 +5,19 @@
 	"packageManager": "pnpm@10.0.0",
 	"scripts": {
 		"build": "turbo build",
-    "build:rs": "turbo build:rs",
+		"build:rs": "turbo build:rs",
 		"test": "turbo test",
 		"check": "biome check --write",
 		"changeset": "changeset",
 		"version-packages": "changeset version",
-		"release": "changeset publish"
+		"release": "changeset publish",
+		"pre:enter": "changeset pre enter canary",
+		"pre:exit": "changeset pre exit"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.0",
 		"@changesets/cli": "^2.29.8",
 		"@types/node": "^25.0.10",
-		"glob": "^13.0.0",
-		"tsup": "^8.5.1",
 		"tsx": "^4.21.0",
 		"turbo": "^2.7.6",
 		"typescript": "^5.9.3"
