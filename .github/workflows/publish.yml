@@ -176,7 +176,6 @@ jobs:
           shell: bash
           run: >-
             cd ./packages/native &&
-            node -v &&
             npm install -f -g pnpm@10 &&
             npm i -g wasm-pack &&
             ${{ matrix.settings.build }}
