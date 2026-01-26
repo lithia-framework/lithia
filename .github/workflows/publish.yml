@@ -35,7 +35,7 @@ jobs:
             target: x86_64-apple-darwin
             build: |
               cd packages/native
-              pnpm build:rust --target x86_64-apple-darwin
+              pnpm napi:build --target x86_64-apple-darwin
               strip -x *.node
           
           # macOS ARM64
@@ -48,7 +48,7 @@ jobs:
               export CXX=$(xcrun -f clang++)
               SYSROOT=$(xcrun --sdk macosx --show-sdk-path)
               export CFLAGS="-isysroot $SYSROOT -isystem $SYSROOT"
-              pnpm build:rust --target aarch64-apple-darwin
+              pnpm napi:build --target aarch64-apple-darwin
               strip -x *.node
           
           # Windows x64
@@ -56,7 +56,7 @@ jobs:
             target: x86_64-pc-windows-msvc
             build: |
               cd packages/native
-              pnpm build:rust --target x86_64-pc-windows-msvc
+              pnpm napi:build --target x86_64-pc-windows-msvc
           
           # Windows x86
           - host: windows-latest
@@ -64,7 +64,7 @@ jobs:
             build: |
               cd packages/native
               export CARGO_PROFILE_RELEASE_LTO=false
-              pnpm build:rust --target i686-pc-windows-msvc
+              pnpm napi:build --target i686-pc-windows-msvc
           
           # Windows ARM64
           - host: windows-latest
@@ -73,7 +73,7 @@ jobs:
               cd packages/native
               export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=256
               export CARGO_PROFILE_RELEASE_LTO=false
-              pnpm build:rust --target aarch64-pc-windows-msvc
+              pnpm napi:build --target aarch64-pc-windows-msvc
           
           # Linux x64 GNU
           - host: ubuntu-latest
@@ -82,7 +82,7 @@ jobs:
             build: |
               set -e &&
               cd packages/native &&
-              pnpm build:rust --target x86_64-unknown-linux-gnu &&
+              pnpm napi:build --target x86_64-unknown-linux-gnu &&
               strip *.node
           
           # Linux x64 MUSL
@@ -93,7 +93,7 @@ jobs:
               set -e &&
               apk update &&
               cd packages/native &&
-              pnpm build:rust --target x86_64-unknown-linux-musl &&
+              pnpm napi:build --target x86_64-unknown-linux-musl &&
               strip *.node
           
           # Linux ARM64 GNU
@@ -106,7 +106,7 @@ jobs:
               rustup target add aarch64-unknown-linux-gnu &&
               export CC_aarch64_unknown_linux_gnu=clang &&
               cd packages/native &&
-              pnpm build:rust --target aarch64-unknown-linux-gnu &&
+              pnpm napi:build --target aarch64-unknown-linux-gnu &&
               aarch64-unknown-linux-gnu-strip *.node
           
           # Linux ARM64 MUSL
@@ -120,7 +120,7 @@ jobs:
               rustup toolchain install stable &&
               rustup target add aarch64-unknown-linux-musl &&
               cd packages/native &&
-              pnpm build:rust --target aarch64-unknown-linux-musl &&
+              pnpm napi:build --target aarch64-unknown-linux-musl &&
               /usr/bin/aarch64-linux-musl-strip *.node
           
           # Linux ARMv7
@@ -128,7 +128,7 @@ jobs:
             target: armv7-unknown-linux-gnueabihf
             build: |
               cd packages/native
-              pnpm build:rust --target armv7-unknown-linux-gnueabihf --use-napi-cross
+              pnpm napi:build --target armv7-unknown-linux-gnueabihf --use-napi-cross
 
     name: Build Native - ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
