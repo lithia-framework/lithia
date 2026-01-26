@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/cli",
-	"version": "1.0.0-canary.0",
+	"version": "1.0.0-canary.1",
 	"private": false,
 	"bin": {
 		"lithia": "dist/main.js"
@@ -27,9 +27,9 @@
 	"engines": {
 		"node": ">=20"
 	},
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "access": "public",
-    "provenance": true
-  }
+	"publishConfig": {
+		"registry": "https://registry.npmjs.org/",
+		"access": "public",
+		"provenance": true
+	}
 }
