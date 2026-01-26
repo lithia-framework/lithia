@@ -175,7 +175,9 @@ jobs:
           options: -v ${{ env.HOME }}/.cargo/git:/root/.cargo/git -v ${{ env.HOME }}/.cargo/registry:/root/.cargo/registry -v ${{ github.workspace }}:/build -w /build
           shell: bash
           run: >-
-            cd ./packages/${{ inputs.package }} &&
+            cd ./packages/native &&
+            apk add --no-cache nodejs-current npm &&
+            node -v &&
             npm install -f -g pnpm@10 &&
             npm i -g wasm-pack &&
             ${{ matrix.settings.build }}
