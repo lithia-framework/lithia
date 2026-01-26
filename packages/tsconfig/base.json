@@ -10,6 +10,9 @@
 		"allowJs": false,
 		"strict": true,
     "sourceMap": true,
+    "declaration": true,
+    "composite": true,
+    "removeComments": false,
 		"forceConsistentCasingInFileNames": true,
 		"strictPropertyInitialization": false,
 		"types": ["node"]
