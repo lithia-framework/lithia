@@ -99,15 +99,12 @@ jobs:
           # Linux ARM64 MUSL
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:node22-alpine
+            docker: ghcr.io/lithia-framework/lithia-napi-rs:22-alpine
             build: |
-              set -e &&
-              apk update &&
-              export JEMALLOC_SYS_WITH_LG_PAGE=16 &&
-              rustup toolchain install stable &&
-              rustup target add aarch64-unknown-linux-musl &&
-              pnpm napi:build --target aarch64-unknown-linux-musl &&
-              /usr/bin/aarch64-linux-musl-strip *.node
+                set -e &&
+                export JEMALLOC_SYS_WITH_LG_PAGE=16 &&
+                pnpm napi:build --target aarch64-unknown-linux-musl &&
+                /usr/bin/aarch64-linux-musl-strip *.node
           
           # Linux ARMv7
           - host: ubuntu-latest
@@ -176,8 +173,6 @@ jobs:
           shell: bash
           run: >-
             cd ./packages/native &&
-            npm install -f -g pnpm@10 &&
-            npm i -g wasm-pack &&
             ${{ matrix.settings.build }}
 
       - name: Upload artifact
