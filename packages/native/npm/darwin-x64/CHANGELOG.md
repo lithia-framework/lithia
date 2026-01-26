@@ -1,5 +1,11 @@
 # @lithia-js/native-darwin-x64
 
+## 1.0.0-canary.1
+
+### Patch Changes
+
+- 2992e91: Manifest update for workflow compatibility
+
 ## 1.0.0-canary.0
 
 ### Major Changes

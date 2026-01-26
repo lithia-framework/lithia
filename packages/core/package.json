@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/core",
-	"version": "1.0.0-canary.0",
+	"version": "1.0.0-canary.1",
 	"private": false,
 	"main": "dist/lib.js",
 	"types": "dist/lib.d.ts",
@@ -44,9 +44,9 @@
 			"import": "./dist/lib.js"
 		}
 	},
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "access": "public",
-    "provenance": true
-  }
+	"publishConfig": {
+		"registry": "https://registry.npmjs.org/",
+		"access": "public",
+		"provenance": true
+	}
 }

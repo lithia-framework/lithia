@@ -18,6 +18,7 @@
     "@lithia-js/utils": "0.1.0"
   },
   "changesets": [
+    "gold-cycles-kick",
     "tame-bushes-shake"
   ]
 }
