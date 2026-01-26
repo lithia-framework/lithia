@@ -30,6 +30,7 @@
 		"hookable": "^6.0.1",
 		"import-fresh": "^3.3.1",
 		"klona": "^2.0.6",
+		"socket.io": "^4.8.1",
 		"source-map-support": "^0.5.21",
 		"zod": "^4.2.1"
 	}

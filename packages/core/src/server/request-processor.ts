@@ -1,9 +1,23 @@
+/**
+ * Request processor module for HTTP request handling.
+ *
+ * This module is the core of Lithia's request processing pipeline. It handles:
+ * - Route matching and parameter extraction
+ * - Static file serving
+ * - CORS preflight and headers
+ * - Middleware execution chain
+ * - Route handler invocation
+ * - Error handling and logging
+ *
+ * @module server/request-processor
+ */
+
 import { createHash } from "node:crypto";
 import { statSync } from "node:fs";
 import { extname, join } from "node:path";
 import type { Route } from "@lithiajs/native";
 import { cyan, green, red, yellow } from "@lithiajs/utils";
-import { type RequestContext, requestContext } from "../context";
+import { type RouteContext, routeContext } from "../context/route-context";
 import {
 	InvalidRouteModuleError,
 	LithiaError,
@@ -13,162 +27,295 @@ import {
 import type { Lithia } from "../lithia";
 import { logger } from "../logger";
 import { coldImport, isAsyncFunction } from "../module-loader";
+import type { HttpServer } from "./http-server";
 import type { LithiaRequest, Params } from "./request";
 import type { LithiaResponse } from "./response";
 
+/**
+ * Route handler function signature.
+ *
+ * The primary function exported from route files to handle requests.
+ *
+ * @param req - The incoming HTTP request
+ * @param res - The HTTP response object
+ */
 export type LithiaHandler = (
 	req: LithiaRequest,
 	res: LithiaResponse,
 ) => Promise<void>;
 
-/** Middleware function signature used by route modules. Call `next()` to continue. */
+/**
+ * Middleware function signature.
+ *
+ * Middlewares run before the route handler and can modify the request/response,
+ * perform authentication, logging, or other cross-cutting concerns.
+ *
+ * @param req - The incoming HTTP request
+ * @param res - The HTTP response object
+ * @param next - Function to call to proceed to the next middleware or handler
+ *
+ * @remarks
+ * Middlewares must call `next()` to continue the chain. Not calling `next()`
+ * will stop execution and prevent the route handler from running.
+ *
+ * @example
+ * ```typescript
+ * export const middlewares = [
+ *   async (req, res, next) => {
+ *     console.log('Before handler');
+ *     await next();
+ *     console.log('After handler');
+ *   }
+ * ];
+ * ```
+ */
 export type LithiaMiddleware = (
 	req: LithiaRequest,
 	res: LithiaResponse,
 	next: () => void,
 ) => Promise<void>;
 
-/** Shape of a route module loaded from disk. */
+/**
+ * Structure of a route module loaded from the file system.
+ *
+ * Route files can export a default handler and optionally an array of
+ * middlewares to run before the handler.
+ */
 export interface RouteModule {
-	/** Default exported handler for the route. */
+	/**
+	 * The default route handler function.
+	 *
+	 * This is the main function that processes the request and sends a response.
+	 */
 	default?: LithiaHandler;
-	/** Optional array of middlewares executed before the handler. */
+
+	/**
+	 * Optional array of middlewares executed before the handler.
+	 *
+	 * Middlewares run in order and must call `next()` to continue.
+	 */
 	middlewares?: Array<LithiaMiddleware>;
 }
 
-interface ErrorResponse {
+/**
+ * Standardized error response format.
+ *
+ * All errors are formatted consistently as JSON with this structure.
+ *
+ * @internal
+ */
+export interface RequestErrorInfo {
+	/** Error details object. */
 	error: {
+		/** Human-readable error message. */
 		message: string;
+		/** HTTP status code. */
 		statusCode: number;
+		/** ISO timestamp of when the error occurred. */
 		timestamp: string;
+		/** Request path that caused the error. */
 		path: string;
+		/** HTTP method of the request. */
 		method: string;
+		/** Short error digest for correlation with logs. */
 		digest?: string;
+		/** Validation error details (for 400 errors). */
 		issues?: any[];
 	};
 }
 
 /**
- * Responsible for processing incoming requests against the currently loaded
- * routes. This class handles route lookup, module loading (with development
- * cache busting), middleware execution and consistent error handling.
+ * Request processor for the Lithia HTTP pipeline.
+ *
+ * This class orchestrates the entire request processing flow from receiving
+ * an HTTP request to sending a response. It manages:
+ *
+ * - **CORS handling**: Preflight requests and CORS headers
+ * - **Static files**: Serving files from configured static directories
+ * - **Route matching**: Finding the route that matches the request path
+ * - **Parameter extraction**: Extracting dynamic route parameters
+ * - **Middleware execution**: Running global and route-specific middlewares
+ * - **Handler invocation**: Executing the route handler function
+ * - **Error handling**: Converting exceptions to structured JSON responses
+ * - **Request logging**: Logging all requests with timing and status codes
+ *
+ * @remarks
+ * The processor uses AsyncLocalStorage to provide request context to hooks,
+ * allowing route handlers to access request/response without explicit parameters.
+ *
+ * In development mode, route modules are reloaded on each request (cache busting).
+ * In production, modules are cached for better performance.
  */
 export class RequestProcessor {
-	constructor(private lithia: Lithia) {}
+	/**
+	 * Creates a new request processor.
+	 *
+	 * @param lithia - The Lithia application instance
+	 */
+	constructor(
+		private lithia: Lithia,
+		private httpServer: HttpServer,
+	) {}
 
 	/**
-	 * Main entry point for processing an incoming request.
+	 * Processes an incoming HTTP request through the complete pipeline.
 	 *
-	 * This performs route matching, dynamic param extraction, middleware
-	 * execution and finally invokes the route handler. Any thrown errors are
-	 * converted into structured JSON error responses by `handleError`.
+	 * This is the main entry point for request processing. The method executes
+	 * the following steps in order:
+	 *
+	 * 1. Initialize request context for hooks
+	 * 2. Handle CORS preflight (OPTIONS) requests
+	 * 3. Add standard response headers
+	 * 4. Attempt to serve static files
+	 * 5. Match request to a route
+	 * 6. Extract dynamic route parameters
+	 * 7. Load the route module
+	 * 8. Execute global middlewares
+	 * 9. Execute route-specific middlewares
+	 * 10. Execute the route handler
+	 * 11. Log the request with timing
+	 *
+	 * Any errors thrown during this process are caught and handled by
+	 * {@link handleError}, which sends a structured error response.
+	 *
+	 * @param req - The incoming HTTP request
+	 * @param res - The HTTP response object
+	 *
+	 * @example
+	 * ```typescript
+	 * const processor = new RequestProcessor(lithia);
+	 * await processor.processRequest(req, res);
+	 * ```
 	 */
 	async processRequest(req: LithiaRequest, res: LithiaResponse): Promise<void> {
 		const start = process.hrtime.bigint();
 
 		// Initialize context for hooks
-		const ctx: RequestContext = {
+		const routeCtx: RouteContext = {
 			req,
 			res,
-			dependencies: new Map(this.lithia.globalDependencies),
+			socketServer: this.httpServer.socketIO!,
 		};
 
-		requestContext.run(ctx, async () => {
-			try {
-				// Handle CORS
-				if (this.handleCors(req, res)) {
-					this.logRequest(req, res, start);
-					return;
-				}
-
-				// Add basic headers
-				res.addHeader("X-Powered-By", "Lithia");
-
-				// Serve static files
-				if (await this.serveStaticFile(req, res)) {
-					this.logRequest(req, res, start);
-					return;
-				}
-
-				// Find matching route
-				const route = this.findMatchingRoute(req.pathname, req.method);
-
-				if (!route) {
-					this.sendNotFound(req, res);
-					this.logRequest(req, res, start);
-					return;
-				}
-
-				// Update context with matched route
-				ctx.route = route;
-
-				// Extract params if dynamic route
-				if (route.dynamic) {
-					(req as any).params = this.extractParams(req.pathname, route);
-				}
-
-				// Import route module
-				const module = await this.importRouteModule(route);
-
-				// Execute global middlewares
-				if (
-					this.lithia.globalMiddlewares &&
-					this.lithia.globalMiddlewares.length > 0
-				) {
-					const globalMiddlewareError = await this.executeMiddlewares(
-						this.lithia.globalMiddlewares,
-						req,
-						res,
-					);
-
-					if (res._ended || globalMiddlewareError) {
-						if (globalMiddlewareError) {
-							throw globalMiddlewareError;
-						}
+		await this.lithia.runWithContext(async () => {
+			await routeContext.run(routeCtx, async () => {
+				try {
+					// Handle CORS
+					if (this.handleCors(req, res)) {
 						this.logRequest(req, res, start);
 						return;
 					}
-				}
 
-				// Execute middlewares if present
-				if (module.middlewares && module.middlewares.length > 0) {
-					const middlewareError = await this.executeMiddlewares(
-						module.middlewares,
-						req,
-						res,
-					);
+					// Add basic headers
+					res.addHeader("X-Powered-By", "Lithia");
 
-					// If middleware ended response or errored, stop processing
-					if (res._ended || middlewareError) {
-						if (middlewareError) {
-							throw middlewareError;
-						}
+					// Serve static files
+					if (await this.serveStaticFile(req, res)) {
 						this.logRequest(req, res, start);
 						return;
 					}
-				}
 
-				// Execute route handler
-				if (module.default) {
-					await module.default(req, res);
-				}
+					// Find matching route
+					const route = this.findMatchingRoute(req.pathname, req.method);
 
-				// End response if not already ended
-				if (!res._ended) {
-					res.end();
-				}
+					if (!route) {
+						this.sendNotFound(req, res);
+						this.logRequest(req, res, start);
+						return;
+					}
 
-				this.logRequest(req, res, start);
-			} catch (err) {
-				this.handleError(err, req, res, start);
-			}
+					// Update context with matched route
+					routeCtx.route = route;
+
+					// Extract params if dynamic route
+					if (route.dynamic) {
+						(req as any).params = this.extractParams(req.pathname, route);
+					}
+
+					// Import route module
+					const module = await this.importRouteModule(route);
+
+					// Execute global middlewares
+					if (
+						this.lithia.globalMiddlewares &&
+						this.lithia.globalMiddlewares.length > 0
+					) {
+						const globalMiddlewareError = await this.executeMiddlewares(
+							this.lithia.globalMiddlewares,
+							req,
+							res,
+						);
+
+						if (res._ended || globalMiddlewareError) {
+							if (globalMiddlewareError) {
+								throw globalMiddlewareError;
+							}
+							this.logRequest(req, res, start);
+							return;
+						}
+					}
+
+					// Execute middlewares if present
+					if (module.middlewares && module.middlewares.length > 0) {
+						const middlewareError = await this.executeMiddlewares(
+							module.middlewares,
+							req,
+							res,
+						);
+
+						// If middleware ended response or errored, stop processing
+						if (res._ended || middlewareError) {
+							if (middlewareError) {
+								throw middlewareError;
+							}
+							this.logRequest(req, res, start);
+							return;
+						}
+					}
+
+					// Execute route handler
+					if (module.default) {
+						await module.default(req, res);
+					}
+
+					// End response if not already ended
+					if (!res._ended) {
+						res.end();
+					}
+
+					this.logRequest(req, res, start);
+				} catch (err) {
+					this.handleError(err, req, res, start);
+				}
+			});
 		});
 	}
 
 	/**
-	 * Execute an array of middlewares sequentially. Each middleware must call
-	 * `next()` to continue; skipping `next()` ends the chain. Returns an
-	 * `Error` if any middleware throws.
+	 * Executes an array of middlewares sequentially.
+	 *
+	 * Middlewares are executed in order. Each middleware must call `next()`
+	 * to continue to the next middleware in the chain. If a middleware does
+	 * not call `next()`, the chain stops and subsequent middlewares are not
+	 * executed.
+	 *
+	 * If any middleware throws an error, execution stops immediately and the
+	 * error is returned.
+	 *
+	 * @param middlewares - Array of middleware functions to execute
+	 * @param req - The HTTP request object
+	 * @param res - The HTTP response object
+	 * @returns null if successful, or an Error if a middleware threw
+	 *
+	 * @private
+	 *
+	 * @example
+	 * ```typescript
+	 * const error = await this.executeMiddlewares(middlewares, req, res);
+	 * if (error) {
+	 *   throw error;
+	 * }
+	 * ```
 	 */
 	private async executeMiddlewares(
 		middlewares: Array<LithiaMiddleware>,
@@ -203,9 +350,19 @@ export class RequestProcessor {
 		}
 	}
 
-	/** Send a structured 404 JSON response for unmatched routes. */
+	/**
+	 * Sends a structured 404 JSON response for unmatched routes.
+	 *
+	 * This method is called when no route matches the requested path.
+	 * It sends a standardized error response with status 404.
+	 *
+	 * @param req - The HTTP request that didn't match any route
+	 * @param res - The HTTP response object
+	 *
+	 * @private
+	 */
 	private sendNotFound(req: LithiaRequest, res: LithiaResponse): void {
-		const response: ErrorResponse = {
+		const response: RequestErrorInfo = {
 			error: {
 				message: "The requested resource was not found",
 				statusCode: 404,
@@ -219,9 +376,29 @@ export class RequestProcessor {
 	}
 
 	/**
-	 * Centralized error handling. Logs the error and returns a structured
-	 * JSON response. In development detailed messages and stacks are
-	 * returned; in production only a generic message and digest are exposed.
+	 * Centralized error handler for the request pipeline.
+	 *
+	 * This method handles all errors thrown during request processing:
+	 *
+	 * **Development mode:**
+	 * - Returns detailed error messages
+	 * - Includes full error stacks
+	 * - Shows validation issues if present
+	 *
+	 * **Production mode:**
+	 * - Returns generic error messages
+	 * - Includes error digest for log correlation
+	 * - Hides sensitive error details
+	 *
+	 * All server errors (5xx) are logged with the error digest for correlation
+	 * between client responses and server logs.
+	 *
+	 * @param err - The error that was thrown
+	 * @param req - The HTTP request that caused the error
+	 * @param res - The HTTP response object
+	 * @param start - High-resolution timestamp when request processing started
+	 *
+	 * @private
 	 */
 	private handleError(
 		err: unknown,
@@ -262,7 +439,7 @@ export class RequestProcessor {
 		}
 
 		// Build error response
-		const response: ErrorResponse = {
+		const response: RequestErrorInfo = {
 			error: {
 				message: clientMessage,
 				statusCode,
@@ -278,12 +455,64 @@ export class RequestProcessor {
 		this.logRequest(req, res, start);
 	}
 
+	/**
+	 * Logs a completed request with color-coded status and timing.
+	 *
+	 * The log includes:
+	 * - HTTP status code (color-coded by range)
+	 * - HTTP method (GET, POST, etc.)
+	 * - Request pathname
+	 * - Processing duration in milliseconds
+	 *
+	 * Status colors:
+	 * - 2xx: Green (success)
+	 * - 3xx: Cyan (redirect)
+	 * - 4xx: Yellow (client error)
+	 * - 5xx: Red (server error)
+	 *
+	 * @param req - The HTTP request that was processed
+	 * @param res - The HTTP response that was sent
+	 * @param start - High-resolution timestamp when processing started
+	 *
+	 * @private
+	 */
+	/**
+	 * Logs a completed request with color-coded status and timing.
+	 *
+	 * The log includes:
+	 * - HTTP status code (color-coded by range)
+	 * - HTTP method (GET, POST, etc.)
+	 * - Request pathname
+	 * - Processing duration in milliseconds
+	 *
+	 * Status colors:
+	 * - 2xx: Green (success)
+	 * - 3xx: Cyan (redirect)
+	 * - 4xx: Yellow (client error)
+	 * - 5xx: Red (server error)
+	 *
+	 * Respects the `logging.requests` configuration flag. Critical errors
+	 * (5xx) are always logged regardless of the flag.
+	 *
+	 * @param req - The HTTP request that was processed
+	 * @param res - The HTTP response that was sent
+	 * @param start - High-resolution timestamp when processing started
+	 *
+	 * @private
+	 */
 	private logRequest(req: LithiaRequest, res: LithiaResponse, start: bigint) {
+		const status = res.statusCode || 200;
+
+		// Always log critical errors (5xx), otherwise respect the logging.requests flag
+		const shouldLog =
+			status >= 500 || this.lithia.options.logging?.requests !== false;
+
+		if (!shouldLog) return;
+
 		const end = process.hrtime.bigint();
 		const duration = Number(end - start) / 1_000_000;
 		const durationStr = `${duration.toFixed(2)}ms`;
 
-		const status = res.statusCode || 200;
 		let statusStr = status.toString();
 
 		if (status >= 500) {
@@ -302,8 +531,21 @@ export class RequestProcessor {
 	}
 
 	/**
-	 * Generate a short hexadecimal digest for an error. This helps correlate
-	 * logs and client-visible error identifiers.
+	 * Generates a short hexadecimal digest for error correlation.
+	 *
+	 * The digest is used to correlate server-side error logs with client-facing
+	 * error responses. This allows developers to find the detailed error in logs
+	 * using the digest shown to the client.
+	 *
+	 * The digest is generated from:
+	 * - Error message and stack
+	 * - Current timestamp
+	 * - Random factor for uniqueness
+	 *
+	 * @param err - The error to generate a digest for
+	 * @returns An 8-character hexadecimal digest
+	 *
+	 * @private
 	 */
 	private generateErrorDigest(err: unknown): string {
 		// Create a unique digest based on error message, timestamp, and random factor
@@ -319,8 +561,26 @@ export class RequestProcessor {
 	}
 
 	/**
-	 * Apply CORS headers and handle options requests.
-	 * Returns true if request was handled (OPTIONS).
+	 * Handles CORS preflight requests and applies CORS headers.
+	 *
+	 * This method:
+	 * 1. Checks if the request origin is allowed based on CORS configuration
+	 * 2. Adds appropriate CORS headers to the response
+	 * 3. Handles OPTIONS preflight requests
+	 *
+	 * **CORS Headers Applied:**
+	 * - `Access-Control-Allow-Origin`: Allowed origin
+	 * - `Access-Control-Allow-Credentials`: If credentials are enabled
+	 * - `Access-Control-Allow-Methods`: Allowed HTTP methods
+	 * - `Access-Control-Allow-Headers`: Allowed request headers
+	 * - `Access-Control-Max-Age`: Preflight cache duration
+	 * - `Access-Control-Expose-Headers`: Headers exposed to client
+	 *
+	 * @param req - The HTTP request
+	 * @param res - The HTTP response
+	 * @returns true if the request was an OPTIONS preflight that was handled, false otherwise
+	 *
+	 * @private
 	 */
 	private handleCors(req: LithiaRequest, res: LithiaResponse): boolean {
 		const cors = this.lithia.options.http.cors;
@@ -379,7 +639,24 @@ export class RequestProcessor {
 		return false;
 	}
 
-	/** Serve static files if configured and file exists. */
+	/**
+	 * Attempts to serve a static file from the configured static directory.
+	 *
+	 * This method:
+	 * 1. Checks if static file serving is enabled
+	 * 2. Only serves for GET and HEAD requests
+	 * 3. Strips configured prefix from the path
+	 * 4. Prevents directory traversal attacks
+	 * 5. Determines MIME type from file extension
+	 * 6. Sends the file with appropriate Content-Type header
+	 *
+	 * @param req - The HTTP request
+	 * @param res - The HTTP response
+	 * @returns true if a static file was served, false otherwise
+	 * @throws {StaticFileMimeMissingError} If file extension has no configured MIME type
+	 *
+	 * @private
+	 */
 	private async serveStaticFile(
 		req: LithiaRequest,
 		res: LithiaResponse,
@@ -423,7 +700,18 @@ export class RequestProcessor {
 		return false;
 	}
 
-	/** Find a route matching the given `pathname` and HTTP `method`. */
+	/**
+	 * Finds a route matching the given pathname and HTTP method.
+	 *
+	 * Routes are matched in the order they were registered. The first route
+	 * that matches both the path pattern (via regex) and HTTP method is returned.
+	 *
+	 * @param pathname - The request pathname to match
+	 * @param method - The HTTP method (GET, POST, etc.)
+	 * @returns The matched Route, or undefined if no match found
+	 *
+	 * @private
+	 */
 	private findMatchingRoute(
 		pathname: string,
 		method: string,
@@ -442,7 +730,15 @@ export class RequestProcessor {
 		});
 	}
 
-	/** Test whether a pathname matches a route's regex. */
+	/**
+	 * Tests whether a pathname matches a route's regex pattern.
+	 *
+	 * @param pathname - The pathname to test
+	 * @param route - The route with the regex pattern
+	 * @returns true if the pathname matches the route's regex, false otherwise
+	 *
+	 * @private
+	 */
 	private matchesPath(pathname: string, route: Route): boolean {
 		try {
 			const regex = new RegExp(route.regex);
@@ -454,9 +750,25 @@ export class RequestProcessor {
 	}
 
 	/**
-	 * Import a route module from disk. In development `import-fresh` is used to
-	 * bypass module cache; in production a normal dynamic import is performed.
-	 * The function also normalizes CommonJS wrappers produced by some bundlers.
+	 * Imports a route module from the file system.
+	 *
+	 * In **development mode**, uses cache-busting to reload the module on each
+	 * request, enabling hot reloading without server restart.
+	 *
+	 * In **production mode**, uses standard dynamic imports with caching for
+	 * better performance.
+	 *
+	 * The method also validates the module structure:
+	 * - Must have a default export
+	 * - Default export must be a function
+	 * - Default export must be async
+	 *
+	 * @param route - The route whose module should be imported
+	 * @returns The loaded and validated route module
+	 * @throws {InvalidRouteModuleError} If the module structure is invalid
+	 * @throws {Error} If the module fails to load
+	 *
+	 * @private
 	 */
 	private async importRouteModule(route: Route): Promise<RouteModule> {
 		try {
@@ -490,12 +802,33 @@ export class RequestProcessor {
 			if (err instanceof InvalidRouteModuleError) {
 				throw err;
 			}
-			logger.error(`Failed to import route module ${route.filePath}:`, err);
+
 			throw new Error(`Failed to import route: ${route.path}`);
 		}
 	}
 
-	/** Extract named params from the pathname using the route's regex and path pattern. */
+	/**
+	 * Extracts named route parameters from the pathname.
+	 *
+	 * For dynamic routes like `/users/:id/posts/:postId`, this method:
+	 * 1. Matches the pathname against the route's regex
+	 * 2. Extracts parameter names from the route path (e.g., "id", "postId")
+	 * 3. Maps regex capture groups to parameter names
+	 * 4. URL-decodes parameter values
+	 *
+	 * @param pathname - The request pathname
+	 * @param route - The matched route with dynamic segments
+	 * @returns Object mapping parameter names to their values
+	 *
+	 * @private
+	 *
+	 * @example
+	 * ```typescript
+	 * // Route: /users/:id/posts/:postId
+	 * // Pathname: /users/123/posts/456
+	 * // Returns: { id: '123', postId: '456' }
+	 * ```
+	 */
 	private extractParams(pathname: string, route: Route): Params {
 		const params: Params = {};
 

@@ -47,6 +47,12 @@ export interface LithiaOptions {
 	studio: {
 		enabled: boolean;
 	};
+	logging: {
+		/** Enable request logging. Critical errors (5xx) are always logged. */
+		requests: boolean;
+		/** Enable event logging. Critical errors are always logged. */
+		events: boolean;
+	};
 	hooks: {
 		[K in keyof LithiaHooks]: LithiaHooks[K];
 	};
@@ -72,6 +78,10 @@ export const DEFAULT_CONFIG: LithiaConfig = {
 			credentials: false,
 			maxAge: 86400,
 		},
+	},
+	logging: {
+		requests: true,
+		events: true,
 	},
 	hooks: {},
 	studio: {

@@ -23,24 +23,24 @@ export class LithiaError extends Error {
 	}
 }
 
-/** Error raised when the routes manifest version does not match the native schema. */
-export class RouteSchemaVersionMismatchError extends LithiaError {
+/** Error raised when the manifest version does not match the native schema. */
+export class SchemaVersionMismatchError extends LithiaError {
 	constructor(expected: string, received: string) {
 		super(
-			"ROUTE_SCHEMA_VERSION_MISMATCH",
-			`Routes manifest version ${received} does not match expected version ${expected}`,
+			"SCHEMA_VERSION_MISMATCH",
+			`Manifest version ${received} does not match expected version ${expected}`,
 			"fatal",
 			undefined,
 		);
 	}
 }
 
-/** Error used when reading or parsing the `routes.json` manifest fails. */
-export class RoutesManifestLoadError extends LithiaError {
+/** Error used when reading or parsing the manifest fails. */
+export class ManifestLoadError extends LithiaError {
 	constructor(cause: any) {
 		super(
-			"ROUTES_MANIFEST_LOAD_ERROR",
-			"Failed to load routes manifest.",
+			"MANIFEST_LOAD_ERROR",
+			"Failed to load manifest.",
 			"fatal",
 			cause,
 		);
@@ -77,6 +77,16 @@ export class InvalidRouteModuleError extends LithiaError {
 			"error",
 		);
 	}
+}
+
+export class InvalidEventModuleError extends LithiaError {
+  constructor(filePath: string, reason: string) {
+    super(
+      "INVALID_EVENT_MODULE",
+      `Invalid event module at '${filePath}': ${reason}. Event modules must export a default function that accepts a Lithia instance.`,
+      "error",
+    );
+  }
 }
 
 /** Error raised when the server bootstrap module (_server.ts) is invalid. */
