@@ -178,8 +178,17 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: native-${{ matrix.settings.target }}
+          name: native-bin-${{ matrix.settings.target }}
           path: packages/native/*.node
+          if-no-files-found: error
+      
+      - name: Upload JS Glue
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-js
+          path: |
+            packages/native/index.js
+            packages/native/index.d.ts
           if-no-files-found: error
 
   # Test native bindings
@@ -221,20 +230,14 @@ jobs:
       - name: Download native artifacts
         uses: actions/download-artifact@v4
         with:
-          name: native-${{ matrix.settings.target }}
+          name: native-bin-${{ matrix.settings.target }}
           path: packages/native
 
-      - name: Move native binary into npm folder
-        run: |
-          cd packages/native
-          mkdir -p npm/${{ matrix.settings.target }}
-          cp ./*.node npm/${{ matrix.settings.target }}/ 2>/dev/null || true
-          ls -R npm/
-
-      - name: Prepare native package
-        run: |
-          cd packages/native
-          pnpm napi prepublish -t npm --tag-style npm
+      - name: Download JS Glue
+        uses: actions/download-artifact@v4
+        with:
+          name: native-js
+          path: packages/native
 
       - name: Build TypeScript packages
         run: pnpm build
@@ -272,7 +275,7 @@ jobs:
       - name: Download all native artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: native-*
+          pattern: native-bin-*
           path: packages/native/artifacts
 
       - name: Move native binaries
