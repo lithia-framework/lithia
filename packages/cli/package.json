@@ -1,0 +1,22 @@
+{
+	"name": "@lithiajs/cli",
+	"version": "5.0.0",
+	"private": false,
+	"bin": {
+		"lithia": "dist/main.js"
+	},
+	"scripts": {
+		"build": "lithia-build",
+		"check": "biome check --write"
+	},
+	"dependencies": {
+		"@lithiajs/core": "workspace:*",
+		"@lithiajs/utils": "workspace:*",
+		"citty": "^0.2.0",
+		"chokidar": "^5.0.0"
+	},
+	"devDependencies": {
+		"@lithiajs/tsconfig": "workspace:*",
+		"@lithiajs/build": "workspace:*"
+	}
+}

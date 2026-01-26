@@ -1,0 +1,22 @@
+{
+	"name": "@lithiajs/utils",
+	"version": "5.0.0",
+	"private": false,
+	"main": "dist/lib.js",
+	"types": "dist/lib.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/lib.d.ts",
+			"require": "./dist/lib.js",
+			"import": "./dist/lib.js"
+		}
+	},
+	"scripts": {
+		"build": "lithia-build",
+		"check": "biome check --write"
+	},
+	"devDependencies": {
+		"@lithiajs/tsconfig": "workspace:*",
+		"@lithiajs/build": "workspace:*"
+	}
+}

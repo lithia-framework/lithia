@@ -1,0 +1,37 @@
+{
+	"name": "@lithiajs/core",
+	"version": "5.0.0",
+	"private": false,
+	"main": "dist/lib.js",
+	"types": "dist/lib.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/lib.d.ts",
+			"require": "./dist/lib.js",
+			"import": "./dist/lib.js"
+		}
+	},
+	"scripts": {
+		"build": "lithia-build",
+		"check": "biome check --write"
+	},
+	"devDependencies": {
+		"@lithiajs/build": "workspace:*",
+		"@lithiajs/tsconfig": "workspace:*",
+		"@types/busboy": "^1.5.4",
+		"@types/source-map-support": "^0.5.10"
+	},
+	"dependencies": {
+		"@lithiajs/native": "workspace:*",
+		"@lithiajs/utils": "workspace:*",
+		"busboy": "^1.6.0",
+		"c12": "^3.3.3",
+		"cookie": "^1.1.1",
+		"hookable": "^6.0.1",
+		"import-fresh": "^3.3.1",
+		"klona": "^2.0.6",
+		"socket.io": "^4.8.1",
+		"source-map-support": "^0.5.21",
+		"zod": "^4.2.1"
+	}
+}

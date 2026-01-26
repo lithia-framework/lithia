@@ -1,0 +1,30 @@
+{
+	"name": "@lithiajs/native",
+	"version": "5.0.0",
+	"private": false,
+  "main": "index.js",
+  "types": "index.d.ts",
+	"exports": {
+		".": {
+			"import": "./index.js",
+			"require": "./index.js",
+      "default": "./index.js",
+			"types": "./index.d.ts"
+		}
+	},
+	"files": [
+		"index.js",
+		"index.d.ts",
+		"*.node",
+		"package.json",
+		"README.md"
+	],
+	"scripts": {
+		"build:rust": "napi build --platform --release",
+    "check": "cargo check",
+    "machete": "cargo machete --fix"
+	},
+	"devDependencies": {
+		"@napi-rs/cli": "^3.5.1"
+	}
+}

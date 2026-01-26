@@ -1,5 +1,0 @@
----
-description: Every class, interface, type, function, method, property, and parameter should have a JSDoc comment.
-globs: **/*
-alwaysApply: true
----

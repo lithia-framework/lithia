@@ -1,0 +1,18 @@
+{
+	"name": "@lithiajs/build",
+	"version": "5.0.0",
+	"private": false,
+	"bin": {
+		"lithia-build": "dist/main.js"
+	},
+	"scripts": {
+		"build": "tsx src/main.ts",
+		"check": "biome check --write"
+	},
+	"devDependencies": {
+		"@lithiajs/native": "workspace:*",
+		"@lithiajs/tsconfig": "workspace:*",
+		"citty": "^0.2.0",
+		"tsup": "^8.5.1"
+	}
+}

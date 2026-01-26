@@ -1,0 +1,31 @@
+[package]
+name = "lithia_native"
+version = "5.0.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "3.8.2", features = ["napi9"] }
+napi-derive = { version = "3.5.1" }
+walkdir = "2.5.0"
+globset = "0.4.18"
+rayon = "1.11"
+swc_common = { version = "18.0.1", features = ["concurrent", "sourcemap"] }
+swc_ecma_codegen = "22.0.0"
+swc_ecma_parser = "33.0.0"
+swc_ecma_transforms_base = "36.0.1"
+swc_ecma_transforms_typescript = "39.0.1"
+swc_ecma_transforms_module = "39.0.0"
+serde_json = "1.0.149"
+swc_ecma_ast = "20.0.0"
+swc_ecma_visit = "20.0.0"
+swc_atoms = "9.0.0"
+pathdiff = "0.2"
+regex = { version = "1.12.2" }
+serde = { version = "1.0.228", features = ["derive"] }
+
+[dev-dependencies]
+tempfile = "3.24.0"
