@@ -2,10 +2,20 @@
   "mode": "pre",
   "tag": "canary",
   "initialVersions": {
-    "@lithia-js/cli": "5.0.0",
-    "@lithia-js/core": "5.0.0",
-    "@lithia-js/native": "5.0.0",
-    "@lithia-js/utils": "5.0.0"
+    "@lithia-js/cli": "0.1.0",
+    "@lithia-js/core": "0.1.0",
+    "@lithia-js/native": "0.1.0",
+    "@lithia-js/native-darwin-arm64": "0.1.0",
+    "@lithia-js/native-darwin-x64": "0.1.0",
+    "@lithia-js/native-linux-arm-gnueabihf": "0.1.0",
+    "@lithia-js/native-linux-arm64-gnu": "0.1.0",
+    "@lithia-js/native-linux-arm64-musl": "0.1.0",
+    "@lithia-js/native-linux-x64-gnu": "0.1.0",
+    "@lithia-js/native-linux-x64-musl": "0.1.0",
+    "@lithia-js/native-win32-arm64-msvc": "0.1.0",
+    "@lithia-js/native-win32-ia32-msvc": "0.1.0",
+    "@lithia-js/native-win32-x64-msvc": "0.1.0",
+    "@lithia-js/utils": "0.1.0"
   },
   "changesets": []
 }
