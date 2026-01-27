@@ -1,5 +1,14 @@
 # @lithia-js/core
 
+## 1.0.0-canary.5
+
+### Patch Changes
+
+- e64696c: Remove unused imports from @lithia-js/utils and fixed `create-lithia` CLI
+- Updated dependencies [e64696c]
+  - @lithia-js/utils@1.0.0-canary.5
+  - @lithia-js/native@1.0.0-canary.5
+
 ## 1.0.0-canary.4
 
 ### Patch Changes
