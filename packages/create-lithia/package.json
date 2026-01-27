@@ -1,6 +1,6 @@
 {
 	"name": "create-lithia",
-	"version": "1.0.0-canary.6",
+	"version": "1.0.0-canary.7",
 	"private": false,
 	"bin": {
 		"create-lithia": "dist/main.js"
