@@ -247,11 +247,11 @@ const main = defineCommand({
 				if (initializeGit) {
 					info("Initializing Git repository...");
 					try {
-						execSync("git init", { cwd: targetDir, stdio: "inherit" });
-						execSync("git add -A", { cwd: targetDir, stdio: "inherit" });
+						execSync("git init", { cwd: targetDir, stdio: "ignore" });
+						execSync("git add -A", { cwd: targetDir, stdio: "ignore" });
 						execSync('git commit -m "chore: initial commit"', {
 							cwd: targetDir,
-							stdio: "inherit",
+							stdio: "ignore",
 						});
 						success("Git repository initialized.");
 					} catch (err) {
