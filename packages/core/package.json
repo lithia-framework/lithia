@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/core",
-	"version": "1.0.0-canary.5",
+	"version": "1.0.0-canary.6",
 	"private": false,
 	"main": "dist/lib.js",
 	"types": "dist/lib.d.ts",
