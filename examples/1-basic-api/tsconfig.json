@@ -4,6 +4,7 @@
     "sourceMap": true,
     "module": "commonjs",
     "moduleResolution": "node",
+    "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

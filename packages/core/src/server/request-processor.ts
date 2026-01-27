@@ -803,7 +803,7 @@ export class RequestProcessor {
 				throw err;
 			}
 
-			throw new Error(`Failed to import route: ${route.path}`);
+			throw err;
 		}
 	}
 

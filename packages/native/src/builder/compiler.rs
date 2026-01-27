@@ -11,6 +11,7 @@ use swc_common::{
 };
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter as CodegenEmitter};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsSyntax};
+use swc_ecma_transforms_base::helpers::{Helpers, HELPERS};
 use swc_ecma_transforms_base::{fixer::fixer, hygiene::hygiene, resolver};
 use swc_ecma_transforms_module::{common_js, path::Resolver as PathResolverEnum};
 use swc_ecma_transforms_typescript::strip;
@@ -352,44 +353,46 @@ impl TypeScriptCompiler {
         let emitter = EmitterWriter::new(Box::new(error_buffer), Some(cm.clone()), false, true);
         let handler = Handler::with_emitter(true, false, Box::new(emitter));
 
-        let fm = cm
-            .load_file(input)
-            .map_err(|e| format!("Failed to load input {}: {}", input.display(), e))?;
-
-        let comments = SingleThreadedComments::default();
-
-        // Parse TypeScript (no TSX support - backend only)
-        let lexer = Lexer::new(
-            Syntax::Typescript(TsSyntax {
-                tsx: false,
-                ..Default::default()
-            }),
-            self.ts_config.target,
-            StringInput::from(&*fm),
-            Some(&comments),
-        );
-
-        let mut parser = Parser::new_from(lexer);
-
-        for e in parser.take_errors() {
-            e.into_diagnostic(&handler).emit();
-        }
-
-        let module = parser.parse_program().map_err(|e| {
-            e.into_diagnostic(&handler).emit();
-
-            let error_msg = error_buffer_clone.get_content();
-            if error_msg.is_empty() {
-                format!("Failed to parse {}", input.display())
-            } else {
-                format!("\n{}", error_msg.trim())
-            }
-        })?;
-
         // Apply transformations and generate code + optional sourcemap
+        // SWC uses scoped thread-locals internally; ensure `GLOBALS` is set
+        // for the entire parse -> transform -> codegen pipeline.
         let globals = Globals::default();
         let (code, map_opt) = GLOBALS
             .set(&globals, || {
+                let fm = cm
+                    .load_file(input)
+                    .map_err(|e| format!("Failed to load input {}: {}", input.display(), e))?;
+
+                let comments = SingleThreadedComments::default();
+
+                // Parse TypeScript (no TSX support - backend only)
+                let lexer = Lexer::new(
+                    Syntax::Typescript(TsSyntax {
+                        tsx: false,
+                        ..Default::default()
+                    }),
+                    self.ts_config.target,
+                    StringInput::from(&*fm),
+                    Some(&comments),
+                );
+
+                let mut parser = Parser::new_from(lexer);
+
+                for e in parser.take_errors() {
+                    e.into_diagnostic(&handler).emit();
+                }
+
+                let module = parser.parse_program().map_err(|e| {
+                    e.into_diagnostic(&handler).emit();
+
+                    let error_msg = error_buffer_clone.get_content();
+                    if error_msg.is_empty() {
+                        format!("Failed to parse {}", input.display())
+                    } else {
+                        format!("\n{}", error_msg.trim())
+                    }
+                })?;
+
                 self.transform_and_generate(module, &cm, &comments, input)
             })
             .map_err(|e| format!("Transformation error: {:?}", e))?;
@@ -446,48 +449,59 @@ impl TypeScriptCompiler {
             }
         }
 
-        // agora aplique as transforms normais
-        let module = program.apply(resolver(unresolved_mark, top_level_mark, true));
-        let module = module.apply(strip(unresolved_mark, top_level_mark));
-        let module = module.apply(common_js(
-            PathResolverEnum::Default,
-            unresolved_mark,
-            swc_ecma_transforms_module::util::Config::default(),
-            swc_ecma_transforms_module::common_js::FeatureFlag::default(),
-        ));
-        let module = module.apply(hygiene());
-        let program = module.apply(fixer(Some(comments)));
+        // agora aplique as transforms normais dentro do escopo de `HELPERS`
+        // Helpers controla a injeção de helpers como `_extends` e deve ser
+        // configurado via `HELPERS.set(...)` antes de executar transforms
+        // que dependam dele.
+        HELPERS.set(&Helpers::new(true), || {
+            let module = program.apply(resolver(unresolved_mark, top_level_mark, true));
+            let module = module.apply(strip(unresolved_mark, top_level_mark));
+            let module = module.apply(common_js(
+                PathResolverEnum::Default,
+                unresolved_mark,
+                swc_ecma_transforms_module::util::Config {
+                    no_interop: true,
+                    strict: true,
+                    ..Default::default()
+                },
+                swc_ecma_transforms_module::common_js::FeatureFlag::default(),
+            ));
+            let module = module.apply(hygiene());
+            let program = module.apply(fixer(Some(comments)));
 
-        // NOTE: buffer de mappings como Vec<(BytePos, LineCol)>
-        let mut src_map_buf: Vec<(BytePos, LineCol)> = Vec::new();
-        let mut code_buf: Vec<u8> = Vec::new();
+            // NOTE: buffer de mappings como Vec<(BytePos, LineCol)>
+            let mut src_map_buf: Vec<(BytePos, LineCol)> = Vec::new();
+            let mut code_buf: Vec<u8> = Vec::new();
 
-        {
-            let js_writer = JsWriter::new(cm.clone(), "\n", &mut code_buf, Some(&mut src_map_buf));
-            let mut emitter = CodegenEmitter {
-                cfg: Default::default(),
-                cm: cm.clone(),
-                comments: Some(comments),
-                wr: Box::new(js_writer),
+            {
+                let js_writer =
+                    JsWriter::new(cm.clone(), "\n", &mut code_buf, Some(&mut src_map_buf));
+                let mut emitter = CodegenEmitter {
+                    cfg: Default::default(),
+                    cm: cm.clone(),
+                    comments: Some(comments),
+                    wr: Box::new(js_writer),
+                };
+
+                emitter
+                    .emit_program(&program)
+                    .map_err(|e| format!("codegen emit error: {:?}", e))?;
+            }
+
+            let code =
+                String::from_utf8(code_buf).map_err(|e| format!("code not utf8: {:?}", e))?;
+
+            let map = if !src_map_buf.is_empty() {
+                let sm = cm.build_source_map(&src_map_buf, None, SourceMapConfigImpl);
+                let mut s = Vec::new();
+                sm.to_writer(&mut s)
+                    .map_err(|e| format!("failed to write source map file: {:?}", e))?;
+                Some(String::from_utf8(s).map_err(|e| format!("source map not utf8: {:?}", e))?)
+            } else {
+                None
             };
 
-            emitter
-                .emit_program(&program)
-                .map_err(|e| format!("codegen emit error: {:?}", e))?;
-        }
-
-        let code = String::from_utf8(code_buf).map_err(|e| format!("code not utf8: {:?}", e))?;
-
-        let map = if !src_map_buf.is_empty() {
-            let sm = cm.build_source_map(&src_map_buf, None, SourceMapConfigImpl);
-            let mut s = Vec::new();
-            sm.to_writer(&mut s)
-                .map_err(|e| format!("failed to write source map file: {:?}", e))?;
-            Some(String::from_utf8(s).map_err(|e| format!("source map not utf8: {:?}", e))?)
-        } else {
-            None
-        };
-
-        Ok((code, map))
+            Ok((code, map))
+        })
     }
 }

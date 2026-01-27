@@ -76,3 +76,40 @@ fn test_compile_no_paths() {
      let js = fs::read_to_string(&output_path).unwrap();
      assert!(js.contains(r#"require("./utils")"#));
 }
+
+#[test]
+fn test_compile_import_star() {
+    let dir = TempDir::new().unwrap();
+    let root = dir.path();
+
+    let src = root.join("src");
+    fs::create_dir(&src).unwrap();
+
+    // module to import
+    fs::write(src.join("mod.ts"), "export const v = 42;").unwrap();
+
+    // file using `import * as`
+    let input_path = src.join("use_mod.ts");
+    fs::write(&input_path, "import * as mod from './mod'; console.log(mod.v);").unwrap();
+
+    let dist = root.join("dist");
+    fs::create_dir(&dist).unwrap();
+    let output_path = dist.join("use_mod.js");
+
+    let ts_config = TsConfigOptions {
+        emit_sourcemap: false,
+        target: EsVersion::Es2020,
+        base_url: None,
+        paths: vec![],
+    };
+
+    let compiler = TypeScriptCompiler::new(ts_config);
+
+    // The previous bug manifested as a panic during parse/transform when the
+    // input contained `import * as`. We assert that compile_file returns Ok
+    // and produces an output file.
+    compiler.compile_file(&input_path, &output_path).expect("compile failed");
+
+    let js = fs::read_to_string(&output_path).unwrap();
+    assert!(js.len() > 0, "output file is empty");
+}
