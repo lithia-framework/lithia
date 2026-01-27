@@ -6,5 +6,10 @@
 		"build": "lithia build",
 		"start": "lithia start"
 	},
-	"dependencies": {}
+	"dependencies": {
+    "@lithia-js/core": "file:../../packages/core"
+  },
+  "devDependencies": {
+    "@lithia-js/cli": "file:../../packages/cli"
+  }
 }

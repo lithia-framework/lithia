@@ -35,8 +35,7 @@
 		"tsx": "^4.21.0",
 		"turbo": "^2.7.6",
 		"typescript": "^5.9.3",
-		"vitest": "^4.0.18",
-		"zod": "^4.3.6"
+		"vitest": "^4.0.18"
 	},
 	"dependencies": {
 		"dotenv": "^17.2.3"
