@@ -1,5 +1,11 @@
 # @lithia-js/utils
 
+## 1.0.0-canary.7
+
+### Patch Changes
+
+- c5e06fb: Fixed exception when trying to build a JS file that haves an import wildcard
+
 ## 1.0.0-canary.6
 
 ### Patch Changes
