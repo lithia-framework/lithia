@@ -1,5 +1,12 @@
 # @lithia-js/native
 
+## 1.0.0-canary.4
+
+### Patch Changes
+
+- fb9cee1: Enhanced production build support, fixed import module bug on production environment, fixed stdio inherit bug on `create-lithia`
+- 00d8f11: fixed available events after connection
+
 ## 1.0.0-canary.3
 
 ### Patch Changes

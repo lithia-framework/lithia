@@ -5,12 +5,15 @@
     "@lithia-js/cli": "0.1.0",
     "@lithia-js/core": "0.1.0",
     "@lithia-js/native": "0.1.0",
-    "@lithia-js/utils": "0.1.0"
+    "@lithia-js/utils": "0.1.0",
+    "create-lithia": "1.0.0-canary.3"
   },
   "changesets": [
     "crisp-cats-worry",
+    "free-yaks-matter",
     "gold-cycles-kick",
     "shaggy-flies-shave",
-    "tame-bushes-shake"
+    "tame-bushes-shake",
+    "tough-bars-warn"
   ]
 }
