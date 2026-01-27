@@ -4,13 +4,16 @@
   "private": false,
   "main": "index.js",
   "types": "index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/lib.d.ts",
-      "require": "./dist/lib.js",
-      "import": "./dist/lib.js"
-    }
-  },
+  "author": "Lucas Arch <luketsx@icloud.com>",
+	"homepage": "https://lithiajs.com",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/lithia-framework/lithia.git"
+	},
+	"bugs": {
+		"url": "https://github.com/lithia-framework/lithia/issues"
+	},
   "scripts": {
     "prepublishOnly": "napi prepublish -p npm --tag-style npm --no-gh-release",
     "artifacts": "napi artifacts --npm-dir npm",
@@ -42,5 +45,12 @@
     "access": "public",
     "provenance": true
   },
-  "optionalDependencies": {}
+  "optionalDependencies": {},
+  "exports": {
+    ".": {
+      "types": "./dist/lib.d.ts",
+      "require": "./dist/lib.js",
+      "import": "./dist/lib.js"
+    }
+  }
 }
