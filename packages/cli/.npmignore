@@ -1,5 +1,6 @@
 .turbo
 node_modules/
+src/
 pnpm-lock.json
 tsconfig.build.json
 tsconfig.build.tsbuildinfo

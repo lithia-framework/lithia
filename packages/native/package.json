@@ -48,9 +48,9 @@
   "optionalDependencies": {},
   "exports": {
     ".": {
-      "types": "./dist/lib.d.ts",
-      "require": "./dist/lib.js",
-      "import": "./dist/lib.js"
+      "types": "./index.d.ts",
+      "require": "./index.js",
+      "import": "./index.js"
     }
   }
 }

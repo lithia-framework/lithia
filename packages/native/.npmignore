@@ -1,6 +1,7 @@
 .turbo
 node_modules/
 npm/
+src/
 pnpm-lock.json
 *.node
 tsconfig.build.json
