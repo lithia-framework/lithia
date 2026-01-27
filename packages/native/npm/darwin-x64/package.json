@@ -1,6 +1,6 @@
 {
   "name": "@lithia-js/native-darwin-x64",
-  "version": "1.0.0-canary.2",
+  "version": "0.1.0",
   "os": [
     "darwin"
   ],

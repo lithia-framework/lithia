@@ -45,7 +45,6 @@
     "access": "public",
     "provenance": true
   },
-  "optionalDependencies": {},
   "exports": {
     ".": {
       "types": "./index.d.ts",
