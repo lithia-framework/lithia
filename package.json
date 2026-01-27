@@ -1,7 +1,7 @@
 {
 	"name": "lithia-framework",
 	"version": "0.0.0",
-	"private": true,
+	
 	"packageManager": "pnpm@10.0.0",
   "author": "Lucas Arch <luketsx@icloud.com>",
   "homepage": "https://lithiajs.com",
