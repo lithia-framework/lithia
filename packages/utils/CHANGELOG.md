@@ -1,5 +1,11 @@
 # @lithia-js/utils
 
+## 1.0.0-canary.6
+
+### Patch Changes
+
+- bb4cb1d: Added new template
+
 ## 1.0.0-canary.5
 
 ### Patch Changes
