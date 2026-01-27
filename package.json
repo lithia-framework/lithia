@@ -29,10 +29,13 @@
 		"@changesets/cli": "^2.29.8",
 		"@lithia-js/cli": "file:./packages/cli",
 		"@lithia-js/core": "file:./packages/core",
+		"@lithia-js/native": "file:./packages/native",
+		"@lithia-js/utils": "file:./packages/utils",
 		"@types/node": "^25.0.10",
 		"tsx": "^4.21.0",
 		"turbo": "^2.7.6",
 		"typescript": "^5.9.3",
+		"vitest": "^4.0.18",
 		"zod": "^4.3.6"
 	},
 	"dependencies": {

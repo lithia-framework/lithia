@@ -21,8 +21,7 @@
 	},
 	"dependencies": {
 		"citty": "^0.2.0",
-		"prompts": "^2.4.2",
-    "@lithia-js/utils": "workspace:*"
+		"prompts": "^2.4.2"
 	},
 	"engines": {
 		"node": ">=20"

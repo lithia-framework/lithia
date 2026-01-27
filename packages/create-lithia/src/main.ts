@@ -4,10 +4,10 @@ import { execSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { green } from "@lithia-js/utils";
 import { defineCommand, runMain } from "citty";
 import prompts from "prompts";
 import { version } from "./meta";
+import { green } from "./picocolors";
 
 // ANSI colors for better logging (consistent with green from utils)
 const red = (str: string) => `\x1b[31m${str}\x1b[0m`;
@@ -62,7 +62,9 @@ const main = defineCommand({
 		let initializeGit: boolean;
 
 		if (!isCommandAvailable("git")) {
-			errorLog("git is required to run this CLI. Please install git and try again.");
+			errorLog(
+				"git is required to run this CLI. Please install git and try again.",
+			);
 			process.exit(1);
 		}
 
@@ -148,13 +150,16 @@ const main = defineCommand({
 		initializeGit = gitResponse.initializeGit;
 
 		const targetDir = path.join(process.cwd(), projectName);
-		const pmToUse = installDependencies && packageManager ? packageManager : "npm";
+		const pmToUse =
+			installDependencies && packageManager ? packageManager : "npm";
 
 		info(`Creating a new Lithia project in ${projectName}...`);
 
 		await withTmpDir(async (tmpDir) => {
 			if (!isCommandAvailable("git")) {
-				errorLog("git is required to clone the template repository. Please install git and try again.");
+				errorLog(
+					"git is required to clone the template repository. Please install git and try again.",
+				);
 				process.exit(1);
 			}
 
@@ -202,7 +207,9 @@ const main = defineCommand({
 				);
 
 				if (!confirmResponse.overwrite) {
-					throw new Error("Cannot create project: target directory already exists.");
+					throw new Error(
+						"Cannot create project: target directory already exists.",
+					);
 				}
 			}
 
@@ -241,7 +248,9 @@ const main = defineCommand({
 
 				await fs.writeFile(pkgJsonPath, JSON.stringify(pkg, null, 2), "utf-8");
 
-				success(`package.json updated (name set + internal packages pinned to v${version}).`);
+				success(
+					`package.json updated (name set + internal packages pinned to v${version}).`,
+				);
 
 				// initialize git if requested (git availability was validated earlier)
 				if (initializeGit) {

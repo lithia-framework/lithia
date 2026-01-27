@@ -64,7 +64,7 @@ sourceMapSupport.install({
  * Influences logging verbosity, error output formatting, and features like
  * configuration hot-reloading (enabled only in development).
  */
-export type Environment = "build" | "production" | "development";
+export type Environment = 'test' | "build" | "production" | "development";
 
 /**
  * Options required to create a Lithia instance.
