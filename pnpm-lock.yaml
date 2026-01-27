@@ -18,6 +18,12 @@ importers:
       '@changesets/cli':
         specifier: ^2.29.8
         version: 2.29.8(@types/node@25.0.10)
+      '@lithia-js/cli':
+        specifier: file:./packages/cli
+        version: file:packages/cli
+      '@lithia-js/core':
+        specifier: file:./packages/core
+        version: file:packages/core
       '@types/node':
         specifier: ^25.0.10
         version: 25.0.10
@@ -30,6 +36,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
 
   packages/cli:
     dependencies:
@@ -531,6 +540,15 @@ packages:
     peerDependenciesMeta:
       '@types/node':
         optional: true
+
+  '@lithia-js/cli@file:packages/cli':
+    resolution: {directory: packages/cli, type: directory}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  '@lithia-js/core@file:packages/core':
+    resolution: {directory: packages/core, type: directory}
+    engines: {node: '>=20'}
 
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
@@ -1994,6 +2012,31 @@ snapshots:
   '@inquirer/type@4.0.3(@types/node@25.0.10)':
     optionalDependencies:
       '@types/node': 25.0.10
+
+  '@lithia-js/cli@file:packages/cli':
+    dependencies:
+      '@lithia-js/core': link:packages/core
+      '@lithia-js/utils': link:packages/utils
+      chokidar: 5.0.0
+      citty: 0.2.0
+
+  '@lithia-js/core@file:packages/core':
+    dependencies:
+      '@lithia-js/native': link:packages/native
+      '@lithia-js/utils': link:packages/utils
+      busboy: 1.6.0
+      c12: 3.3.3
+      cookie: 1.1.1
+      import-fresh: 3.3.1
+      klona: 2.0.6
+      socket.io: 4.8.3
+      source-map-support: 0.5.21
+      zod: 4.3.6
+    transitivePeerDependencies:
+      - bufferutil
+      - magicast
+      - supports-color
+      - utf-8-validate
 
   '@manypkg/find-root@1.1.0':
     dependencies:

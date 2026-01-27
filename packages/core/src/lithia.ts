@@ -29,6 +29,7 @@ import sourceMapSupport from "source-map-support";
 import { ConfigProvider, type LithiaOptions } from "./config";
 import { type LithiaContext, lithiaContext } from "./context/lithia-context";
 import {
+	EnvironmentNotSupportedError,
 	InvalidBootstrapModuleError,
 	LithiaError,
 	ManifestLoadError,
@@ -63,7 +64,7 @@ sourceMapSupport.install({
  * Influences logging verbosity, error output formatting, and features like
  * configuration hot-reloading (enabled only in development).
  */
-export type Environment = "production" | "development";
+export type Environment = "build" | "production" | "development";
 
 /**
  * Options required to create a Lithia instance.
@@ -77,22 +78,61 @@ export interface LithiaCreateOptions {
 	 *
 	 * - `development`: Enables config watching, verbose logging, source maps
 	 * - `production`: Optimized for performance with minimal logging
+	 * - `build`: Used during the build process; no server is started
 	 */
 	environment: Environment;
+}
+
+export interface App {
+	/**
+	 * Registers a global middleware to run on every HTTP request.
+	 *
+	 * Middlewares are executed in the order they are registered, before
+	 * route-specific handlers. They can modify the request/response or
+	 * perform cross-cutting concerns like logging and authentication.
+	 *
+	 * @param middleware - The middleware function to register
+	 * @returns The Lithia instance for method chaining
+	 *
+	 * @example
+	 * ```typescript
+	 * lithia.use(async (req, res, next) => {
+	 *   console.log(`${req.method} ${req.url}`);
+	 *   await next();
+	 * });
+	 * ```
+	 */
+	use(middleware: LithiaMiddleware): App;
 
 	/**
-	 * Absolute path to the source directory containing application code.
+	 * Registers a global dependency for dependency injection.
 	 *
-	 * @example "./src"
+	 * Registered dependencies can be injected into route handlers and
+	 * middlewares using the `inject()` hook.
+	 *
+	 * @param key - The injection key (use `createInjectionKey<T>()` to create)
+	 * @param value - The dependency value to provide
+	 * @returns The Lithia instance for method chaining
+	 *
+	 * @example
+	 * ```typescript
+	 * const dbKey = createInjectionKey<Database>('database');
+	 * lithia.provide(dbKey, new Database());
+	 * ```
 	 */
-	sourceRoot: string;
+	provide<T>(key: InjectionKey<T>, value: T): App;
 
-	/**
-	 * Absolute path to the output directory for compiled JavaScript.
-	 *
-	 * @example "./dist"
-	 */
-	outRoot: string;
+	getEnvironment(): Environment;
+
+	getRoutes(): Route[];
+
+	getEvents(): Event[];
+
+	getConfig(): LithiaOptions;
+
+	getOutRoot(): string;
+
+	getSourceRoot(): string;
 }
 
 /**
@@ -123,7 +163,7 @@ export interface LithiaCreateOptions {
  * await lithia.start();
  * ```
  */
-export class Lithia {
+export class Lithia implements App {
 	/** Singleton instance of Lithia. */
 	private static instance: Lithia;
 
@@ -231,48 +271,22 @@ export class Lithia {
 		return Lithia.instance;
 	}
 
-	/**
-	 * Registers a global middleware to run on every HTTP request.
-	 *
-	 * Middlewares are executed in the order they are registered, before
-	 * route-specific handlers. They can modify the request/response or
-	 * perform cross-cutting concerns like logging and authentication.
-	 *
-	 * @param middleware - The middleware function to register
-	 * @returns The Lithia instance for method chaining
-	 *
-	 * @example
-	 * ```typescript
-	 * lithia.use(async (req, res, next) => {
-	 *   console.log(`${req.method} ${req.url}`);
-	 *   await next();
-	 * });
-	 * ```
-	 */
 	use(middleware: LithiaMiddleware) {
 		this.globalMiddlewares.push(middleware);
 		return this;
 	}
 
-	/**
-	 * Registers a global dependency for dependency injection.
-	 *
-	 * Registered dependencies can be injected into route handlers and
-	 * middlewares using the `inject()` hook.
-	 *
-	 * @param key - The injection key (use `createInjectionKey<T>()` to create)
-	 * @param value - The dependency value to provide
-	 * @returns The Lithia instance for method chaining
-	 *
-	 * @example
-	 * ```typescript
-	 * const dbKey = createInjectionKey<Database>('database');
-	 * lithia.provide(dbKey, new Database());
-	 * ```
-	 */
 	provide<T>(key: InjectionKey<T>, value: T) {
 		this.globalDependencies.set(key, value);
 		return this;
+	}
+
+	getOutRoot(): string {
+		return this.outRoot;
+	}
+
+	getSourceRoot(): string {
+		return this.sourceRoot;
 	}
 
 	/**
@@ -289,9 +303,12 @@ export class Lithia {
 	 */
 	private async initialize(options: LithiaCreateOptions) {
 		this.environment = options.environment;
-		this.sourceRoot = options.sourceRoot;
-		this.outRoot = options.outRoot;
-		this.config = await this.configProvider.loadConfig();
+		this.sourceRoot = path.join(process.cwd(), "src");
+		this.outRoot = path.join(process.cwd(), "dist");
+		this.config = await this.configProvider.loadConfig({
+			environment: this.environment,
+			outDir: this.outRoot,
+		});
 
 		this.configureEventEmitter();
 
@@ -310,33 +327,41 @@ export class Lithia {
 	 */
 	private async setupConfigWatcher() {
 		try {
-			this.configWatchHandle = await this.configProvider.watchConfig((ctx) => {
-				this.config = ctx.newConfig;
-				this.emit("config:changed", ctx.newConfig);
+			this.configWatchHandle = await this.configProvider.watchConfig(
+				(ctx) => {
+					this.config = ctx.newConfig;
+					this.emit("config:changed", ctx.newConfig);
 
-				try {
-					const diffs = typeof ctx.getDiff === "function" ? ctx.getDiff() : [];
+					try {
+						const diffs =
+							typeof ctx.getDiff === "function" ? ctx.getDiff() : [];
 
-					if (diffs && diffs.length > 0) {
-						logger.event(`Config updated — ${diffs.length} change(s)`);
+						if (diffs && diffs.length > 0) {
+							logger.event(`Config updated — ${diffs.length} change(s)`);
 
-						// Log first 20 changes to avoid spam
-						for (const d of diffs.slice(0, 20)) {
-							const requiresRestart = this.configChangeRequiresRestart(d.key);
+							// Log first 20 changes to avoid spam
+							for (const d of diffs.slice(0, 20)) {
+								const requiresRestart = this.configChangeRequiresRestart(d.key);
 
-							if (requiresRestart) {
-								logger.warn(
-									`  • ${d.key}: ${d.oldValue} → ${d.newValue} (requires server restart)`,
-								);
-							} else {
-								logger.info(`  • ${d.key}: ${d.oldValue} → ${d.newValue}`);
+								if (requiresRestart) {
+									logger.warn(
+										`  • ${d.key}: ${d.oldValue} → ${d.newValue} (requires server restart)`,
+									);
+								} else {
+									logger.info(`  • ${d.key}: ${d.oldValue} → ${d.newValue}`);
+								}
 							}
 						}
+					} catch (logErr) {
+						logger.debug("Failed to summarize config diff:", logErr);
 					}
-				} catch (logErr) {
-					logger.debug("Failed to summarize config diff:", logErr);
-				}
-			}, undefined);
+				},
+				{},
+				{
+					environment: this.environment,
+					outDir: this.outRoot,
+				},
+			);
 		} catch (err) {
 			this.emitter.emit("error", err);
 		}
@@ -388,7 +413,8 @@ export class Lithia {
 				this.emitter.emit("error", err);
 				throw err; // Prevent server from starting with invalid bootstrap
 			}
-			logger.error(`Failed to load _server.ts: ${err}`);
+
+			logger.error(`Failed to load _server file: ${err}`);
 		}
 	}
 
@@ -446,6 +472,8 @@ export class Lithia {
 	 * ```
 	 */
 	async start() {
+		if (this.environment === "build")
+			throw new EnvironmentNotSupportedError("build");
 		if (this.serverRunning) return;
 
 		// Load optional user bootstrap logic
@@ -478,6 +506,8 @@ export class Lithia {
 	 * ```
 	 */
 	async stop() {
+		if (this.environment === "build")
+			throw new EnvironmentNotSupportedError("build");
 		if (!this.serverRunning) return;
 		try {
 			await this.httpServer?.close();
@@ -568,6 +598,8 @@ export class Lithia {
 		this.emitter.on("built", (durationMs: number) => {
 			logger.success(`Build completed in ${durationMs.toFixed(2)}ms`);
 
+			if (this.environment === "build") return;
+
 			this.loadRoutes();
 			this.loadEvents();
 		});
@@ -611,6 +643,9 @@ export class Lithia {
 	 * ```
 	 */
 	build() {
+		if (this.environment === "production")
+			throw new EnvironmentNotSupportedError("production");
+
 		const start = process.hrtime.bigint();
 		try {
 			buildProject(this.sourceRoot, this.outRoot);
@@ -660,6 +695,9 @@ export class Lithia {
 	 * On error, emits an `error` event and leaves routes unchanged.
 	 */
 	loadRoutes() {
+		if (this.environment === "build")
+			throw new EnvironmentNotSupportedError("build");
+
 		try {
 			const manifest = this.loadManifest<RoutesManifest>("routes.json");
 
@@ -688,6 +726,9 @@ export class Lithia {
 	 * On error, emits an `error` event and leaves events unchanged.
 	 */
 	loadEvents() {
+		if (this.environment === "build")
+			throw new EnvironmentNotSupportedError("build");
+
 		try {
 			const manifest = this.loadManifest<EventsManifest>("events.json");
 

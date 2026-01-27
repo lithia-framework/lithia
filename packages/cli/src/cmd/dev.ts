@@ -1,6 +1,6 @@
 import path from "node:path";
 import { Lithia, loadEnv, logger } from "@lithia-js/core";
-import { green, parseTsConfig } from "@lithia-js/utils";
+import { green } from "@lithia-js/utils";
 import chokidar from "chokidar";
 import { defineCommand } from "citty";
 
@@ -13,15 +13,10 @@ const dev = defineCommand({
 		const cwd = process.cwd();
 
 		// Load environment variables initially
-		loadEnv(cwd);
+		loadEnv();
 
-		const tsConfig = parseTsConfig();
-		const sourceRoot = path.join(cwd, "src");
-		const outRoot = path.join(cwd, tsConfig.outDir);
 		const lithia = await Lithia.create({
 			environment: "development",
-			sourceRoot,
-			outRoot,
 		});
 
 		// Initial build
@@ -45,7 +40,7 @@ const dev = defineCommand({
 		};
 
 		// Watch source files
-		const watchPath = sourceRoot;
+		const watchPath = path.join(cwd, "src");
 		const sourceWatcher = chokidar.watch(watchPath, {
 			ignored: /(^|[/\\])\../, // ignore dotfiles
 			persistent: true,
@@ -84,7 +79,7 @@ const dev = defineCommand({
 		envWatcher.on("all", (event, path) => {
 			if (event === "change" || event === "add") {
 				// Reload env vars
-				loadEnv(cwd);
+				loadEnv();
 
 				// Restart server to pick up new env vars if needed
 				// For now we just reload, but some configs might depend on env vars

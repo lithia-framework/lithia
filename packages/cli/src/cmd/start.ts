@@ -1,6 +1,4 @@
-import path from "node:path";
 import { Lithia, loadEnv } from "@lithia-js/core";
-import { parseTsConfig } from "@lithia-js/utils";
 import { defineCommand } from "citty";
 
 const start = defineCommand({
@@ -9,19 +7,10 @@ const start = defineCommand({
 		description: "Start the production server",
 	},
 	async run() {
-		const cwd = process.cwd();
-
-		// Load environment variables
-		loadEnv(cwd);
-
-		const tsConfig = parseTsConfig();
-		const sourceRoot = path.join(cwd, "src");
-		const outRoot = path.join(cwd, tsConfig.outDir);
+		loadEnv();
 
 		const lithia = await Lithia.create({
 			environment: "production",
-			sourceRoot,
-			outRoot,
 		});
 
 		lithia.loadRoutes();

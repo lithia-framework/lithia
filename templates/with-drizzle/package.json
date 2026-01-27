@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "lithia dev",
     "build": "lithia build",
-    "start": "lithia start"
+    "start": "lithia start",
+    "check": "biome check"
   },
   "dependencies": {
     "@lithia-js/core": "1.0.0-canary.3",
@@ -17,5 +18,8 @@
     "@types/node": "^25.0.10",
     "drizzle-kit": "^0.31.8",
     "typescript": "^5.9.3"
-  }
+  },
+  "engines": {
+		"node": ">=20"
+	}
 }

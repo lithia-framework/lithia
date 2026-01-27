@@ -1,11 +1,7 @@
 import type { DeepPartial } from "@lithia-js/utils";
-import {
-	type C12InputConfig,
-	loadConfig,
-	type WatchConfigOptions,
-	watchConfig,
-} from "c12";
+import { type C12InputConfig, loadConfig, watchConfig } from "c12";
 import { klona } from "klona";
+import type { Environment } from "./lithia";
 
 /** Result type for lifecycle hooks — may be synchronous or async. */
 export type HookResult = void | Promise<void>;
@@ -90,9 +86,8 @@ export const DEFAULT_CONFIG: LithiaConfig = {
 };
 
 type LoadConfigOptions = {
-	watch?: boolean;
-	c12?: WatchConfigOptions;
-	overrides?: LithiaConfig;
+	environment: Environment;
+	outDir: string;
 };
 
 /** Error thrown when configuration validation fails. */
@@ -129,17 +124,16 @@ export class ConfigProvider {
 	 * This delegates to `c12` for reading configuration files and defaults
 	 * and validates the resulting `LithiaOptions` before returning them.
 	 */
-	async loadConfig(overrides: LithiaConfig = {}, opts: LoadConfigOptions = {}) {
+	async loadConfig(opts: LoadConfigOptions, overrides: LithiaConfig = {}) {
 		overrides = klona(overrides);
 
 		const configOptions = {
 			name: "lithia",
 			configFile: "lithia.config",
-			cwd: process.cwd(),
+			cwd: opts.environment === "production" ? opts.outDir : process.cwd(),
 			dotenv: true,
 			overrides,
 			defaults: DEFAULT_CONFIG,
-			...opts.c12,
 		};
 
 		const loadedConfig = await loadConfig<LithiaConfig>(configOptions);
@@ -160,18 +154,17 @@ export class ConfigProvider {
 	async watchConfig(
 		onChange: (ctx: ConfigUpdateContext) => void | Promise<void>,
 		overrides: LithiaConfig = {},
-		opts: LoadConfigOptions = {},
+		opts: LoadConfigOptions,
 	) {
 		overrides = klona(overrides);
 
 		const configOptions = {
 			name: "lithia",
 			configFile: "lithia.config",
-			cwd: process.cwd(),
+			cwd: opts.environment === "production" ? opts.outDir : process.cwd(),
 			dotenv: true,
 			overrides,
 			defaults: DEFAULT_CONFIG,
-			...opts.c12,
 			watch: true,
 			onUpdate: async (context: any) => {
 				const newOptions = klona(context.newConfig.config) as LithiaOptions;

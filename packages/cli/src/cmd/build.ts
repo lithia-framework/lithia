@@ -1,6 +1,6 @@
+import { chmod, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Lithia } from "@lithia-js/core";
-import { parseTsConfig } from "@lithia-js/utils";
 import { defineCommand } from "citty";
 
 const build = defineCommand({
@@ -9,17 +9,29 @@ const build = defineCommand({
 		description: "Start the build process",
 	},
 	async run() {
-		const tsConfig = parseTsConfig();
-		const sourceRoot = path.join(process.cwd(), "src");
-		const outRoot = path.join(process.cwd(), tsConfig.outDir);
-
 		const lithia = await Lithia.create({
-			environment: "production",
-			sourceRoot,
-			outRoot,
+			environment: "build",
 		});
 
 		lithia.build();
+
+		const cfgPath = path.join(lithia.getOutRoot(), "lithia.config.json");
+		const entryPath = path.join(lithia.getOutRoot(), "lithia.js");
+		const content = await readFile(
+			path.resolve(__dirname, "../entrypoint.js"),
+			"utf-8",
+		);
+
+		await writeFile(entryPath, content, "utf-8");
+		await writeFile(
+			cfgPath,
+			JSON.stringify(lithia.getConfig(), null, 2),
+			"utf-8",
+		);
+
+		try {
+			await chmod(entryPath, 0o755);
+		} catch {}
 	},
 });
 

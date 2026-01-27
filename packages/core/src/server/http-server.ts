@@ -208,11 +208,13 @@ export class HttpServer {
 	private setupSocketIOEventListeners(): void {
 		if (!this.io) return;
 
-		const events = this.lithia.getEvents();
-		const connectionEvent = events.find((e) => e.name === "connection");
-		const disconnectEvent = events.find((e) => e.name === "disconnect");
-
+    
 		this.io.on("connection", async (socket) => {
+      const events = this.lithia.getEvents();
+      
+      const connectionEvent = events.find((e) => e.name === "connection");
+      const disconnectEvent = events.find((e) => e.name === "disconnect");
+
 			// Handle connection event
 			if (connectionEvent) {
 				await this.eventProcessor.processEvent(socket, connectionEvent);

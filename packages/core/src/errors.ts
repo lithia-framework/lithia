@@ -94,3 +94,13 @@ export class InvalidBootstrapModuleError extends LithiaError {
 		);
 	}
 }
+
+export class EnvironmentNotSupportedError extends LithiaError {
+  constructor(env: string) {
+    super(
+      "ENVIRONMENT_NOT_SUPPORTED",
+      `The environment '${env}' is not supported for this operation.`,
+      "fatal",
+    );
+  }
+}

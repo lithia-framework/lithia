@@ -1,4 +1,3 @@
-import { pathToFileURL } from "node:url";
 import importFresh from "import-fresh";
 
 /**
@@ -20,8 +19,7 @@ export async function coldImport<T = any>(
 		mod = importFresh(filePath);
 	} else {
 		// Production: use normal dynamic import via file URL
-		const importUrl = pathToFileURL(filePath).href;
-		mod = await import(importUrl);
+		mod = await import(filePath);
 	}
 
 	// Normalize CommonJS module structure
