@@ -47,7 +47,7 @@ const main = defineCommand({
 	},
 	async run(ctx) {
 		const repo = "https://github.com/lithia-framework/lithia.git";
-		const templates = ["starter", "with-drizzle"];
+		const templates = ["starter", "with-drizzle", "with-docker"];
 		const packages = [
 			"@lithia-js/cli",
 			"@lithia-js/core",

@@ -17,7 +17,8 @@
   "scripts": {
     "prepublishOnly": "napi prepublish -p npm --tag-style npm --no-gh-release",
     "artifacts": "napi artifacts --npm-dir npm",
-    "build:rs": "napi build --platform --release"
+    "build:rs": "pnpm prebuild && napi build --platform --release",
+    "prebuild": "node sync-versions.js"
   },
   "devDependencies": {
     "@napi-rs/cli": "^3.5.1"
