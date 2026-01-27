@@ -1,0 +1,19 @@
+{
+  "name": "my-lithia-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "lithia dev",
+    "build": "lithia build",
+    "start": "lithia start"
+  },
+  "dependencies": {
+    "@lithia-js/core": "1.0.0-canary.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.13",
+    "@lithia-js/cli": "1.0.0-canary.3",
+    "@types/node": "^25.0.10",
+    "typescript": "^5.9.3"
+  }
+}

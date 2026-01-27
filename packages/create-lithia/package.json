@@ -1,9 +1,10 @@
 {
-	"name": "@lithia-js/utils",
+	"name": "create-lithia",
 	"version": "1.0.0-canary.3",
 	"private": false,
-	"main": "dist/lib.js",
-	"types": "dist/lib.d.ts",
+	"bin": {
+		"create-lithia": "dist/main.js"
+	},
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"homepage": "https://lithiajs.com",
 	"license": "MIT",
@@ -15,21 +16,23 @@
 		"url": "https://github.com/lithia-framework/lithia/issues"
 	},
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json"
+		"build": "tsc -p tsconfig.build.json",
+    "cli": "tsx ./src/main.ts"
+	},
+	"dependencies": {
+		"citty": "^0.2.0",
+		"prompts": "^2.4.2",
+    "@lithia-js/utils": "workspace:*"
 	},
 	"engines": {
 		"node": ">=20"
-	},
-	"exports": {
-		".": {
-			"types": "./dist/lib.d.ts",
-			"require": "./dist/lib.js",
-			"import": "./dist/lib.js"
-		}
 	},
 	"publishConfig": {
 		"registry": "https://registry.npmjs.org/",
 		"access": "public",
 		"provenance": true
+	},
+	"devDependencies": {
+		"@types/prompts": "^2.4.9"
 	}
 }

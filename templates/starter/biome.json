@@ -6,13 +6,7 @@
 		"useIgnoreFile": false
 	},
 	"files": {
-		"ignoreUnknown": false,
-		"includes": [
-			"packages/**",
-			"!templates/*",
-			"!packages/native/*",
-			"!**/dist/**/*"
-		]
+		"ignoreUnknown": false
 	},
 	"formatter": {
 		"enabled": true,
@@ -21,13 +15,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
-			"suspicious": {
-				"noExplicitAny": "off"
-			},
-			"style": {
-				"noNonNullAssertion": "off"
-			}
+			"recommended": true
 		}
 	},
 	"javascript": {

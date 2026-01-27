@@ -2,7 +2,5 @@
 node_modules/
 npm/
 src/
-pnpm-lock.json
 *.node
-tsconfig.build.json
-tsconfig.build.tsbuildinfo
+Cargo.toml
