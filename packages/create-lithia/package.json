@@ -1,6 +1,6 @@
 {
 	"name": "create-lithia",
-	"version": "1.0.0-canary.3",
+	"version": "1.0.0-canary.4",
 	"private": false,
 	"bin": {
 		"create-lithia": "dist/main.js"
@@ -17,7 +17,7 @@
 	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",
-    "cli": "tsx ./src/main.ts"
+		"cli": "tsx ./src/main.ts"
 	},
 	"dependencies": {
 		"citty": "^0.2.0",
