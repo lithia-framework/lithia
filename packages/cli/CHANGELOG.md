@@ -1,5 +1,14 @@
 # @lithia-js/cli
 
+## 1.0.0-canary.3
+
+### Patch Changes
+
+- d536a2f: Fixed exports from @lithia-js/native
+- Updated dependencies [d536a2f]
+  - @lithia-js/core@1.0.0-canary.3
+  - @lithia-js/utils@1.0.0-canary.3
+
 ## 1.0.0-canary.2
 
 ### Patch Changes

@@ -1,19 +1,19 @@
 {
   "name": "@lithia-js/native",
-  "version": "1.0.0-canary.2",
+  "version": "1.0.0-canary.3",
   "private": false,
   "main": "index.js",
   "types": "index.d.ts",
   "author": "Lucas Arch <luketsx@icloud.com>",
-	"homepage": "https://lithiajs.com",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lithia-framework/lithia.git"
-	},
-	"bugs": {
-		"url": "https://github.com/lithia-framework/lithia/issues"
-	},
+  "homepage": "https://lithiajs.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lithia-framework/lithia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lithia-framework/lithia/issues"
+  },
   "scripts": {
     "prepublishOnly": "napi prepublish -p npm --tag-style npm --no-gh-release",
     "artifacts": "napi artifacts --npm-dir npm",
