@@ -1,5 +1,11 @@
 # create-lithia
 
+## 1.0.0-canary.11
+
+### Patch Changes
+
+- 01467e0: Fixed index from `create-lithia` CLI
+
 ## 1.0.0-canary.10
 
 ### Patch Changes

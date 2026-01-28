@@ -1,5 +1,14 @@
 # @lithia-js/cli
 
+## 1.0.0-canary.11
+
+### Patch Changes
+
+- 01467e0: Fixed index from `create-lithia` CLI
+- Updated dependencies [01467e0]
+  - @lithia-js/core@1.0.0-canary.11
+  - @lithia-js/utils@1.0.0-canary.11
+
 ## 1.0.0-canary.10
 
 ### Patch Changes
