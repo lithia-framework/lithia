@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/better-auth",
-	"version": "1.0.0-canary.12",
+	"version": "1.0.0-canary.13",
 	"private": false,
 	"type": "module",
 	"author": "Lucas Arch <luketsx@icloud.com>",

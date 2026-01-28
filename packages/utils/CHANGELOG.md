@@ -1,5 +1,11 @@
 # @lithia-js/utils
 
+## 1.0.0-canary.13
+
+### Patch Changes
+
+- 2a65f2a: Fixed missing await from authenticated middleware
+
 ## 1.0.0-canary.12
 
 ### Patch Changes
