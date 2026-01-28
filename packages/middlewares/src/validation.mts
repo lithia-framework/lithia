@@ -1,6 +1,6 @@
 import {
-	type Middleware,
-	RequestValidationError,
+  type Middleware,
+  RequestValidationError,
 } from "@lithia-js/core/server";
 import { ZodError, type ZodType } from "zod";
 
@@ -37,7 +37,7 @@ export function validate(schemas: ValidationSchemas): Middleware {
 				req.setBody(validatedBody);
 			}
 
-			next();
+			await next();
 		} catch (err) {
 			if (err instanceof ZodError) {
 				throw new RequestValidationError("Validation failed", err.issues);
