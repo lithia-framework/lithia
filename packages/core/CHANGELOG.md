@@ -1,5 +1,14 @@
 # @lithia-js/core
 
+## 1.0.0-canary.12
+
+### Patch Changes
+
+- 059a95a: Fixed middleware `next` function call
+- Updated dependencies [059a95a]
+  - @lithia-js/native@1.0.0-canary.12
+  - @lithia-js/utils@1.0.0-canary.12
+
 ## 1.0.0-canary.11
 
 ### Patch Changes
