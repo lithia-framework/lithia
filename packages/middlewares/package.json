@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/middlewares",
-	"version": "1.0.0-canary.8",
+	"version": "1.0.0-canary.9",
 	"private": false,
 	"type": "module",
 	"author": "Lucas Arch <luketsx@icloud.com>",
