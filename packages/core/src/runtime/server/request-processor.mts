@@ -140,43 +140,57 @@ export class LithiaRequestProcessor {
 
 	private handleCors(req: LithiaRequest, res: LithiaResponse): boolean {
 		const { cors } = this.runtime.config.http;
-		if (!cors) return false;
+		if (!cors?.origin?.length) return false;
 
-		const origin = req.headers.origin as string;
-		const isAllowed =
-			cors.origin?.includes("*") || (origin && cors.origin?.includes(origin));
+		const requestOrigin = req.headers.origin as string | undefined;
+		if (!requestOrigin) return false;
 
-		if (isAllowed) {
-			const allowedOrigin =
-				cors.credentials && cors.origin?.includes("*")
-					? origin
-					: cors.origin?.includes("*")
-						? "*"
-						: origin;
+		const isOriginAllowed = (): boolean => {
+			if (cors.origin?.includes("*")) return true;
+			return (cors.origin || []).some((allowed) => allowed === requestOrigin);
+		};
 
-			res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
-			res.setHeader("Vary", "Origin");
+		if (!isOriginAllowed()) return false;
 
-			if (cors.credentials)
-				res.setHeader("Access-Control-Allow-Credentials", "true");
-			if (cors.exposedHeaders)
-				res.setHeader(
-					"Access-Control-Expose-Headers",
-					cors.exposedHeaders.join(", "),
-				);
-
-			if (req.method === "OPTIONS") {
-				if (cors.methods)
-					res.setHeader(
-						"Access-Control-Allow-Methods",
-						cors.methods.join(", "),
-					);
-				if (cors.maxAge)
-					res.setHeader("Access-Control-Max-Age", cors.maxAge.toString());
-				res.status(204).end();
-				return true;
-			}
+		let allowedOrigin: string;
+		if (cors.origin.includes("*")) {
+			allowedOrigin = cors.credentials ? requestOrigin : "*";
+		} else {
+			allowedOrigin = requestOrigin;
 		}
+
+		res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+		res.setHeader("Vary", "Origin");
+
+		if (cors.credentials) {
+			res.setHeader("Access-Control-Allow-Credentials", "true");
+		}
+
+		if (cors.exposedHeaders?.length) {
+			res.setHeader(
+				"Access-Control-Expose-Headers",
+				cors.exposedHeaders.join(", "),
+			);
+		}
+
+		// Preflight (OPTIONS)
+		if (req.method === "OPTIONS") {
+			if (cors.methods?.length) {
+				res.setHeader("Access-Control-Allow-Methods", cors.methods.join(", "));
+			}
+			if (cors.allowedHeaders?.length) {
+				res.setHeader(
+					"Access-Control-Allow-Headers",
+					cors.allowedHeaders.join(", "),
+				);
+			}
+			if (cors.maxAge != null) {
+				res.setHeader("Access-Control-Max-Age", String(cors.maxAge));
+			}
+			res.status(204).end();
+			return true;
+		}
+
 		return false;
 	}
 
