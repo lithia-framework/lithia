@@ -1,5 +1,11 @@
 # @lithia-js/utils
 
+## 1.0.0-canary.14
+
+### Patch Changes
+
+- cb28ad8: Fixed CORS error
+
 ## 1.0.0-canary.13
 
 ### Patch Changes
