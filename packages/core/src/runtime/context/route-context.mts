@@ -13,15 +13,13 @@ export interface RouteContext {
 	dependencies: Map<any, any>;
 }
 
-// const GLOBAL_KEY = "__lithia_route_context_v1" as const;
-// const globalAny = globalThis as any;
-// if (!globalAny[GLOBAL_KEY]) {
-// 	globalAny[GLOBAL_KEY] = new AsyncLocalStorage<RouteContext>();
-// }
-// export const routeContext: AsyncLocalStorage<RouteContext> =
-// 	globalAny[GLOBAL_KEY];
-
-export const routeContext = new AsyncLocalStorage<RouteContext>();
+const GLOBAL_KEY = "__lithia_route_context_v1" as const;
+const globalAny = globalThis as any;
+if (!globalAny[GLOBAL_KEY]) {
+	globalAny[GLOBAL_KEY] = new AsyncLocalStorage<RouteContext>();
+}
+export const routeContext: AsyncLocalStorage<RouteContext> =
+	globalAny[GLOBAL_KEY];
 
 export function getRouteContext(): RouteContext {
 	const ctx = routeContext.getStore();

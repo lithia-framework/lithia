@@ -10,15 +10,13 @@ export type EventContext = {
 	event: Event;
 };
 
-// const GLOBAL_KEY = "__lithia_event_context_v1" as const;
-// const globalAny = globalThis as any;
-// if (!globalAny[GLOBAL_KEY]) {
-// 	globalAny[GLOBAL_KEY] = new AsyncLocalStorage<EventContext>();
-// }
-// export const eventContext: AsyncLocalStorage<EventContext> =
-// 	globalAny[GLOBAL_KEY];
-
-export const eventContext = new AsyncLocalStorage<EventContext>();
+const GLOBAL_KEY = "__lithia_event_context_v1" as const;
+const globalAny = globalThis as any;
+if (!globalAny[GLOBAL_KEY]) {
+	globalAny[GLOBAL_KEY] = new AsyncLocalStorage<EventContext>();
+}
+export const eventContext: AsyncLocalStorage<EventContext> =
+	globalAny[GLOBAL_KEY];
 
 export function getEventContext(): EventContext {
 	const ctx = eventContext.getStore();

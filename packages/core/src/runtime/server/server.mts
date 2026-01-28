@@ -168,7 +168,7 @@ export class LithiaServer {
 	}
 
 	private handleRequest() {
-		return async (req: IncomingMessage, res: ServerResponse) => {
+		return (req: IncomingMessage, res: ServerResponse) => {
 			try {
 				const lithiaReq = new LithiaRequest(req, {
 					maxBodySize: this.runtime.config.http.maxBodySize,

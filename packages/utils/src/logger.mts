@@ -60,7 +60,7 @@ export class Logger {
 	}
 
 	debug(msg: any, meta?: any) {
-		if (process.env.DEBUG !== "true" && process.env.DEBUG !== "1") return;
+		if (process.env.DEBUG !== "1") return;
 		const symbol = purple(bold("»"));
 		const m = formatMeta(meta);
 		console.log(`${symbol} ${gray(msg)}${m ? ` — ${m}` : ""}`);
