@@ -6,7 +6,9 @@
     "@lithia-js/core": "0.1.0",
     "@lithia-js/native": "0.1.0",
     "@lithia-js/utils": "0.1.0",
-    "create-lithia": "1.0.0-canary.3"
+    "create-lithia": "1.0.0-canary.3",
+    "@lithia-js/better-auth": "1.0.0-canary.7",
+    "@lithia-js/middlewares": "1.0.0-canary.7"
   },
   "changesets": [
     "crisp-cats-worry",
@@ -17,6 +19,7 @@
     "shaggy-flies-shave",
     "tame-bushes-shake",
     "tough-bars-warn",
-    "true-flies-like"
+    "true-flies-like",
+    "wicked-ants-end"
   ]
 }

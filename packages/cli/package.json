@@ -1,8 +1,8 @@
 {
 	"name": "@lithia-js/cli",
-	"version": "1.0.0-canary.7",
+	"version": "1.0.0-canary.8",
 	"private": false,
-  "type": "module",
+	"type": "module",
 	"bin": {
 		"lithia": "dist/index.mjs"
 	},
@@ -26,7 +26,7 @@
 		"access": "public",
 		"provenance": true
 	},
-  "repository": {
+	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/lithia-framework/lithia.git"
 	},
