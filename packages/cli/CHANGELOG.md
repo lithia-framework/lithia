@@ -1,5 +1,14 @@
 # @lithia-js/cli
 
+## 1.0.0-canary.8
+
+### Patch Changes
+
+- 15de957: Changed the entire framework to use ESM modules
+- Updated dependencies [15de957]
+  - @lithia-js/core@1.0.0-canary.8
+  - @lithia-js/utils@1.0.0-canary.8
+
 ## 1.0.0-canary.7
 
 ### Patch Changes

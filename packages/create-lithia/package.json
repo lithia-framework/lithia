@@ -1,6 +1,6 @@
 {
 	"name": "create-lithia",
-	"version": "1.0.0-canary.7",
+	"version": "1.0.0-canary.8",
 	"private": false,
 	"type": "module",
 	"bin": {
@@ -28,7 +28,7 @@
 	"devDependencies": {
 		"@types/prompts": "^2.4.9"
 	},
-  "repository": {
+	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/lithia-framework/lithia.git"
 	},
