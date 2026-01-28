@@ -8,5 +8,5 @@ export function digest(err: unknown): string {
 		.update(`${errString}${Date.now()}${Math.random()}`)
 		.digest("hex");
 
-	return hash;
+	return hash.slice(0, 12)
 }

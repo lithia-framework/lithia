@@ -1,6 +1,7 @@
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import type { Route } from "@lithia-js/native";
+import { logger, red } from "@lithia-js/utils";
 import { routeContext } from "../context/route-context.mjs";
 import { loadModule } from "../module-loader.js";
 import type { LithiaRuntime } from "../runtime-app.mjs";
@@ -229,20 +230,31 @@ export class LithiaRequestProcessor {
 		const message =
 			isProd && statusCode >= 500 ? "Internal Server Error" : error.message;
 
+		const _digest = digest(err);
+
 		res.status(statusCode).json({
 			error: {
 				statusCode,
 				message,
 				timestamp: new Date().toISOString(),
-				digest: digest(error),
+				digest: _digest,
 				path: req.pathname,
 				method: req.method,
-				issues: error instanceof RequestValidationError ? error.issues : [],
+				issues:
+					error instanceof RequestValidationError ? error.issues : undefined,
 				...(this.runtime.environment === "development" && {
 					cause: String(error.cause || err),
 				}),
 			},
 		});
+
+		if (statusCode >= 500) {
+			logger.error(`Digest: ${red(_digest)}`);
+			logger.info(`Path: ${req.pathname}`);
+			logger.info(`Method: ${req.method}`);
+			logger.info(`Status: ${statusCode}`);
+			logger.info(`${err.stack || err}`);
+		}
 	}
 
 	private getOrCreateRegex(pattern: string): RegExp {

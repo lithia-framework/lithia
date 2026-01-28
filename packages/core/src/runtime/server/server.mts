@@ -69,6 +69,7 @@ export class LithiaServer {
 				this.runtime.config.http.port,
 				this.runtime.config.http.host,
 				() => {
+					logger.success("Lithia is ready!");
 					resolve();
 				},
 			);

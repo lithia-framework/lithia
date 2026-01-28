@@ -9,7 +9,8 @@
     "start": "lithia start",
     "check": "biome check",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@lithia-js/better-auth": "file:../../packages/better-auth",

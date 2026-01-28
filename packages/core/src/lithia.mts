@@ -89,7 +89,7 @@ export class Lithia {
 			const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
 			this.emitter.emit("built", { durationMs });
 		} catch (err) {
-			this.emitter.emit("error", err);
+			logger.error("Build failed:", err);
 		}
 	}
 
@@ -98,9 +98,9 @@ export class Lithia {
 			logger.success(`Build completed in ${durationMs.toFixed(2)}ms`);
 
 			if (this.environment === "build") {
-        logger.debug("Exiting process after build in 'build' environment.");
-        process.exit(0);
-      }
+				logger.debug("Exiting process after build in 'build' environment.");
+				process.exit(0);
+			}
 
 			await this.swapRuntime();
 		});

@@ -1,4 +1,13 @@
-import { blue, bold, green, red, white, yellow } from "./picocolors.mjs";
+import {
+  blue,
+  bold,
+  gray,
+  green,
+  purple,
+  red,
+  white,
+  yellow,
+} from "./picocolors.mjs";
 
 export type LogLevel =
 	| "info"
@@ -51,9 +60,10 @@ export class Logger {
 	}
 
 	debug(msg: any, meta?: any) {
-		const symbol = white(bold("»"));
+		if (process.env.DEBUG !== "true" && process.env.DEBUG !== "1") return;
+		const symbol = purple(bold("»"));
 		const m = formatMeta(meta);
-		console.log(`${symbol} ${msg}${m ? ` — ${m}` : ""}`);
+		console.log(`${symbol} ${gray(msg)}${m ? ` — ${m}` : ""}`);
 	}
 
 	wait(msg: any, meta?: any) {

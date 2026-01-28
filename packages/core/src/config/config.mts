@@ -4,7 +4,6 @@ import { klona } from "klona";
 import type { Environment } from "../lithia.mjs";
 
 export interface LithiaOptions {
-	debug: boolean;
 	http: {
 		port: number;
 		host: string;
@@ -42,7 +41,6 @@ export interface LithiaConfig
 		C12InputConfig<LithiaConfig> {}
 
 export const DEFAULT_CONFIG: LithiaConfig = {
-	debug: false,
 	http: {
 		port: 3000,
 		host: "localhost",
