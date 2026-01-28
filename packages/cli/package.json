@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/cli",
-	"version": "1.0.0-canary.10",
+	"version": "1.0.0-canary.11",
 	"private": false,
 	"type": "module",
 	"bin": {
