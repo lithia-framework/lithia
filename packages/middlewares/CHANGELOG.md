@@ -1,5 +1,13 @@
 # @lithia-js/core
 
+## 1.0.0-canary.10
+
+### Patch Changes
+
+- 9eed826: Added better-auth support
+- Updated dependencies [9eed826]
+  - @lithia-js/core@1.0.0-canary.10
+
 ## 1.0.0-canary.9
 
 ### Patch Changes

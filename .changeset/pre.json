@@ -11,6 +11,7 @@
     "@lithia-js/middlewares": "1.0.0-canary.7"
   },
   "changesets": [
+    "beige-houses-sleep",
     "crisp-cats-worry",
     "free-yaks-matter",
     "gold-cycles-kick",
