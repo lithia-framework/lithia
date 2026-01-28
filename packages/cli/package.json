@@ -2,19 +2,13 @@
 	"name": "@lithia-js/cli",
 	"version": "1.0.0-canary.7",
 	"private": false,
+  "type": "module",
 	"bin": {
-		"lithia": "dist/main.js"
+		"lithia": "dist/index.mjs"
 	},
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"homepage": "https://lithiajs.com",
 	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lithia-framework/lithia.git"
-	},
-	"bugs": {
-		"url": "https://github.com/lithia-framework/lithia/issues"
-	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json"
 	},
@@ -31,5 +25,12 @@
 		"registry": "https://registry.npmjs.org/",
 		"access": "public",
 		"provenance": true
+	},
+  "repository": {
+		"type": "git",
+		"url": "git+https://github.com/lithia-framework/lithia.git"
+	},
+	"bugs": {
+		"url": "https://github.com/lithia-framework/lithia/issues"
 	}
 }

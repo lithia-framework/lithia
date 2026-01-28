@@ -2,17 +2,30 @@
 	"name": "@lithia-js/core",
 	"version": "1.0.0-canary.7",
 	"private": false,
-	"main": "dist/lib.js",
-	"types": "dist/lib.d.ts",
+	"type": "module",
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"homepage": "https://lithiajs.com",
 	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lithia-framework/lithia.git"
-	},
-	"bugs": {
-		"url": "https://github.com/lithia-framework/lithia/issues"
+	"main": "dist/index.mjs",
+	"types": "dist/index.d.mts",
+	"module": "dist/index.mjs",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.mts",
+			"default": "./dist/index.mjs"
+		},
+		"./config": {
+			"types": "./dist/config/index.d.mts",
+			"default": "./dist/config/index.mjs"
+		},
+		"./hooks": {
+			"types": "./dist/runtime/hooks/index.d.mts",
+			"default": "./dist/runtime/hooks/index.mjs"
+		},
+		"./server": {
+			"types": "./dist/runtime/server/index.d.mts",
+			"default": "./dist/runtime/server/index.mjs"
+		}
 	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json"
@@ -27,7 +40,6 @@
 		"busboy": "^1.6.0",
 		"c12": "^3.3.3",
 		"cookie": "^1.1.1",
-		"import-fresh": "^3.3.1",
 		"klona": "^2.0.6",
 		"socket.io": "^4.8.1",
 		"source-map-support": "^0.5.21",
@@ -36,16 +48,16 @@
 	"engines": {
 		"node": ">=20"
 	},
-	"exports": {
-		".": {
-			"types": "./dist/lib.d.ts",
-			"require": "./dist/lib.js",
-			"import": "./dist/lib.js"
-		}
-	},
 	"publishConfig": {
 		"registry": "https://registry.npmjs.org/",
 		"access": "public",
 		"provenance": true
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/lithia-framework/lithia.git"
+	},
+	"bugs": {
+		"url": "https://github.com/lithia-framework/lithia/issues"
 	}
 }

@@ -1,0 +1,31 @@
+{
+  "name": "my-lithia-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "lithia dev",
+    "build": "lithia build",
+    "start": "lithia start",
+    "check": "biome check",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "@lithia-js/better-auth": "file:../../packages/better-auth",
+    "@lithia-js/core": "file:../../packages/core",
+    "better-auth": "^1.4.17",
+    "drizzle-orm": "^0.45.1",
+    "pg": "^8.17.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.13",
+    "@lithia-js/cli": "file:../../packages/cli",
+    "@types/node": "^25.0.10",
+    "drizzle-kit": "^0.31.8",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

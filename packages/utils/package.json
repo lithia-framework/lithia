@@ -2,17 +2,18 @@
 	"name": "@lithia-js/utils",
 	"version": "1.0.0-canary.7",
 	"private": false,
-	"main": "dist/lib.js",
-	"types": "dist/lib.d.ts",
+  "type": "module",
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"homepage": "https://lithiajs.com",
 	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lithia-framework/lithia.git"
-	},
-	"bugs": {
-		"url": "https://github.com/lithia-framework/lithia/issues"
+  "main": "dist/index.mjs",
+	"types": "dist/index.d.mts",
+	"module": "dist/index.mjs",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.mts",
+			"default": "./dist/index.mjs"
+		}
 	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json"
@@ -20,16 +21,16 @@
 	"engines": {
 		"node": ">=20"
 	},
-	"exports": {
-		".": {
-			"types": "./dist/lib.d.ts",
-			"require": "./dist/lib.js",
-			"import": "./dist/lib.js"
-		}
-	},
 	"publishConfig": {
 		"registry": "https://registry.npmjs.org/",
 		"access": "public",
 		"provenance": true
+	},
+  "repository": {
+		"type": "git",
+		"url": "git+https://github.com/lithia-framework/lithia.git"
+	},
+	"bugs": {
+		"url": "https://github.com/lithia-framework/lithia/issues"
 	}
 }

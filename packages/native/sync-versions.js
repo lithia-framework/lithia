@@ -6,7 +6,6 @@ if (process.env.CI !== '1') {
   return;
 }
 
-
 function die(msg) {
   console.error(msg);
   process.exit(1);

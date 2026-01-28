@@ -1,50 +1,13 @@
-//! Utilities to transform filesystem route file paths into normalized HTTP
-//! route paths and regular expressions used by the router.
-//!
-//! This module exposes the `PathTransformer` trait which defines the
-//! transformations required to convert a filesystem-style route (for example
-//! `users/[id]/route.ts`) into a normalized runtime path (`/users/:id/route`),
-//! a route regex and helper utilities. The `NativePathTransformer` implements
-//! the trait with the typical behaviour expected by the framework.
-//!
-//! Public API:
-//! - `PathTransformer` trait: abstraction used across the codebase to convert
-//!   and normalize paths.
-//! - `NativePathTransformer`: default implementation used by the native router.
-
 use regex::Regex;
 
-/// Trait that defines path transformation utilities used by the router.
-/// Implementors convert filesystem file paths into normalized route paths,
-/// detect dynamic segments, and produce regular expressions suitable for
-/// matching incoming requests.
 pub trait PathTransformer {
-    /// Transform a filesystem file path into a normalized route-like path.
-    ///
-    /// Example: `users/[id]/route.ts` -> `users/:id/route`.
     fn transform_file_path(&self, path: &str) -> String;
-
-    /// Normalize a route path applying a global prefix, ensuring a leading
-    /// slash and removing trailing slashes where appropriate.
-    ///
-    /// Example: `("/users", "/api")` -> `/api/users`.
     fn normalize_path(&self, path: &str, global_prefix: &str) -> String;
-
-    /// Return true when the supplied path contains dynamic segments (e.g.
-    /// `:id`).
     fn is_dynamic_route(&self, path: &str) -> bool;
-
-    /// Generate a regular expression string from a normalized route path.
-    ///
-    /// Example: `/users/:id` -> `^/users/([^\/]+)$`.
     fn generate_route_regex(&self, path: &str) -> String;
-
-    /// Clone the transformer as a boxed trait object.
     fn clone_box(&self) -> Box<dyn PathTransformer>;
 }
 
-/// Join `base` and `path`, ensuring there is at most one separator between
-/// them. If `base` is empty, `path` is returned unchanged.
 fn with_base(path: &str, base: &str) -> String {
     if base.is_empty() {
         path.to_string()
@@ -57,7 +20,6 @@ fn with_base(path: &str, base: &str) -> String {
     }
 }
 
-/// Ensure the provided `path` starts with a leading slash.
 fn with_leading_slash(path: &str) -> String {
     if path.starts_with('/') {
         path.to_string()
@@ -66,7 +28,6 @@ fn with_leading_slash(path: &str) -> String {
     }
 }
 
-/// Remove a trailing slash from `path` except when the path is `/`.
 fn without_trailing_slash(path: &str) -> String {
     if path.ends_with('/') && path.len() > 1 {
         path.trim_end_matches('/').to_string()
@@ -75,10 +36,6 @@ fn without_trailing_slash(path: &str) -> String {
     }
 }
 
-/// Default `PathTransformer` implementation used by the native router.
-/// It converts filesystem route file names and patterns (including dynamic
-/// segments like `[id]` and catch-all `[...path]`) into normalized runtime
-/// path templates and regexes.
 #[derive(Clone)]
 pub struct NativePathTransformer {
     remove_ext: Regex,
@@ -91,11 +48,9 @@ pub struct NativePathTransformer {
 }
 
 impl NativePathTransformer {
-    /// Construct a new `NativePathTransformer` with precompiled regular
-    /// expressions tuned for route syntax used by the framework.
     pub fn new() -> Self {
         Self {
-            remove_ext: Regex::new(r"\.[A-Za-z]+$").unwrap(),
+            remove_ext: Regex::new(r"\.(mts|mjs)$").unwrap(),
             remove_groups: Regex::new(r"\(([^(/\\]+)\)[/\\]").unwrap(),
             catch_all_named: Regex::new(r"\[\.\.\.(\w+)\]").unwrap(),
             catch_all: Regex::new(r"\[\.\.\.]").unwrap(),
@@ -134,7 +89,12 @@ impl PathTransformer for NativePathTransformer {
     }
 
     fn generate_route_regex(&self, path: &str) -> String {
-        let escaped = path.replace('/', r"\/");
+        let mut escaped = path.replace('/', r"\/");
+
+        let catch_all_named = Regex::new(r"\*\*:(\w+)").unwrap();
+        escaped = catch_all_named.replace_all(&escaped, r"(.*)").to_string();
+
+        escaped = escaped.replace("**", "(.*)");
 
         let regex_body = self
             .route_param
@@ -161,20 +121,20 @@ mod tests {
     #[test]
     fn transform_file_path_removes_extension() {
         let t = transformer();
-        assert_eq!(t.transform_file_path("users/route.ts"), "users/route")
+        assert_eq!(t.transform_file_path("users/route.mts"), "users/route")
     }
 
     #[test]
     fn transform_file_path_removes_route_groups() {
         let t = transformer();
-        assert_eq!(t.transform_file_path("(v1)/users/route.ts"), "users/route")
+        assert_eq!(t.transform_file_path("(v1)/users/route.mts"), "users/route")
     }
 
     #[test]
     fn transform_file_path_dynamic_segments() {
         let t = transformer();
         assert_eq!(
-            t.transform_file_path("users/[id]/route.ts"),
+            t.transform_file_path("users/[id]/route.mts"),
             "users/:id/route"
         )
     }
@@ -183,7 +143,7 @@ mod tests {
     fn transform_file_path_multiple_dynamic_segments() {
         let t = transformer();
         assert_eq!(
-            t.transform_file_path("users/[userId]/posts/[postId]/route.ts"),
+            t.transform_file_path("users/[userId]/posts/[postId]/route.mts"),
             "users/:userId/posts/:postId/route"
         )
     }
@@ -192,7 +152,7 @@ mod tests {
     fn transform_file_path_catch_all_named() {
         let t = transformer();
         assert_eq!(
-            t.transform_file_path("files/[...path]/route.ts"),
+            t.transform_file_path("files/[...path]/route.mts"),
             "files/**:path/route"
         )
     }
@@ -201,7 +161,7 @@ mod tests {
     fn transform_file_path_catch_all_unnamed() {
         let t = transformer();
         assert_eq!(
-            t.transform_file_path("files/[...]/route.ts"),
+            t.transform_file_path("files/[...]/route.mts"),
             "files/**/route"
         )
     }
@@ -210,7 +170,7 @@ mod tests {
     fn transform_file_path_normalizes_windows_separators() {
         let t = transformer();
         assert_eq!(
-            t.transform_file_path(r"users\[id]\route.ts"),
+            t.transform_file_path(r"users\[id]\route.mts"),
             "users/:id/route"
         )
     }

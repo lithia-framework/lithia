@@ -2,22 +2,16 @@
 	"name": "create-lithia",
 	"version": "1.0.0-canary.7",
 	"private": false,
+	"type": "module",
 	"bin": {
-		"create-lithia": "dist/main.js"
+		"create-lithia": "dist/index.mts"
 	},
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"homepage": "https://lithiajs.com",
 	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lithia-framework/lithia.git"
-	},
-	"bugs": {
-		"url": "https://github.com/lithia-framework/lithia/issues"
-	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",
-		"cli": "tsx ./src/main.ts"
+		"cli": "tsx ./src/index.mts"
 	},
 	"dependencies": {
 		"citty": "^0.2.0",
@@ -33,5 +27,12 @@
 	},
 	"devDependencies": {
 		"@types/prompts": "^2.4.9"
+	},
+  "repository": {
+		"type": "git",
+		"url": "git+https://github.com/lithia-framework/lithia.git"
+	},
+	"bugs": {
+		"url": "https://github.com/lithia-framework/lithia/issues"
 	}
 }

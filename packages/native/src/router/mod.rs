@@ -90,7 +90,7 @@ pub fn write_routes_manifest(config: &BuildConfig) -> Result<(), String> {
                 "routes".to_string(),
             ],
             Some(crate::scanner::ScanOptions {
-                include: Some(vec!["**/*.js".to_string()]),
+                include: Some(vec!["**/*.mjs".to_string()]),
                 ignore: None,
             }),
         )
@@ -102,13 +102,12 @@ pub fn write_routes_manifest(config: &BuildConfig) -> Result<(), String> {
     let routes: Vec<Route> = route_files
         .iter()
         .map(|file| processor.process_route_file(file))
-        .filter(|route| route.method.is_some())
         .map(Route::from)
         .collect();
 
     let manifest = RoutesManifest { version, routes };
 
-    let json = serde_json::to_string(&manifest)
+    let json = serde_json::to_string_pretty(&manifest)
         .map_err(|e| format!("Failed to serialize routes: {}", e))?;
 
     fs::write(config.out_root.join("routes.json"), json)

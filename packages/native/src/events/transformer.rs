@@ -1,15 +1,8 @@
 use regex::Regex;
 
 pub trait PathTransformer {
-    /// Normalize a file path by removing extensions, groups, and normalizing
-    /// separators.
     fn normalize(&self, path: &str) -> String;
-
-    /// Normalize a path and apply an optional global prefix, returning a
-    /// value that always starts with a leading slash.
     fn normalize_path(&self, path: &str, global_prefix: &str) -> String;
-
-    /// Clone the transformer as a boxed trait object.
     fn clone_box(&self) -> Box<dyn PathTransformer>;
 }
 
@@ -22,7 +15,7 @@ pub struct NativeEventTransformer {
 impl NativeEventTransformer {
     pub fn new() -> Self {
         Self {
-            remove_ext: Regex::new(r"\.[A-Za-z0-9]+$").unwrap(),
+            remove_ext: Regex::new(r"\.(mts|mjs)$").unwrap(),
             remove_groups: Regex::new(r"\(([^(/\\]+)\)[/\\]").unwrap(),
         }
     }
@@ -72,7 +65,7 @@ mod tests {
     #[test]
     fn normalize_basic() {
         let t = NativeEventTransformer::new();
-        assert_eq!(t.normalize("app/events/chat/message.ts"), "app/events/chat/message");
-        assert_eq!(t.normalize("(v1)/events/connection.ts"), "events/connection");
+        assert_eq!(t.normalize("app/events/chat/message.mts"), "app/events/chat/message");
+        assert_eq!(t.normalize("(v1)/events/connection.mts"), "events/connection");
     }
 }

@@ -1,0 +1,43 @@
+{
+	"name": "@lithia-js/middlewares",
+	"version": "1.0.0-canary.7",
+	"private": false,
+	"type": "module",
+	"author": "Lucas Arch <luketsx@icloud.com>",
+	"homepage": "https://lithiajs.com",
+	"license": "MIT",
+	"main": "dist/index.mjs",
+	"types": "dist/index.d.mts",
+	"module": "dist/index.mjs",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.mts",
+			"default": "./dist/index.mjs"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json"
+	},
+	"dependencies": {
+		"@lithia-js/core": "workspace:*",
+		"zod": "^4.2.1"
+	},
+	"engines": {
+		"node": ">=20"
+	},
+	"publishConfig": {
+		"registry": "https://registry.npmjs.org/",
+		"access": "public",
+		"provenance": true
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/lithia-framework/lithia.git"
+	},
+	"bugs": {
+		"url": "https://github.com/lithia-framework/lithia/issues"
+	}
+}

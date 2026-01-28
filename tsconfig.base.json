@@ -1,8 +1,9 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"compilerOptions": {
-		"target": "es2022",
-		"module": "commonjs",
+		"target": "esnext",
+		"module": "nodenext",
+    "moduleResolution": "nodenext",
 		"resolveJsonModule": true,
 		"esModuleInterop": true,
 		"noLib": false,
@@ -11,7 +12,6 @@
 		"strict": true,
     "sourceMap": true,
     "declaration": true,
-    "composite": true,
     "removeComments": false,
 		"forceConsistentCasingInFileNames": true,
 		"strictPropertyInitialization": false,

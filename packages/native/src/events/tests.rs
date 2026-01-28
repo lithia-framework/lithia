@@ -17,13 +17,13 @@ mod tests {
         fs::write(temp.path().join("tsconfig.json"), "{}").unwrap();
 
         // Create a sample event file path entry
-        // Use compiled JS path as the processor expects files from the output
-        let relative = "app/events/chat/message.js".to_string();
+        // Use compiled MJS path as the processor expects files from the output
+        let relative = "app/events/chat/message.mjs".to_string();
         let full = out_root.join(&relative).to_string_lossy().to_string();
 
         // touch the compiled file on disk
         fs::create_dir_all(std::path::Path::new(&full).parent().unwrap()).unwrap();
-        fs::write(&full, "module.exports = {};").unwrap();
+        fs::write(&full, "export default {};" ).unwrap();
 
         let file_info = FileInfo {
             path: relative.clone(),
@@ -35,7 +35,7 @@ mod tests {
 
         assert_eq!(e.name, "chat:message");
         assert_eq!(e.namespace.as_ref().unwrap(), "chat");
-        assert!(e.file_path.ends_with("message.js"));
+        assert!(e.file_path.ends_with("message.mjs"));
         assert_eq!(e.file_path, full);
     }
 }

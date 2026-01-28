@@ -1,30 +1,19 @@
-//! Event file processor utilities mirroring the router processor design.
-//!
-//! Converts scanned `FileInfo` entries for `app/events` into `Event`
-//! structures suitable for serialization into `events.json`.
-
 use crate::scanner::FileInfo;
 
 use crate::events::convention::{EventConvention, NativeEventConvention};
 use crate::events::transformer::{NativeEventTransformer, PathTransformer};
 use crate::events::Event;
 
-/// Trait that converts a discovered `FileInfo` into an `Event` structure.
 pub trait EventProcessor {
     fn process_event_file(&self, file: &FileInfo) -> Event;
 }
 
-/// Native implementation of `EventProcessor` that composes a
-/// `PathTransformer` and an `EventConvention` similar to the route
-/// processor.
 pub struct NativeEventProcessor {
     transformer: Box<dyn PathTransformer>,
     convention: Box<dyn EventConvention>,
 }
 
 impl NativeEventProcessor {
-    /// Create a new `NativeEventProcessor`.
-    /// Optional components may be provided for testing.
     pub fn new(
         opt_transformer: Option<Box<dyn PathTransformer>>,
         opt_convention: Option<Box<dyn EventConvention>>,
@@ -40,7 +29,6 @@ impl NativeEventProcessor {
         }
     }
 
-    /// Convenience: process a collection of files into events.
     pub fn process(&self, files: &[FileInfo]) -> Vec<Event> {
         files.iter().map(|f| self.process_event_file(f)).collect()
     }
@@ -48,13 +36,9 @@ impl NativeEventProcessor {
 
 impl EventProcessor for NativeEventProcessor {
     fn process_event_file(&self, file: &FileInfo) -> Event {
-        // Convert the scanned file path into a normalized event path using
-        // the convention and then apply the PathTransformer normalization
-        // (mirrors the route processor pipeline).
         let intermediate = self.convention.transform_path(&file.path);
         let normalized = self.transformer.normalize_path(&intermediate, "");
 
-        // Build event name: `a/b/c` -> `a:b:c` except for standalone names
         let parts: Vec<&str> = normalized
             .trim_start_matches('/')
             .split('/')
@@ -103,8 +87,8 @@ mod tests {
     fn processor_creates_event() {
         let p = NativeEventProcessor::new(None, None);
         let f = file_info(
-            "app/events/chat/message.js",
-            "/out/app/events/chat/message.js",
+            "app/events/chat/message.mjs",
+            "/out/app/events/chat/message.mjs",
         );
         let e = p.process_event_file(&f);
         assert_eq!(e.name, "chat:message");
