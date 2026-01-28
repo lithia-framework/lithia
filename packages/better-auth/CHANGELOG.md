@@ -1,5 +1,13 @@
 # @lithia-js/core
 
+## 1.0.0-canary.9
+
+### Patch Changes
+
+- a0f6630: New templates and build fixes
+- Updated dependencies [a0f6630]
+  - @lithia-js/core@1.0.0-canary.9
+
 ## 1.0.0-canary.8
 
 ### Patch Changes
