@@ -10,10 +10,10 @@ export class NotInRequestHandlerError extends RuntimeError {
 }
 
 export class NotInEventHandlerError extends RuntimeError {
-  constructor() {
-    super(
-      "This operation can only be performed within an event handler.",
-      "fatal",
-    );
-  }
+	constructor() {
+		super(
+			"This operation can only be performed within an event handler.",
+			"fatal",
+		);
+	}
 }

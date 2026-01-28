@@ -4,14 +4,13 @@
 	"private": false,
 	"type": "module",
 	"bin": {
-		"create-lithia": "dist/index.mts"
+		"create-lithia": "dist/index.mjs"
 	},
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"homepage": "https://lithiajs.com",
 	"license": "MIT",
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
-		"cli": "tsx ./src/index.mts"
+		"build": "tsc -p tsconfig.build.json"
 	},
 	"dependencies": {
 		"citty": "^0.2.0",

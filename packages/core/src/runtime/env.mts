@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { parse } from "dotenv";
 
 export function loadEnv() {
-  const cwd = process.cwd();
+	const cwd = process.cwd();
 	const envFiles = [".env", ".env.local"];
 	const envVars: Record<string, string> = {};
 

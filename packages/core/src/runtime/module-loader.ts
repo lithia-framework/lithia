@@ -2,9 +2,9 @@ import { access, constants } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { isAsyncFunction } from "node:util/types";
 import {
-  InvalidModuleDefaultExportError,
-  ModuleDefaultExportMissingError,
-  ModuleNotFoundError,
+	InvalidModuleDefaultExportError,
+	ModuleDefaultExportMissingError,
+	ModuleNotFoundError,
 } from "./errors.mjs";
 
 export async function loadModule<

@@ -46,10 +46,10 @@ const dev = defineCommand({
 				".env",
 				".env.local",
 				"lithia.config.mts",
-        'lithia.config.mjs',
-        'lithia.config.ts',
-        'lithia.config.js',
-        'lithia.config.json'
+				"lithia.config.mjs",
+				"lithia.config.ts",
+				"lithia.config.js",
+				"lithia.config.json",
 			],
 			{
 				cwd: cwd,

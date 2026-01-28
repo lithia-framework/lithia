@@ -1,12 +1,12 @@
 import {
-  blue,
-  bold,
-  gray,
-  green,
-  purple,
-  red,
-  white,
-  yellow,
+	blue,
+	bold,
+	gray,
+	green,
+	purple,
+	red,
+	white,
+	yellow,
 } from "./picocolors.mjs";
 
 export type LogLevel =

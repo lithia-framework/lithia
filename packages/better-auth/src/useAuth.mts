@@ -42,14 +42,14 @@ export function authenticated(
 }
 
 export function getAuthContext<T extends Auth = Auth>(): AuthContext<T> {
-  const context = authContext.getStore() as AuthContext<T> | undefined;
-  if (!context) {
-    throw new Error("No authentication context available");
-  }
-  return context;
+	const context = authContext.getStore() as AuthContext<T> | undefined;
+	if (!context) {
+		throw new Error("No authentication context available");
+	}
+	return context;
 }
 
 export function useSession<T extends Auth = Auth>(): AuthContext<T>["session"] {
-  const context = getAuthContext<T>();
-  return context.session;
+	const context = getAuthContext<T>();
+	return context.session;
 }

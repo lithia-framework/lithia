@@ -1,6 +1,6 @@
 import {
-  type Middleware,
-  RequestValidationError,
+	type Middleware,
+	RequestValidationError,
 } from "@lithia-js/core/server";
 import { ZodError, type ZodType } from "zod";
 

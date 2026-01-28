@@ -41,9 +41,9 @@ export class RuntimeHost {
 					sourceDir: this.lithia.sourceDir,
 					outDir: this.lithia.outDir,
 				},
-        env: {
-          FORCE_COLOR: "1"
-        }
+				env: {
+					FORCE_COLOR: "1",
+				},
 			},
 		);
 
