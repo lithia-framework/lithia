@@ -125,6 +125,25 @@ importers:
 
   packages/utils: {}
 
+  templates/starter:
+    dependencies:
+      '@lithia-js/core':
+        specifier: file:../../packages/core
+        version: file:packages/core
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 2.3.13
+        version: 2.3.13
+      '@lithia-js/cli':
+        specifier: file:../../packages/cli
+        version: file:packages/cli
+      '@types/node':
+        specifier: ^25.0.10
+        version: 25.0.10
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   templates/with-better-auth:
     dependencies:
       '@lithia-js/better-auth':
@@ -142,6 +161,50 @@ importers:
       pg:
         specifier: ^8.17.2
         version: 8.17.2
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 2.3.13
+        version: 2.3.13
+      '@lithia-js/cli':
+        specifier: file:../../packages/cli
+        version: file:packages/cli
+      '@types/node':
+        specifier: ^25.0.10
+        version: 25.0.10
+      drizzle-kit:
+        specifier: ^0.31.8
+        version: 0.31.8
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  templates/with-docker:
+    dependencies:
+      '@lithia-js/core':
+        specifier: file:../../packages/core
+        version: file:packages/core
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 2.3.13
+        version: 2.3.13
+      '@lithia-js/cli':
+        specifier: file:../../packages/cli
+        version: file:packages/cli
+      '@types/node':
+        specifier: ^25.0.10
+        version: 25.0.10
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  templates/with-drizzle:
+    dependencies:
+      '@lithia-js/core':
+        specifier: file:../../packages/core
+        version: file:packages/core
+      drizzle-orm:
+        specifier: ^0.45.1
+        version: 0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.10)(pg@8.17.2)
     devDependencies:
       '@biomejs/biome':
         specifier: 2.3.13

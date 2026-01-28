@@ -30,6 +30,20 @@ export interface AppOpts {
 	outDir: string;
 }
 
+export interface CustomLithiaRuntime
+	extends Pick<
+		LithiaRuntime,
+		| "config"
+		| "environment"
+		| "events"
+		| "routes"
+		| "provide"
+		| "use"
+		| "isRunning"
+	> {
+	server: Pick<LithiaServer, "httpServer" | "socketServer">;
+}
+
 export class LithiaRuntime {
 	private _initialized: boolean;
 	private _routes: Route[];
@@ -93,7 +107,14 @@ export class LithiaRuntime {
 		return this._globalDependencies;
 	}
 
-	async load() {
+	async start() {
+		if (!this.initialized) await this.load();
+		if (this.isRunning) return;
+		this._server = new LithiaServer(this);
+		await this._server.listen();
+	}
+
+	private async load() {
 		if (this._initialized) return;
 		loadEnv();
 		await this.loadAppConfig();
@@ -108,13 +129,6 @@ export class LithiaRuntime {
 
 	use(middleware: Middleware) {
 		this._globalMiddlewares.push(middleware);
-	}
-
-	async start() {
-		if (!this.initialized) await this.load();
-		if (this.isRunning) return;
-		this._server = new LithiaServer(this);
-		await this._server.listen();
 	}
 
 	async stop() {

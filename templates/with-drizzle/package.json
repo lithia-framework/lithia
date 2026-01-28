@@ -2,6 +2,7 @@
   "name": "my-lithia-app",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "lithia dev",
     "build": "lithia build",

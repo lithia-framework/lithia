@@ -98,8 +98,7 @@ export class Lithia {
 			logger.success(`Build completed in ${durationMs.toFixed(2)}ms`);
 
 			if (this.environment === "build") {
-				logger.debug("Exiting process after build in 'build' environment.");
-				process.exit(0);
+				return;
 			}
 
 			await this.swapRuntime();
