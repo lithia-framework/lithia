@@ -35,7 +35,7 @@ export function authenticated(
 				throw new RequestError(401, options.error.message);
 			}
 
-		authContext.run({ session }, async () => {
+		await authContext.run({ session }, async () => {
 			await next();
 		});
 	};
