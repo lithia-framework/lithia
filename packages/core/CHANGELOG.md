@@ -1,5 +1,13 @@
 # @lithia-js/core
 
+## 1.0.0-canary.18
+
+### Patch Changes
+
+- f584974: Fixed fully import resolve
+- Updated dependencies [f584974]
+  - @lithia-js/utils@1.0.0-canary.18
+
 ## 1.0.0-canary.17
 
 ### Patch Changes
