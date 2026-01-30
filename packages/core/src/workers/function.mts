@@ -1,9 +1,17 @@
+/**
+ * @fileoverview Isolated Function Worker Entry Point.
+ * This script is executed within a dedicated worker thread to run background
+ * functions in isolation. It handles module loading, execution, and
+ * communication of results back to the LithiaHost using standardized logging.
+ */
+
 import { isMainThread, parentPort, workerData } from "node:worker_threads";
+import { logger } from "@lithia-js/utils";
 import { loadModule } from "../module-loader.js";
 
 /**
- * Ensures the function worker is not running in the main thread
- * and is managed by the Lithia orchestrator.
+ * Validates that the script is running in a proper worker environment.
+ * @throws {Error} If executed on the main thread or unmanaged by Lithia.
  */
 function validateExecutionContext(): void {
 	if (isMainThread) {
@@ -19,30 +27,44 @@ function validateExecutionContext(): void {
 	}
 }
 
-type FunctionModule = {
-	default: (payload: any) => Promise<any>;
-};
-
+/**
+ * Main execution loop for the worker thread.
+ * 1. Validates the environment.
+ * 2. Loads and validates the target module via 'loadModule'.
+ * 3. Executes the function and reports the result.
+ * 4. Terminates the process to reclaim resources.
+ */
 async function run() {
-	try {
-		validateExecutionContext();
+	const { function: fn, args } = workerData;
 
-		const { function: fn, payload } = workerData;
+	validateExecutionContext();
 
-		// Import dinâmico do arquivo transpilado (.js)
-		const mod = await loadModule<FunctionModule>(fn.filePath);
+	logger.debug(`[fn:${fn.id}] Starting execution...`);
 
-		const result = await mod.default(payload);
-		// Retorna o resultado para o Host (que pode repassar para o App se não for async)
-		parentPort?.postMessage(result);
-	} catch (err) {
-		// Em threads, o erro deve ser capturado e o processo encerrado com falha
-		console.error(`[FunctionWorker Error]:`, err);
-		process.exit(1);
-	} finally {
-		// Importante: garante que a thread morra após a execução para liberar RAM
-		process.exit(0);
+	/**
+	 * loadModule handles file existence checks and validates that the
+	 * default export is an async function.
+	 */
+	const mod = await loadModule(fn.filePath);
+
+	/**
+	 * Execute the function logic.
+	 * Arguments are spread from the array provided by the 'invoke' hook.
+	 */
+	const result = await mod.default(...args);
+
+	/**
+	 * Send the execution result back to the LithiaHost.
+	 */
+	if (parentPort) {
+		parentPort.postMessage(result);
 	}
+
+	logger.debug(`[fn:${fn.id}] Execution completed successfully.`);
+
+	// Ensure the event loop flushes the message before the process exits
+	setImmediate(() => process.exit(0));
 }
 
-run();
+// Start the worker execution
+await run();

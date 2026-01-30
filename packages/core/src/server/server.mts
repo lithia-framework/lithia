@@ -22,10 +22,6 @@ import {
 	eventContextStore,
 } from "../context/event-context.mjs";
 import {
-	type LithiaContext,
-	lithiaContextStore,
-} from "../context/lithia-context.mjs";
-import {
 	type RouteContext,
 	routeContextStore,
 } from "../context/request-context.mjs";
@@ -219,7 +215,7 @@ export class LithiaServer {
 					event,
 				};
 
-				this.runWithLithiaContext(async () => {
+				this.app.runWithContext(async () => {
 					eventContextStore.run(eventCtx, async () => {
 						await this.eventProcessor.process(socket, event);
 					});
@@ -248,20 +244,12 @@ export class LithiaServer {
 					socketServer: this._socketServer,
 				};
 
-				this.runWithLithiaContext(async () => {
+				this.app.runWithContext(async () => {
 					routeContextStore.run(routeCtx, async () => {
 						await this.requestProcessor.process(lithiaReq, lithiaRes);
 					});
 				});
 			} catch {}
 		};
-	}
-
-	private runWithLithiaContext<T>(fn: () => Promise<T>): Promise<T> {
-		const lithiaCtx: LithiaContext = {
-			container: new Map(this.app.dependencies),
-		};
-
-		return lithiaContextStore.run(lithiaCtx, fn);
 	}
 }

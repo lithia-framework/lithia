@@ -73,7 +73,7 @@ export class Builder {
 		// 3. Manifest Phase
 		// Use the metadata from scanned files to generate manifests in the outRoot
 		// 3. Manifest Phase
-		const [_, events, functions] = await Promise.all([
+		const [_, __, functions] = await Promise.all([
 			this.routeGenerator.generateManifest(config.outRoot, distFiles),
 			this.eventGenerator.generateManifest(config.outRoot, distFiles),
 			this.functionGenerator.generateManifest(config.outRoot, distFiles),
@@ -89,15 +89,6 @@ export class Builder {
 				filePath:
 					allFiles.find((file) => file.fullPath.includes(f.id))?.fullPath ||
 					f.filePath,
-			}));
-		}
-
-		if (events?.events) {
-			registry.events = events.events.map((e) => ({
-				identifier: e.name,
-				filePath:
-					allFiles.find((file) => file.fullPath.includes(e.name))?.fullPath ||
-					e.filePath,
 			}));
 		}
 

@@ -26,6 +26,8 @@ export {
 	useSocket,
 } from "./hooks/event-hooks.mjs";
 export {
+	invoke,
+	invokeAsync,
 	provide,
 	useDependency,
 	useOptionalDependency,

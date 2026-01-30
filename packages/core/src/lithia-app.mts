@@ -4,11 +4,13 @@
  * Designed to run exclusively within isolated worker threads for dev-mode stability.
  */
 
-import { randomUUID } from "node:crypto";
-import { isMainThread, parentPort, workerData } from "node:worker_threads";
+import { isMainThread, workerData } from "node:worker_threads";
 import { logger } from "@lithia-js/utils";
 import type { LithiaOptions } from "./config.mjs";
-import type { HostToAppEvent } from "./lithia-host.mjs";
+import {
+	type LithiaContext,
+	lithiaContextStore,
+} from "./context/lithia-context.mjs";
 import type { EventMiddleware } from "./server/event-processor.mjs";
 import type { RouteMiddleware } from "./server/request-processor.mjs";
 import { LithiaServer } from "./server/server.mjs";
@@ -20,8 +22,6 @@ import type { Environment } from "./types.js";
  * Valid types for dependency injection keys.
  */
 export type InjectionKey<T> = symbol | string | { new (...args: any[]): T };
-
-export type LithiaFunctions = Record<string, (...args: any[]) => Promise<any>>;
 
 /**
  * The core application instance.
@@ -90,6 +90,15 @@ export class LithiaApp {
 		return this._isFirstApp;
 	}
 
+	runWithContext<T>(fn: () => Promise<T>): Promise<T> {
+		const lithiaCtx: LithiaContext = {
+			container: new Map(this.dependencies),
+			config: this.config,
+		};
+
+		return lithiaContextStore.run(lithiaCtx, fn);
+	}
+
 	// --- Registry & Configuration ---
 
 	/**
@@ -117,45 +126,6 @@ export class LithiaApp {
 				`Unknown middleware context: ${context}. Registration ignored.`,
 			);
 		}
-	}
-
-	public async invoke<K extends keyof LithiaFunctions>(
-		functionId: K,
-		payload?: Parameters<LithiaFunctions[K]>[0],
-	): Promise<Awaited<ReturnType<LithiaFunctions[K]>>> {
-		const requestId = randomUUID();
-
-		return new Promise((resolve, reject) => {
-			const handler = (msg: HostToAppEvent) => {
-				if (msg.requestId === requestId) {
-					parentPort?.off("message", handler);
-					if (msg.type === "invoke_success") resolve(msg.result);
-					else reject(new Error(msg.error));
-				}
-			};
-
-			parentPort?.on("message", handler);
-			parentPort?.postMessage({
-				type: "invoke",
-				requestId,
-				functionId,
-				payload,
-				async: false,
-			});
-		});
-	}
-
-	public invokeAsync<K extends keyof LithiaFunctions>(
-		functionId: K,
-		payload?: Parameters<LithiaFunctions[K]>[0],
-	): void {
-		parentPort?.postMessage({
-			type: "invoke",
-			requestId: null,
-			functionId,
-			payload,
-			async: true,
-		});
 	}
 
 	// --- Lifecycle Orchestration ---

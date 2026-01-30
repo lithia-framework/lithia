@@ -1,96 +1,136 @@
+/**
+ * @fileoverview Global Type Augmentation Generator for Lithia.
+ * Orchestrates the creation of ambient declaration files (.d.ts) to provide
+ * strict type safety and IntelliSense for dynamically discovered resources 
+ * like functions, events, and plugins.
+ */
+
 import fs from "node:fs/promises";
 import path from "node:path";
 
 /**
- * Representa um item a ser tipado no manifesto global.
+ * Represents a resource item to be registered in the global type manifest.
  */
 export interface TypeDefinition {
-	/** Nome identificador (ex: "users:create" ou "cleanup") */
-	identifier: string;
-	/** Caminho absoluto para o arquivo de origem (.ts ou .js) */
-	filePath: string;
-	/** Nome do export a ser importado (opcional, padrão 'default') */
-	exportName?: string;
+  /** * Unique identifier for the resource (e.g., "users:create" or "cleanup").
+   * This string becomes a valid key in the augmented interfaces.
+   */
+  identifier: string;
+  /** * Absolute path to the original source file (.ts, .mts). 
+   * Used to generate relative imports for the declaration file.
+   */
+  filePath: string;
+  /** * Specific named export to import. 
+   * @default 'default'
+   */
+  exportName?: string;
 }
 
 /**
- * Estrutura para expansão de múltiplas interfaces do Core.
+ * Registry structure containing categorized definitions for core interface expansion.
  */
 export interface GeneratorRegistry {
-	/** Mapeamento para a interface LithiaFunctions */
-	functions?: TypeDefinition[];
-	/** Mapeamento para a interface LithiaEvents (exemplo de expansão futura) */
-	events?: TypeDefinition[];
-	/** Mapeamento para configurações de plugins ou middlewares */
-	plugins?: TypeDefinition[];
+  /** Mapping for the LithiaFunctions interface. */
+  functions?: TypeDefinition[];
+  /** Mapping for plugin-specific configurations or extensions. */
+  plugins?: TypeDefinition[];
 }
 
 /**
- * Gera um arquivo de definição de tipos (.d.ts) para prover IntelliSense
- * e Type Safety global nas APIs do Lithia.
- * * @param outRoot - O diretório de saída (geralmente o .lithia ou dist)
- * @param registry - Objeto contendo as definições de cada categoria
+ * Generates a `.d.ts` file within the `.lithia` directory to provide global 
+ * Type Safety and IntelliSense for Lithia APIs.
+ * * It uses TypeScript Module Augmentation to inject discovered types into 
+ * the "@lithia-js/core" module namespaces.
+ * * @param projectRoot - The root directory of the project where .lithia/ will be created.
+ * @param registry - Object containing discovered resource definitions.
+ * @returns A promise that resolves when the type definition file is written.
+ * * @example
+ * await generateLithiaTypes(process.cwd(), { 
+ * functions: [{ identifier: 'sendEmail', filePath: '/src/funcs/email.ts' }] 
+ * });
  */
 export async function generateLithiaTypes(
-	projectRoot: string,
-	registry: GeneratorRegistry,
+  projectRoot: string,
+  registry: GeneratorRegistry,
 ) {
-	const dotLithiaDir = path.join(projectRoot, ".lithia");
-	const imports: string[] = [];
-	const moduleAugmentations: string[] = [];
+  const dotLithiaDir = path.join(projectRoot, ".lithia");
+  const imports: string[] = [];
+  const moduleAugmentations: string[] = [];
 
-	for (const [category, definitions] of Object.entries(registry)) {
-		if (!definitions || definitions.length === 0) continue;
+  for (const [category, definitions] of Object.entries(registry)) {
+    if (!definitions || definitions.length === 0) continue;
 
-		const interfaceName = `Lithia${category.charAt(0).toUpperCase() + category.slice(1)}`;
-		const interfaceLines: string[] = [];
+    const interfaceName = `Lithia${category.charAt(0).toUpperCase() + category.slice(1)}`;
+    const interfaceLines: string[] = [];
 
-		for (const def of definitions) {
-			const typeAlias = `${category}_${toPascalCase(def.identifier)}`;
-			// O caminho relativo agora é calculado a partir de .lithia/
-			const importPath = relativeImportPath(dotLithiaDir, def.filePath);
-			const member = def.exportName || "default";
+    for (const def of definitions) {
+      /**
+       * Create a unique alias (Category_Identifier) to prevent naming collisions
+       * when multiple categories have files with the same name.
+       */
+      const typeAlias = `${category}_${toPascalCase(def.identifier)}`;
+      
+      /** * Calculate path relative to the .lithia directory to ensure 
+       * the compiler can resolve the source files.
+       */
+      const importPath = relativeImportPath(dotLithiaDir, def.filePath);
+      const member = def.exportName || "default";
 
-			imports.push(
-				`import { ${member} as ${typeAlias} } from "${importPath}";`,
-			);
-			interfaceLines.push(`    "${def.identifier}": typeof ${typeAlias};`);
-		}
+      // Note: Appending ".ts" is required for strict ESM resolution in some TS environments
+      imports.push(
+        `import { ${member} as ${typeAlias} } from "${importPath}.ts";`,
+      );
+      
+      interfaceLines.push(`    "${def.identifier}": typeof ${typeAlias};`);
+    }
 
-		moduleAugmentations.push(
-			`  interface ${interfaceName} {\n${interfaceLines.join("\n")}\n  }`,
-		);
-	}
+    /**
+     * Build the interface structure that will be merged into the core module.
+     */
+    moduleAugmentations.push(
+      `  interface ${interfaceName} {\n${interfaceLines.join("\n")}\n  }`,
+    );
+  }
 
-	const content = [
-		"/* eslint-disable */",
-		"/* This file is auto-generated by Lithia. Do not edit manually. */",
-		imports.join("\n"),
-		'\ndeclare module "@lithia-js/core" {',
-		moduleAugmentations.join("\n\n"),
-		"}",
-	].join("\n");
+  const content = [
+    "/* eslint-disable */",
+    "/* This file is auto-generated by Lithia. Do not edit manually. */",
+    imports.join("\n"),
+    '\ndeclare module "@lithia-js/core" {',
+    moduleAugmentations.join("\n\n"),
+    "}",
+  ].join("\n");
 
-	const lithiaTypesPath = path.join(dotLithiaDir, "lithia.d.ts");
-	await fs.mkdir(dotLithiaDir, { recursive: true });
-	await fs.writeFile(lithiaTypesPath, content, "utf-8");
+  const lithiaTypesPath = path.join(dotLithiaDir, "lithia.d.ts");
+  await fs.mkdir(dotLithiaDir, { recursive: true });
+  await fs.writeFile(lithiaTypesPath, content, "utf-8");
 }
 
 /**
- * Converte strings com hífens ou espaços para PascalCase.
+ * Converts strings (kebab-case, snake_case, or spaced) into PascalCase aliases.
+ * @param str - The input identifier string.
+ * @returns A sanitized PascalCase string.
  */
 function toPascalCase(str: string) {
-	return str
-		.replace(/[^a-zA-Z0-9]/g, "-")
-		.replace(/(^\w|-\w)/g, (m) => m.replace("-", "").toUpperCase());
+  return str
+    .replace(/[^a-zA-Z0-9]/g, "-")
+    .replace(/(^\w|-\w)/g, (m) => m.replace("-", "").toUpperCase());
 }
 
 /**
- * Calcula o caminho relativo e limpa extensões para compatibilidade com ESM/TS.
+ * Calculates a relative import path and strips extensions to ensure 
+ * compatibility with TypeScript's module resolution.
+ * * @param from - The directory containing the generated types file.
+ * @param to - The absolute path to the target source file.
+ * @returns A normalized relative path string.
  */
 function relativeImportPath(from: string, to: string) {
-	let rel = path.relative(from, to).replace(/\\/g, "/");
-	if (!rel.startsWith(".")) rel = `./${rel}`;
-	// Remove extensões comuns para manter o import limpo
-	return rel.replace(/\.(ts|mts|js|mjs)$/, "");
+  let rel = path.relative(from, to).replace(/\\/g, "/");
+  if (!rel.startsWith(".")) rel = `./${rel}`;
+  
+  /**
+   * Strip existing extensions to avoid double extension issues (e.g., .ts.ts)
+   * when the suffix is manually added in the template.
+   */
+  return rel.replace(/\.(ts|mts|js|mjs)$/, "");
 }

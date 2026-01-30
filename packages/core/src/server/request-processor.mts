@@ -334,8 +334,8 @@ export class LithiaRequestProcessor {
 		});
 
 		if (statusCode >= 500) {
-			logger.error(`[Internal Error] Digest: ${red(digest)}`);
-			logger.info(`Context: ${req.method} ${req.pathname}`);
+			logger.error(`Digest: ${red(digest)}`);
+			logger.info(`Path: ${req.method} ${req.pathname}`);
 			logger.info(err.stack || err);
 		}
 	}

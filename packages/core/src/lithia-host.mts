@@ -1,7 +1,12 @@
 /**
- * @fileoverview LithiaHost Orchestrator.
- * Responsible for the main-thread logic: building the project, loading manifests,
- * managing environment variables, and orchestrating worker thread lifecycles.
+ * @fileoverview LithiaHost Orchestrator
+ *
+ * Main-thread coordinator responsible for:
+ * - Project building
+ * - Manifest loading (routes, events, functions)
+ * - Environment variable management
+ * - Worker thread lifecycle orchestration (app + function workers)
+ * - Hot-reload support and crash recovery
  */
 
 import { readFile } from "node:fs/promises";
@@ -9,7 +14,7 @@ import path from "node:path";
 import { parseEnv } from "node:util";
 import { isMainThread, Worker } from "node:worker_threads";
 import { green, logger } from "@lithia-js/utils";
-
+import sms from "source-map-support";
 import { Builder } from "./builder.mjs";
 import { type LithiaOptions, loadConfig } from "./config.mjs";
 import { LithiaError } from "./errors/base.mjs";
@@ -24,79 +29,96 @@ import type { Route, RoutesManifest } from "./strategy/routes/index.mjs";
 import type { Environment } from "./types.js";
 import { fileExists } from "./utils.mjs";
 
+sms.install({
+	environment: "node",
+	handleUncaughtExceptions: false,
+});
+
 declare namespace globalThis {
 	var isLithiaCLI: boolean | undefined;
 	var __lithia_host_config_v1: LithiaOptions;
 }
 
-/** Global key used to store configuration in production environments. */
+/** Global key used to store configuration in production environments */
 export const CFG_GLOBAL_KEY = "__lithia_host_config_v1" as const;
 
-/** Options for initializing a LithiaHost instance. */
+/** Options required to initialize a LithiaHost instance */
 export interface LithiaOpts {
-	/** The execution environment (development, production, build, etc.). */
+	/** Runtime environment mode */
 	environment: Environment;
 }
 
+/** Events sent from the application worker to the host */
 export type AppToHostEvent =
 	| { type: "ready" }
 	| {
 			type: "invoke";
 			functionId: string;
-			payload?: any;
-			async: boolean;
-			requestId?: string;
+			async: false;
+			requestId: string;
+			args?: any[];
+	  }
+	| {
+			type: "invoke";
+			functionId: string;
+			async: true;
+			args?: any[];
 	  };
 
+/** Events sent from the host back to the application worker */
 export type HostToAppEvent =
 	| {
 			type: "invoke_success";
 			functionId: string;
 			result: any;
-			requestId?: string;
+			requestId: string;
 	  }
 	| {
 			type: "invoke_error";
 			functionId: string;
 			error: string;
-			requestId?: string;
+			requestId: string;
 	  };
 
 /**
- * The LithiaHost acts as the process manager.
- * It remains active even if the application code (running in the worker)
- * crashes, allowing for hot-reloads and graceful recovery.
+ * Central orchestrator that runs in the main thread.
+ * Manages the lifecycle of the application worker, handles hot-reloading,
+ * loads manifests, coordinates builds, and provides recovery from worker crashes.
  */
 export class LithiaHost {
-	/** Reference to the active Worker Thread. */
+	/** Currently active application worker */
 	private _app: Worker | null = null;
-	/** Internal configuration storage. */
+
+	/** Loaded Lithia configuration */
 	private _config!: LithiaOptions;
-	/** Parsed environment variables. */
+
+	/** Parsed environment variables from .env files */
 	private _env: Record<string, string> = {};
-	/** The build engine orchestrator. */
+
+	/** Build system instance */
 	private _builder: Builder;
 
-	/** State tracking for the worker lifecycle. */
+	// Lifecycle state
 	private _isAppRunning = false;
-	/** State tracking for application readiness. */
 	private _isAppReady = false;
-	/** Counter for total workers spawned during the process lifetime. */
 	private _appCount = 0;
-	/** Cache of the last port used for collision detection. */
 	private _lastPortUsed: number = 0;
 
-	/** Discovered routes from manifest. */
+	// Managed Functions Semaphore
+	private _runningFunctions = 0;
+	private _invocationQueue: Array<() => void> = [];
+
+	// Manifest contents
 	private _routes: Route[] = [];
-	/** Discovered events from manifest. */
 	private _events: Event[] = [];
-	/** Discovered functions from manifest. */
 	private _functions: FunctionCore[] = [];
 
 	/**
-	 * Initializes the Host in the main thread.
-	 * @param opts - Initialization options.
-	 * @throws {Error} If instantiated outside the main thread.
+	 * Creates a new LithiaHost instance.
+	 * Must be called from the main thread.
+	 *
+	 * @param opts - Host initialization options
+	 * @throws {Error} When instantiated outside the main thread
 	 */
 	constructor(private readonly opts: LithiaOpts) {
 		if (!isMainThread) {
@@ -105,45 +127,42 @@ export class LithiaHost {
 		this._builder = new Builder();
 	}
 
-	// --- Getters ---
+	// ── Getters ────────────────────────────────────────────────
 
-	/** Returns the active Lithia configuration. */
+	/** Active configuration (reads from global in production) */
 	public get config(): LithiaOptions {
 		return this.environment === "production"
 			? globalThis[CFG_GLOBAL_KEY]
 			: this._config;
 	}
 
-	/** Returns the current environment mode. */
+	/** Current runtime environment */
 	public get environment(): Environment {
 		return this.opts.environment;
 	}
 
-	/** Checks if the application in the worker is ready. */
+	/** Whether the application worker has signaled readiness */
 	public get isAppReady(): boolean {
 		return this._isAppReady;
 	}
 
-	/** Returns the current list of registered routes. */
 	public get routes(): Route[] {
 		return this._routes;
 	}
 
-	/** Returns the current list of registered socket events. */
 	public get events(): Event[] {
 		return this._events;
 	}
 
-	/** Returns the current list of registered background functions. */
 	public get functions(): FunctionCore[] {
 		return this._functions;
 	}
 
-	// --- Configuration & Env Loading ---
+	// ── Configuration & Environment ─────────────────────────────
 
 	/**
-	 * Loads the Lithia configuration file from the filesystem.
-	 * @returns A promise that resolves when config is loaded.
+	 * Loads the Lithia configuration file.
+	 * Skipped in production (config is embedded via global).
 	 */
 	public async loadConfig(): Promise<void> {
 		if (this.environment === "production") return;
@@ -152,8 +171,8 @@ export class LithiaHost {
 	}
 
 	/**
-	 * Resolves and parses available .env files into the host environment.
-	 * @returns A promise that resolves when environment variables are parsed.
+	 * Loads and parses all applicable .env / .env.* files
+	 * and merges them into the internal environment store.
 	 */
 	public async loadEnv(): Promise<void> {
 		this.ensureConfigLoaded();
@@ -171,21 +190,21 @@ export class LithiaHost {
 		}
 	}
 
-	// --- Manifest Management ---
+	// ── Manifest Loading ────────────────────────────────────────
 
-	/** Loads the API routes manifest. */
+	/** Loads the HTTP routes manifest if present */
 	public async loadRoutes(): Promise<void> {
 		const manifest = await this.loadManifest<RoutesManifest>("routes.json");
 		if (manifest) this._routes = manifest.routes;
 	}
 
-	/** Loads the WebSocket events manifest. */
+	/** Loads the WebSocket events manifest if present */
 	public async loadEvents(): Promise<void> {
 		const manifest = await this.loadManifest<EventsManifest>("events.json");
 		if (manifest) this._events = manifest.events;
 	}
 
-	/** Loads the background functions manifest. */
+	/** Loads the background/cron functions manifest if present */
 	public async loadFunctions(): Promise<void> {
 		const manifest =
 			await this.loadManifest<FunctionsManifest>("functions.json");
@@ -193,11 +212,11 @@ export class LithiaHost {
 	}
 
 	/**
-	 * Internal helper to read and validate manifest files.
-	 * @param fileName - Name of the manifest file (e.g., 'routes.json').
-	 * @template T - The manifest interface type.
-	 * @returns The parsed manifest or null if file is missing.
-	 * @throws {ManifestVersionMismatchError} If schema versions are incompatible.
+	 * Generic manifest loader with version validation.
+	 *
+	 * @param fileName - manifest filename (e.g. "routes.json")
+	 * @returns Parsed manifest or null if file doesn't exist
+	 * @throws {ManifestVersionMismatchError} on schema version mismatch
 	 */
 	private async loadManifest<T extends { version: string }>(
 		fileName: string,
@@ -217,12 +236,11 @@ export class LithiaHost {
 		return manifest;
 	}
 
-	// --- Build & Lifecycle ---
+	// ── Build & Lifecycle Control ───────────────────────────────
 
 	/**
-	 * Compiles source code using the TypeScript-based SWC Builder.
-	 * @returns A promise that resolves when the build is complete.
-	 * @throws {Error} If the build fails and environment is set to 'build'.
+	 * Executes a full build of the source code using SWC.
+	 * Logs success/failure; throws in "build" environment on error.
 	 */
 	public async build(): Promise<void> {
 		this.ensureConfigLoaded();
@@ -243,7 +261,7 @@ export class LithiaHost {
 		}
 	}
 
-	/** Performs initial setup including config loading and environment parsing. */
+	/** Runs initial setup: config + env + welcome message */
 	public async setup(): Promise<void> {
 		await this.loadConfig();
 		await this.loadEnv();
@@ -251,8 +269,9 @@ export class LithiaHost {
 	}
 
 	/**
-	 * Starts the Lithia instance by loading manifests and spawning a worker.
-	 * @returns A promise that resolves when the worker is initiated.
+	 * Starts the Lithia runtime:
+	 * - Loads all manifests
+	 * - Spawns the application worker
 	 */
 	public async start(): Promise<void> {
 		if (!this._config) await this.loadConfig();
@@ -267,7 +286,7 @@ export class LithiaHost {
 		logger.debug(`Instance started in ${this.environment} mode.`);
 	}
 
-	/** Triggers a hot-reload by reloading manifests and swapping the worker. */
+	/** Performs a hot-reload: reloads manifests and replaces worker */
 	public async reload(): Promise<void> {
 		await Promise.all([
 			this.loadRoutes(),
@@ -277,16 +296,17 @@ export class LithiaHost {
 		await this.swapApp();
 	}
 
-	/** Terminates the active worker and stops the host. */
+	/** Gracefully shuts down the current worker and host */
 	public async stop(): Promise<void> {
 		await this.disposeApp();
 		logger.debug("Lithia instance stopped.");
 	}
 
-	// --- Worker Operations ---
+	// ── Worker Management ───────────────────────────────────────
 
 	/**
-	 * Spawns a new Worker Thread with the current application state.
+	 * Creates and configures a new application worker.
+	 * Sets up message and error handlers.
 	 */
 	private createApp(): void {
 		logger.debug("Spawning background worker...");
@@ -309,14 +329,14 @@ export class LithiaHost {
 			},
 		);
 
-		this._app.on("message", (msg: AppToHostEvent) => {
+		this._app.on("message", async (msg: AppToHostEvent) => {
 			if (msg.type === "ready") {
 				this._isAppReady = true;
 				this._isAppRunning = true;
 			}
 
 			if (msg.type === "invoke") {
-				this.handleFunctionInvocation(msg);
+				await this.handleFunctionInvocation(msg);
 			}
 		});
 
@@ -326,19 +346,48 @@ export class LithiaHost {
 		});
 	}
 
-	private handleFunctionInvocation(event: {
-		functionId: string;
-		payload?: any;
-		async: boolean;
-		requestId?: string; // Adicionado aqui
-	}) {
+	/**
+	 * Handles function invocation requests coming from the app worker.
+	 * Spawns short-lived function workers with full error propagation.
+	 */
+	private async handleFunctionInvocation(
+		event: AppToHostEvent & { type: "invoke" },
+	): Promise<void> {
+		const limit = this.config.managedFunctions.concurrencyLimit;
+		const timeoutMs = this.config.managedFunctions.timeoutMs;
+
+		if (this._runningFunctions >= limit) {
+			logger.debug(
+				`[fn:${event.functionId}] Concurrency limit reached, queuing invocation...`,
+			);
+
+			return new Promise<void>((resolve) => {
+				this._invocationQueue.push(async () => {
+					await this.handleFunctionInvocation(event);
+					resolve();
+				});
+			});
+		}
+
+		this._runningFunctions++;
+
 		const fnMeta = this.functions.find((f) => f.id === event.functionId);
+
+		// 2. Resource Validation
 		if (!fnMeta) {
-			logger.error(`Function with ID ${event.functionId} not found.`);
+			if (!event.async) {
+				this._app?.postMessage({
+					type: "invoke_error",
+					functionId: event.functionId,
+					requestId: event.requestId,
+					error: `[fn:${event.functionId}] Function not found in manifest.`,
+				});
+			}
+			this.finalizeInvocation();
 			return;
 		}
 
-		logger.debug(`Invoking function: ${fnMeta.id}`);
+		logger.debug(`[fn:${fnMeta.id}] Starting worker...`);
 
 		const worker = new Worker(
 			path.join(import.meta.dirname, "workers", "function.mjs"),
@@ -347,36 +396,84 @@ export class LithiaHost {
 					managedBy: "lithia",
 					environment: this.environment,
 					config: this.config,
-					payload: event.payload,
 					function: fnMeta,
+					args: event.args || [],
 				},
-				env: {
-					FORCE_COLOR: "1",
-					...this._env,
-				},
+				env: { FORCE_COLOR: "1", ...this._env },
 			},
 		);
 
+		let isFinalized = false;
+
+		const finalize = () => {
+			if (isFinalized) return;
+			isFinalized = true;
+			clearTimeout(timer);
+			logger.debug(`[fn:${fnMeta.id}] Function finalized.`);
+			this.finalizeInvocation();
+		};
+
+		const timer = setTimeout(async () => {
+			if (isFinalized) return;
+			if (!event.async) {
+				this._app?.postMessage({
+					type: "invoke_error",
+					functionId: event.functionId,
+					requestId: event.requestId,
+					error: `[fn:${fnMeta.id}] Function timed out after ${timeoutMs}ms.`,
+				});
+			}
+
+			await worker.terminate();
+			finalize();
+		}, timeoutMs);
+
 		if (event.async) {
+			// Fire-and-forget: The Host doesn't wait for a result message
 			worker.unref();
+			// For async, we release the slot as soon as the worker exits
+			worker.on("exit", () => finalize());
 		} else {
-			worker.on("message", (result: HostToAppEvent) => {
+			// Synchronous (Request-Response)
+			worker.on("message", (result: any) => {
 				this._app?.postMessage({
 					type: "invoke_success",
 					functionId: event.functionId,
+					requestId: event.requestId,
 					result,
 				});
+				finalize();
+			});
+
+			worker.on("error", (err) => {
+				this._app?.postMessage({
+					type: "invoke_error",
+					functionId: event.functionId,
+					requestId: event.requestId,
+					error: (err instanceof Error) ? err.message : String(err),
+				});
+				finalize();
+			});
+
+			worker.on("exit", (code) => {
+				if (code !== 0) {
+					logger.debug(`[fn:${fnMeta.id}] Exited with code ${code}`);
+				}
+				finalize();
 			});
 		}
-
-		worker.on("error", (err) =>
-			logger.error(`Function ${fnMeta.id} failed:`, err),
-		);
 	}
 
 	/**
-	 * Terminates the existing worker safely.
+	 * Decrements running counter and processes the next pending invocation.
 	 */
+	private finalizeInvocation(): void {
+		this._runningFunctions--;
+		const next = this._invocationQueue.shift();
+		if (next) next();
+	}
+
+	/** Terminates the current application worker if active */
 	private async disposeApp(): Promise<void> {
 		if (!this._app) return;
 		await this._app.terminate();
@@ -385,9 +482,7 @@ export class LithiaHost {
 		this._isAppReady = false;
 	}
 
-	/**
-	 * Gracefully swaps the current worker for a new one.
-	 */
+	/** Replaces the current worker with a fresh instance */
 	public async swapApp(): Promise<void> {
 		if (this._app && this._isAppRunning) {
 			await this.disposeApp();
@@ -395,9 +490,9 @@ export class LithiaHost {
 		this.createApp();
 	}
 
-	// --- UI Helpers ---
+	// ── Console UI Helpers ──────────────────────────────────────
 
-	/** Prints the Lithia banner and environment status to the console. */
+	/** Prints Lithia banner + detected environment files */
 	public async printHeader(): Promise<void> {
 		const files = await this.getAvailableEnvFiles();
 		logger.event(green(`Lithia.js ${version}`));
@@ -405,7 +500,7 @@ export class LithiaHost {
 		console.log();
 	}
 
-	/** Prints the visual tree of HTTP routes. */
+	/** Renders visual tree of registered HTTP routes */
 	public printRouteTree(): void {
 		this.printTree(
 			"Routes",
@@ -415,7 +510,7 @@ export class LithiaHost {
 		);
 	}
 
-	/** Prints the visual tree of WebSocket events. */
+	/** Renders visual tree of registered WebSocket events */
 	public printEventTree(): void {
 		this.printTree(
 			"Events",
@@ -425,7 +520,7 @@ export class LithiaHost {
 		);
 	}
 
-	/** Prints the visual tree of background functions (Cron/Task). */
+	/** Renders visual tree of registered background functions */
 	public printFunctionTree(): void {
 		this.printTree(
 			"Functions",
@@ -436,7 +531,7 @@ export class LithiaHost {
 	}
 
 	/**
-	 * Generic internal helper for console tree rendering.
+	 * Generic console tree printer for routes/events/functions
 	 */
 	private printTree<T>(
 		label: string,
@@ -453,10 +548,7 @@ export class LithiaHost {
 		});
 	}
 
-	/**
-	 * Checks the filesystem for defined environment files.
-	 * @returns Array of available .env file names.
-	 */
+	/** Returns list of existing .env files configured in the project */
 	private async getAvailableEnvFiles(): Promise<string[]> {
 		const existing: string[] = [];
 		for (const f of this.config.envFiles) {
@@ -466,8 +558,8 @@ export class LithiaHost {
 	}
 
 	/**
-	 * Validates that configuration is loaded before performing operations.
-	 * @throws {LithiaError} If config is missing.
+	 * Ensures configuration is loaded before performing manifest/build operations.
+	 * @throws {LithiaError} if configuration is not available
 	 */
 	private ensureConfigLoaded(): void {
 		if (!this.config) throw new LithiaError("Configuration not loaded.");
