@@ -1,3 +1,3 @@
-import { defineConfig } from '@lithia-js/core/config';
+import { defineConfig } from '@lithia-js/core';
 
 export default defineConfig({})

@@ -63,7 +63,7 @@ USER lithia
 EXPOSE 3000
 
 # By default run npm start; templates should provide a `start` script.
-CMD ["node", "dist/lithia.mjs"]
+CMD ["node", "dist/server.mjs"]
 
 # Notes / optional BuildKit optimization:
 # - To speed up installs, enable BuildKit and use cache mounts, e.g.:

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "lithia dev",
     "build": "lithia build",
-    "start": "lithia start",
+    "start": "node ./dist/server.mjs",
     "check": "biome check"
   },
   "dependencies": {
@@ -18,6 +18,6 @@
     "typescript": "^5.9.3"
   },
   "engines": {
-		"node": ">=20"
-	}
+    "node": ">=20"
+  }
 }

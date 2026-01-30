@@ -2,23 +2,31 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 import type { Route } from "@lithia-js/native";
 import { logger, red } from "@lithia-js/utils";
-import { routeContext } from "../context/route-context.mjs";
-import { loadModule } from "../module-loader.js";
-import type { LithiaRuntime } from "../runtime-app.mjs";
-import { digest } from "../utils/index.mjs";
+import { routeContext } from "../context/request-context.mjs";
 import {
-	RequestError,
-	RequestValidationError,
+	InternalServerError,
+	LithiaRequestError,
 	RouteNotFoundError,
-} from "./errors.mjs";
-import type { LithiaRequest, LithiaResponse, Params } from "./index.mjs";
+} from "../errors.mjs";
+import type { LithiaApp } from "../lithia-app.mjs";
+import { loadModule } from "../module-loader.js";
+import { produceDigest } from "../utils.mjs";
+import type { LithiaRequest, Params } from "./request.mjs";
+import type { LithiaResponse } from "./response.mjs";
 
-export type NextFunction = () => Promise<void> | void;
+export type NextRoute = () => Promise<void> | void;
 
-export type Middleware = (
+export type RouteMiddleware = (
 	req: LithiaRequest,
 	res: LithiaResponse,
-	next: NextFunction,
+	next: NextRoute,
+) => Promise<void>;
+
+export type RouteErrorMiddleware = (
+	err: Error,
+	req: LithiaRequest,
+	res: LithiaResponse,
+	next: NextRoute,
 ) => Promise<void>;
 
 export type RouteHandler = (
@@ -28,13 +36,13 @@ export type RouteHandler = (
 
 export type RouteModule = {
 	default: RouteHandler;
-	middlewares?: Middleware[];
+	middlewares?: RouteMiddleware[];
 };
 
 export class LithiaRequestProcessor {
 	private readonly regexCache = new Map<string, RegExp>();
 
-	constructor(private readonly runtime: LithiaRuntime) {}
+	constructor(private readonly app: LithiaApp) {}
 
 	async process(req: LithiaRequest, res: LithiaResponse): Promise<void> {
 		try {
@@ -46,7 +54,10 @@ export class LithiaRequestProcessor {
 
 			// 2. Routing
 			const route = this.findRoute(req);
-			if (!route) throw new RouteNotFoundError(req.pathname);
+			if (!route)
+				throw new RouteNotFoundError(
+					`The requested resource does not exist on this server.`,
+				);
 
 			// 3. Context & Params
 			this.setupRouteContext(route, req);
@@ -56,7 +67,7 @@ export class LithiaRequestProcessor {
 
 			// 5. Middleware Pipeline
 			const pipeline = [
-				...(this.runtime.globalMiddlewares || []),
+				...(this.app.globalRouteMiddlewares || []),
 				...(mod.middlewares || []),
 			];
 
@@ -75,7 +86,7 @@ export class LithiaRequestProcessor {
 	}
 
 	private async runPipeline(
-		middlewares: Middleware[],
+		middlewares: RouteMiddleware[],
 		req: LithiaRequest,
 		res: LithiaResponse,
 		handler: RouteHandler,
@@ -102,7 +113,7 @@ export class LithiaRequestProcessor {
 	private findRoute(req: LithiaRequest): Route | undefined {
 		const method = req.method.toLowerCase();
 
-		return this.runtime.routes.find((route) => {
+		return this.app.routes.find((route) => {
 			const methodMatches =
 				!route.method || route.method.toLowerCase() === method;
 			if (!methodMatches) return false;
@@ -139,7 +150,7 @@ export class LithiaRequestProcessor {
 	}
 
 	private handleCors(req: LithiaRequest, res: LithiaResponse): boolean {
-		const { cors } = this.runtime.config.http;
+		const { cors } = this.app.config.http;
 		if (!cors?.origin?.length) return false;
 
 		const requestOrigin = req.headers.origin as string | undefined;
@@ -198,7 +209,7 @@ export class LithiaRequestProcessor {
 		req: LithiaRequest,
 		res: LithiaResponse,
 	): Promise<boolean> {
-		const { static: staticConfig, http } = this.runtime.config;
+		const { static: staticConfig, http } = this.app.config;
 		if (!staticConfig?.root || (req.method !== "GET" && req.method !== "HEAD"))
 			return false;
 
@@ -234,39 +245,30 @@ export class LithiaRequestProcessor {
 		if (res._ended) return;
 
 		const error =
-			err instanceof RequestError
-				? err
-				: new RequestError(500, "Internal Server Error", err);
+			err instanceof LithiaRequestError ? err : new InternalServerError(err);
 
-		const isProd = this.runtime.environment === "production";
+		const isProd = this.app.environment === "production";
 		const statusCode = error.statusCode || 500;
-
+		const digest = produceDigest(err);
 		const message =
 			isProd && statusCode >= 500 ? "Internal Server Error" : error.message;
-
-		const _digest = digest(err);
 
 		res.status(statusCode).json({
 			error: {
 				statusCode,
 				message,
 				timestamp: new Date().toISOString(),
-				digest: _digest,
+				digest,
 				path: req.pathname,
 				method: req.method,
-				issues:
-					error instanceof RequestValidationError ? error.issues : undefined,
-				...(this.runtime.environment === "development" && {
-					cause: String(error.cause || err),
-				}),
+				details: error.details,
 			},
 		});
 
 		if (statusCode >= 500) {
-			logger.error(`Digest: ${red(_digest)}`);
+			logger.error(`Digest: ${red(digest)}`);
 			logger.info(`Path: ${req.pathname}`);
 			logger.info(`Method: ${req.method}`);
-			logger.info(`Status: ${statusCode}`);
 			logger.info(`${err.stack || err}`);
 		}
 	}

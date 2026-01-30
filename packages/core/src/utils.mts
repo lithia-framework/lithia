@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
+import { access } from "node:fs/promises";
 
-export function digest(err: unknown): string {
+export function produceDigest(err: unknown): string {
 	const errString =
 		err instanceof Error ? err.stack || err.message : String(err);
 
@@ -9,4 +10,8 @@ export function digest(err: unknown): string {
 		.digest("hex");
 
 	return hash.slice(0, 12);
+}
+
+export async function fileExists(filePath: string): Promise<boolean> {
+  return await access(filePath).then(() => true).catch(() => false);
 }

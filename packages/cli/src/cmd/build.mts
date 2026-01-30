@@ -1,48 +1,44 @@
 import { chmod, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { Lithia } from "@lithia-js/core";
-import { loadConfig } from "@lithia-js/core/config";
+import { LithiaHost } from "@lithia-js/core/_";
 import { logger } from "@lithia-js/utils";
 import { defineCommand } from "citty";
 
 const build = defineCommand({
 	meta: {
 		name: "build",
-		description: "Start the build process",
+		description: "Compila o projeto para produção",
 	},
-	async run() {
-		const lithia = Lithia.create({ environment: "build" });
 
+	async run() {
+		const lithia = new LithiaHost({ environment: "build" });
+		await lithia.setup();
+
+		logger.info("Creating a production build...");
 		lithia.build();
 
-		const cfgPath = path.join(lithia.outDir, "lithia.config.json");
-		const entryPath = path.join(lithia.outDir, "lithia.mjs");
-
-		const cfg = await loadConfig({
-			environment: lithia.environment,
-			outDir: lithia.outDir,
-		});
-
-		logger.debug("Loaded configuration from lithia.config");
-
-		logger.debug(
-			"Preparing entrypoint file and configuration for build output",
-		);
-		const content = await readFile(
-			path.resolve(import.meta.dirname, "../entrypoint.mjs"),
-			"utf-8",
+		const config = lithia.config;
+		const entryPath = path.join(process.cwd(), config.outDir, "server.mjs");
+		const entryTemplatePath = path.resolve(
+			import.meta.dirname,
+			"..",
+			"_entrypoint.mjs",
 		);
 
-		await writeFile(entryPath, content, "utf-8");
-		await writeFile(cfgPath, JSON.stringify(cfg, null, 2), "utf-8");
+		let entryContent = await readFile(entryTemplatePath, "utf-8");
 
-		logger.debug(
-			"Entrypoint and configuration files written to output directory",
-		);
+		entryContent = entryContent.replace("__CONFIG__", JSON.stringify(config));
+
+		await writeFile(entryPath, entryContent, "utf-8");
 
 		try {
+			await lithia.loadRoutes();
+			await lithia.loadEvents();
 			await chmod(entryPath, 0o755);
 		} catch {}
+
+		lithia.printRouteTree();
+		lithia.printEventTree();
 	},
 });
 

@@ -1,16 +1,22 @@
 import type { Event } from "@lithia-js/native";
 import type { Socket } from "socket.io";
+import type { LithiaApp } from "../lithia-app.mjs";
 import { loadModule } from "../module-loader.js";
-import type { LithiaRuntime } from "../runtime-app.mjs";
 
 /**
  * Tipagens para suporte a Middlewares em Events
  */
-export type EventNextFunction = () => Promise<void> | void;
+export type NextEvent = () => Promise<void> | void;
 
 export type EventMiddleware = (
 	socket: Socket,
-	next: EventNextFunction,
+	next: NextEvent,
+) => Promise<void>;
+
+export type EventErrorMiddleware = (
+	error: Error,
+	socket: Socket,
+	next: NextEvent,
 ) => Promise<void>;
 
 export type EventHandler = (socket: Socket, data?: any) => Promise<void>;
@@ -21,7 +27,7 @@ export type EventModule = {
 };
 
 export class LithiaEventProcessor {
-	constructor(private readonly runtime: LithiaRuntime) {}
+	constructor(private readonly app: LithiaApp) {}
 
 	/**
 	 * Processa um evento específico do Socket.io
@@ -77,7 +83,7 @@ export class LithiaEventProcessor {
 	 * Central de tratamento de erros para Sockets
 	 */
 	private handleEventError(socket: Socket, eventName: string, err: any): void {
-		const isProd = this.runtime.environment === "production";
+		const isProd = this.app.environment === "production";
 
 		// Log interno (essencial, já que sockets não têm logs de acesso nativos como HTTP)
 		console.error(

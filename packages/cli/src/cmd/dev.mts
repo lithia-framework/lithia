@@ -1,5 +1,6 @@
 import path from "node:path";
-import { Lithia } from "@lithia-js/core";
+import { LithiaHost } from "@lithia-js/core/_";
+import { logger } from "@lithia-js/utils";
 import chokidar from "chokidar";
 import { defineCommand } from "citty";
 
@@ -8,74 +9,98 @@ const dev = defineCommand({
 		name: "dev",
 		description: "Start the development server",
 	},
+
 	async run() {
 		const cwd = process.cwd();
-		const lithia = Lithia.create({ environment: "development" });
+		const lithia = new LithiaHost({ environment: "development" });
+		await lithia.setup();
+
 		lithia.build();
 
 		try {
 			await lithia.start();
 		} catch {}
 
-		let timer: NodeJS.Timeout | null = null;
-		const debounce = (fn: () => void, ms = 150) => {
-			if (timer) clearTimeout(timer);
-			timer = setTimeout(() => {
-				timer = null;
-				fn();
-			}, ms);
+		const debounce = <T extends () => Promise<void> | void>(
+			fn: T,
+			delay = 180,
+		) => {
+			let timer: NodeJS.Timeout | null = null;
+			return () => {
+				if (timer) clearTimeout(timer);
+				timer = setTimeout(() => {
+					timer = null;
+					fn()?.catch(logger.error);
+				}, delay);
+			};
 		};
 
-		const watchPath = path.join(cwd, "src");
-		const sourceWatcher = chokidar.watch(watchPath, {
-			ignored: /(^|[/\\])\../,
+		const rebuild = debounce(async () => {
+			lithia.build();
+			await lithia.reload();
+		});
+
+		const reloadConfig = debounce(async () => {
+			await lithia.loadConfig();
+			await lithia.reload();
+		});
+
+		const reloadEnv = debounce(async () => {
+			await lithia.loadEnv();
+			await lithia.reload();
+		});
+
+		const srcWatcher = chokidar.watch(path.join(cwd, "src"), {
+			ignored: [/(^|[/\\])\../, "**/node_modules/**"],
 			persistent: true,
 			ignoreInitial: true,
 		});
 
-		sourceWatcher.on("all", (event) => {
-			if (event === "add" || event === "change" || event === "unlink") {
-				debounce(() => {
-					lithia.build();
-				});
+		srcWatcher.on("all", async (event) => {
+			if (["add", "change", "unlink"].includes(event)) {
+				rebuild();
 			}
 		});
 
-		const cfgWatcher = chokidar.watch(
+		const availableExtensions = [".js", ".mjs", ".ts", ".mts", ".json"];
+
+		const configWatcher = chokidar.watch(
 			[
-				".env",
-				".env.local",
-				"lithia.config.mts",
-				"lithia.config.mjs",
-				"lithia.config.ts",
-				"lithia.config.js",
-				"lithia.config.json",
+				...lithia.config.envFiles,
+				...availableExtensions.map((ext) =>
+					path.join(cwd, `lithia.config${ext}`),
+				),
 			],
 			{
-				cwd: cwd,
+				cwd,
 				ignoreInitial: true,
 			},
 		);
 
-		cfgWatcher.on("all", async (event) => {
-			if (event === "change" || event === "add") {
-				await lithia.swapRuntime();
+		configWatcher.on("all", (event, path) => {
+			if (["change", "add"].includes(event)) {
+				if (path.includes("lithia.config")) {
+					logger.info(`Reloaded configuration: ${path}`);
+					reloadConfig();
+				} else {
+					logger.info(`Reloaded env: ${path}`);
+					reloadEnv();
+				}
 			}
 		});
 
 		const shutdown = async () => {
-			try {
-				await sourceWatcher.close();
-				await cfgWatcher.close();
-			} catch (_) {}
-			try {
-				await lithia.stop();
-			} catch (_) {}
+			await Promise.allSettled([
+				srcWatcher.close(),
+				configWatcher.close(),
+				lithia.stop(),
+			]);
+
 			process.exit(0);
 		};
 
-		process.on("SIGINT", shutdown);
-		process.on("SIGTERM", shutdown);
+		process.once("SIGINT", () => shutdown);
+		process.once("SIGTERM", () => shutdown);
 	},
 });
 

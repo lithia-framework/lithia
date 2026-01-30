@@ -1,5 +1,6 @@
-import {LithiaRequest, LithiaResponse} from '@lithia-js/core/server'
+import type { LithiaRequest, LithiaResponse } from "@lithia-js/core";
 
-export default async (req: LithiaRequest, res: LithiaResponse) => {
-  res.json({ message: 'Hello, from Lithia! 🚀' });
-}
+export default async (_: LithiaRequest, res: LithiaResponse) => {
+  // res.json({ message: "Hello, from Lithia! 🚀" });
+  throw new Error("This is a sample error from the hello route.");
+};

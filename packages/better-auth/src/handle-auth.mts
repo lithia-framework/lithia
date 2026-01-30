@@ -1,4 +1,5 @@
-import { type RouteHandler, RouteNotFoundError } from "@lithia-js/core/server";
+import type { RouteHandler } from "@lithia-js/core";
+import { RouteNotFoundError } from "@lithia-js/core/_";
 import type { Auth } from "better-auth/types";
 
 export function handleAuth(auth: Auth): RouteHandler {

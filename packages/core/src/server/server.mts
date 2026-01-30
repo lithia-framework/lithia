@@ -12,13 +12,12 @@ import type { Socket as ActiveRequest } from "node:net";
 import type { Event } from "@lithia-js/native";
 import { logger } from "@lithia-js/utils";
 import { type Socket, Server as SocketServer } from "socket.io";
+import { type EventContext, eventContext } from "../context/event-context.mjs";
 import {
-	type EventContext,
-	eventContext,
 	type RouteContext,
 	routeContext,
-} from "../context/index.mjs";
-import type { LithiaRuntime } from "../runtime-app.mjs";
+} from "../context/request-context.mjs";
+import type { LithiaApp } from "../lithia-app.mjs";
 import { LithiaEventProcessor } from "./event-processor.mjs";
 import { LithiaRequest } from "./request.mjs";
 import { LithiaRequestProcessor } from "./request-processor.mjs";
@@ -41,10 +40,10 @@ export class LithiaServer {
 	private eventProcessor: LithiaEventProcessor;
 	private _activeRequests: Set<ActiveRequest>;
 
-	constructor(private readonly runtime: LithiaRuntime) {
+	constructor(private readonly app: LithiaApp) {
 		this._activeRequests = new Set<ActiveRequest>();
-		this.requestProcessor = new LithiaRequestProcessor(this.runtime);
-		this.eventProcessor = new LithiaEventProcessor(this.runtime);
+		this.requestProcessor = new LithiaRequestProcessor(this.app);
+		this.eventProcessor = new LithiaEventProcessor(this.app);
 		this._httpServer = this.createServer();
 		this._socketServer = this.createSocketServer(this._httpServer);
 	}
@@ -66,12 +65,9 @@ export class LithiaServer {
 			if (this._httpServer?.listening) return resolve();
 
 			this._httpServer?.listen(
-				this.runtime.config.http.port,
-				this.runtime.config.http.host,
-				() => {
-					logger.success("Lithia is ready!");
-					resolve();
-				},
+				this.app.config.http.port,
+				this.app.config.http.host,
+				resolve,
 			);
 
 			this.httpServer?.on("error", (err) => {
@@ -101,8 +97,8 @@ export class LithiaServer {
 
 	private createServer(): HttpServer | HttpsServer {
 		const handler = this.handleRequest();
-		const server = this.runtime.config.http.ssl
-			? createHttpsServer(this.runtime.config.http.ssl, handler)
+		const server = this.app.config.http.ssl
+			? createHttpsServer(this.app.config.http.ssl, handler)
 			: createHttpServer(handler);
 
 		server.on("connection", (socket: ActiveRequest) => {
@@ -122,15 +118,15 @@ export class LithiaServer {
 
 		const io = new SocketServer(httpServer, {
 			cors: {
-				origin: this.runtime.config.http.cors.origin,
-				methods: this.runtime.config.http.cors.methods,
-				credentials: this.runtime.config.http.cors.credentials,
+				origin: this.app.config.http.cors.origin,
+				methods: this.app.config.http.cors.methods,
+				credentials: this.app.config.http.cors.credentials,
 			},
 		});
 
 		io.on("connection", async (socket: Socket) => {
 			const eventMap = new Map<string, Event>(
-				this.runtime.events.map((e) => [e.name, e]),
+				this.app.events.map((e) => [e.name, e]),
 			);
 
 			const event = eventMap.get("connection");
@@ -142,7 +138,7 @@ export class LithiaServer {
 			});
 
 			socket.onAny(async (eventName: string, ...args: any[]) => {
-				const event = this.runtime.events.find((e) => e.name === eventName);
+				const event = this.app.events.find((e) => e.name === eventName);
 				if (event) handler(socket, event, ...args);
 			});
 		});
@@ -155,7 +151,7 @@ export class LithiaServer {
 			try {
 				const eventCtx: EventContext = {
 					data: args[0],
-					dependencies: new Map(this.runtime.globalDependencies),
+					dependencies: new Map(this.app.dependencies),
 					socket,
 					event,
 				};
@@ -171,7 +167,7 @@ export class LithiaServer {
 		return (req: IncomingMessage, res: ServerResponse) => {
 			try {
 				const lithiaReq = new LithiaRequest(req, {
-					maxBodySize: this.runtime.config.http.maxBodySize,
+					maxBodySize: this.app.config.http.maxBodySize,
 				});
 
 				const lithiaRes = new LithiaResponse(res);
@@ -179,7 +175,7 @@ export class LithiaServer {
 				const routeCtx: RouteContext = {
 					req: lithiaReq,
 					res: lithiaRes,
-					dependencies: new Map(this.runtime.globalDependencies),
+					dependencies: new Map(this.app.dependencies),
 					socketServer: this.socketServer!,
 				};
 

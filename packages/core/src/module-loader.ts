@@ -1,11 +1,6 @@
 import { access, constants } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { isAsyncFunction } from "node:util/types";
-import {
-	InvalidModuleDefaultExportError,
-	ModuleDefaultExportMissingError,
-	ModuleNotFoundError,
-} from "./errors.mjs";
 
 export async function loadModule<
 	T extends { default: unknown; [key: string]: unknown },
@@ -15,24 +10,24 @@ export async function loadModule<
 		.catch(() => false);
 
 	if (!exists) {
-		throw new ModuleNotFoundError(filePath);
+		// throw new ModuleNotFoundError(filePath);
 	}
 
 	const mod = await import(pathToFileURL(filePath).href);
 	if (mod) {
 		if (!mod.default) {
-			throw new ModuleDefaultExportMissingError(filePath);
+			// throw new ModuleDefaultExportMissingError(filePath);
 		}
 
 		if (mod.default && typeof mod.default !== "function") {
-			throw new InvalidModuleDefaultExportError(filePath);
+			// throw new InvalidModuleDefaultExportError(filePath);
 		}
 
 		if (!isAsyncFunction(mod.default)) {
-			throw new InvalidModuleDefaultExportError(filePath);
+			// throw new InvalidModuleDefaultExportError(filePath);
 		}
 	} else {
-		throw new ModuleNotFoundError(filePath);
+		// throw new ModuleNotFoundError(filePath);
 	}
 
 	return mod as T;

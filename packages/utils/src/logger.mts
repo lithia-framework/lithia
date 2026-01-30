@@ -1,12 +1,11 @@
 import {
-	blue,
-	bold,
-	gray,
-	green,
-	purple,
-	red,
-	white,
-	yellow,
+  bold,
+  gray,
+  green,
+  purple,
+  red,
+  white,
+  yellow
 } from "./picocolors.mjs";
 
 export type LogLevel =
@@ -48,13 +47,13 @@ export class Logger {
 	}
 
 	success(msg: any, meta?: any) {
-		const symbol = green(bold("▲"));
+		const symbol = green(bold("✓"));
 		const m = formatMeta(meta);
 		console.log(`${symbol} ${msg}${m ? ` — ${m}` : ""}`);
 	}
 
 	event(msg: any, meta?: any) {
-		const symbol = blue(bold("▲"));
+		const symbol = green(bold("▲"));
 		const m = formatMeta(meta);
 		console.log(`${symbol} ${msg}${m ? ` — ${m}` : ""}`);
 	}

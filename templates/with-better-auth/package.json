@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "lithia dev",
     "build": "lithia build",
-    "start": "lithia start",
+    "start": "node ./dist/server.mjs",
     "check": "biome check",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

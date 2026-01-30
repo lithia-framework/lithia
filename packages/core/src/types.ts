@@ -1,0 +1,1 @@
+export type Environment = "test" | "build" | "production" | "development";

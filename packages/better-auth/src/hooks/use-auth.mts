@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { type Middleware, RequestError } from "@lithia-js/core/server";
+import { type RouteMiddleware, UnauthorizedError } from "@lithia-js/core";
 import { fromNodeHeaders } from "better-auth/node";
 import type { Auth } from "better-auth/types";
 
@@ -24,7 +24,7 @@ export function authenticated(
 			throw: true,
 		},
 	},
-): Middleware {
+): RouteMiddleware {
 	return async (req, _, next) => {
 		const session = await auth.api.getSession({
 			headers: fromNodeHeaders(req.headers),
@@ -32,7 +32,7 @@ export function authenticated(
 
 		if (!session)
 			if (options.error.throw) {
-				throw new RequestError(401, options.error.message);
+				throw new UnauthorizedError(options.error.message);
 			}
 
 		await authContext.run({ session }, async () => {
