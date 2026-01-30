@@ -48,7 +48,6 @@
     "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
-    "@lithia-js/native": "workspace:*",
     "@lithia-js/utils": "workspace:*",
     "@swc/core": "^1.15.11",
     "busboy": "^1.6.0",

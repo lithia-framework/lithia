@@ -5,10 +5,6 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
-    "build:rs": {
-      "inputs": ["native/src/**", "native/Cargo.toml", "native/Cargo.lock"],
-      "outputs": ["packages/native/*.node", "packages/native/index.js", "packages/native/index.d.ts"]
-    },
     "test": {
       "dependsOn": ["build"]
     },

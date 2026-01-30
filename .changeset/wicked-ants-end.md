@@ -4,7 +4,7 @@
 "@lithia-js/core": patch
 "create-lithia": patch
 "@lithia-js/middlewares": patch
-"@lithia-js/native": patch
+"": patch
 "@lithia-js/utils": patch
 ---
 
