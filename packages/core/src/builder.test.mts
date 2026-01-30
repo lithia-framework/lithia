@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import * as swc from "@swc/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Builder } from "./builder.mjs";
-import { FileScanner } from "./scanner.mjs";
+import { type FileInfo, FileScanner } from "./scanner.mjs";
 
 // Mocks
 vi.mock("node:fs/promises");
@@ -30,9 +30,16 @@ describe("Builder", () => {
 	it("should orchestrate the full build process", async () => {
 		const config = { sourceDir: "src", outRoot: "dist" };
 
-		const mockFiles = [
-			{ path: "routes/user.ts", fullPath: "/abs/src/routes/user.ts" },
-		];
+		const mockFiles: FileInfo[] =
+			process.platform === "win32"
+				? [
+						{
+							path: "routes/user.ts",
+							fullPath: "C:\\abs\\src\\routes\\user.ts",
+						},
+					]
+				: [{ path: "routes/user.ts", fullPath: "/abs/src/routes/user.ts" }];
+
 		vi.spyOn(FileScanner.prototype, "scanDir").mockResolvedValue(mockFiles);
 
 		vi.mocked(swc.transformFile).mockResolvedValue({
