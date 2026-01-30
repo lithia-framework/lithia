@@ -33,7 +33,11 @@ const build = defineCommand({
 		logger.info("Initializing production build sequence...");
 
 		// Trigger the core build process
-		lithia.build();
+    try {
+      lithia.build();
+    } catch {
+      process.exit(1);
+    }
 
 		const { config } = lithia;
 		const workingDirectory = process.cwd();

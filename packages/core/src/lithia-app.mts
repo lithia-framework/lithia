@@ -122,7 +122,7 @@ export class LithiaApp {
 
     try {
       await this._server.listen();
-      this.executeOnce(() => logger.success("Lithia is ready!"));
+      this.executeOnce(() => logger.ready("Lithia is ready!"));
     } catch (error) {
       this.executeOnce(() => logger.error("Failed to start Lithia server."));
       throw error;

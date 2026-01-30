@@ -168,7 +168,7 @@ export class LithiaHost {
 	 *                     (useful for CLI `build`). When false, errors are
 	 *                     logged but the host keeps running (useful for dev).
 	 */
-	public build(throwOnError: boolean = true): void {
+	public build(): void {
 		this.ensureConfigLoaded();
 		const start = process.hrtime.bigint();
 
@@ -182,8 +182,8 @@ export class LithiaHost {
 			const duration = Number(process.hrtime.bigint() - start) / 1e6;
 			logger.success(`Compiled successfully in ${duration.toFixed(2)}ms`);
 		} catch (err) {
-			logger.error("Build failed:", err);
-			if (throwOnError) throw err;
+			logger.error(`Build failed with error: ${(err as Error).message}`);
+			if (this.environment === "build") throw err;
 		}
 	}
 

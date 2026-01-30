@@ -67,7 +67,7 @@ export class Logger {
 	 * Logs an error message.
 	 */
 	error = (msg: any, meta?: any) => {
-		this.print(red(bold("✖")), msg, meta, "error");
+		this.print(red(bold("○")), msg, meta, "error");
 	};
 
 	/**
