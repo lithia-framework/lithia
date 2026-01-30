@@ -15,7 +15,6 @@ import {
 	type Server as HttpsServer,
 } from "node:https";
 import type { Socket as ActiveRequest } from "node:net";
-import type { Event } from "@lithia-js/native";
 import { logger } from "@lithia-js/utils";
 import { type Socket, Server as SocketServer } from "socket.io";
 import {
@@ -23,10 +22,15 @@ import {
 	eventContextStore,
 } from "../context/event-context.mjs";
 import {
+	type LithiaContext,
+	lithiaContextStore,
+} from "../context/lithia-context.mjs";
+import {
 	type RouteContext,
 	routeContextStore,
 } from "../context/request-context.mjs";
 import type { LithiaApp } from "../lithia-app.mjs";
+import type { Event } from "../strategy/events/index.mjs";
 import { LithiaEventProcessor } from "./event-processor.mjs";
 import { LithiaRequest } from "./request.mjs";
 import { LithiaRequestProcessor } from "./request-processor.mjs";
@@ -211,14 +215,14 @@ export class LithiaServer {
 			try {
 				const eventCtx: EventContext = {
 					data: args[0],
-					dependencies: new Map(this.app.dependencies),
 					socket,
 					event,
 				};
 
-				// Execute processing within the AsyncLocalStorage store
-				eventContextStore.run(eventCtx, async () => {
-					await this.eventProcessor.process(socket, event);
+				this.runWithLithiaContext(async () => {
+					eventContextStore.run(eventCtx, async () => {
+						await this.eventProcessor.process(socket, event);
+					});
 				});
 			} catch {
 				// Errors are handled within the eventProcessor
@@ -241,15 +245,23 @@ export class LithiaServer {
 				const routeCtx: RouteContext = {
 					req: lithiaReq,
 					res: lithiaRes,
-					dependencies: new Map(this.app.dependencies),
 					socketServer: this._socketServer,
 				};
 
-				// Execute processing within the AsyncLocalStorage store
-				routeContextStore.run(routeCtx, async () => {
-					await this.requestProcessor.process(lithiaReq, lithiaRes);
+				this.runWithLithiaContext(async () => {
+					routeContextStore.run(routeCtx, async () => {
+						await this.requestProcessor.process(lithiaReq, lithiaRes);
+					});
 				});
 			} catch {}
 		};
+	}
+
+	private runWithLithiaContext<T>(fn: () => Promise<T>): Promise<T> {
+		const lithiaCtx: LithiaContext = {
+			container: new Map(this.app.dependencies),
+		};
+
+		return lithiaContextStore.run(lithiaCtx, fn);
 	}
 }

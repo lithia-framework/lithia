@@ -1,8 +1,8 @@
 //!
- //! @fileoverview AST Path Rewriter (Native).
- //! Visits the SWC AST to find import/export declarations and 'require' calls,
- //! replacing TypeScript path aliases (@/*) with relative physical paths.
- //!
+//! @fileoverview AST Path Rewriter (Native).
+//! Visits the SWC AST to find import/export declarations and 'require' calls,
+//! replacing TypeScript path aliases (@/*) with relative physical paths.
+//!
 
 use std::path::{Path, PathBuf};
 use swc_atoms::Wtf8Atom;
@@ -49,7 +49,7 @@ impl PathsRewriter {
 
         for target in to_list {
             let replaced = target.replace('*', extra);
-            
+
             if let Some(abs_found) = try_find_file_on_disk(&self.base_url.join(&replaced)) {
                 return Some(make_relative_or_prefixed(&self.file_dir, &abs_found));
             }
@@ -135,15 +135,19 @@ pub(crate) fn try_find_file_on_disk(candidate: &Path) -> Option<PathBuf> {
     for ext in &["mts", "mjs", "ts", "js"] {
         let mut p = candidate.to_path_buf();
         p.set_extension(ext);
-        if p.is_file() { return Some(p); }
+        if p.is_file() {
+            return Some(p);
+        }
     }
 
     // Probing for index files
     if candidate.is_dir() {
-        for ext in &["mts", "mjs"] {
+        for ext in &["mts", "mjs", "ts", "js"] {
             let mut idx = candidate.to_path_buf();
             idx.push(format!("index.{}", ext));
-            if idx.is_file() { return Some(idx); }
+            if idx.is_file() {
+                return Some(idx);
+            }
         }
     }
 
@@ -155,7 +159,8 @@ pub(crate) fn make_relative_or_prefixed(file_dir: &Path, target: &Path) -> Strin
     let target_abs = std::fs::canonicalize(target).unwrap_or_else(|_| target.to_path_buf());
     let file_dir_abs = std::fs::canonicalize(file_dir).unwrap_or_else(|_| file_dir.to_path_buf());
 
-    let rel = pathdiff::diff_paths(&target_abs, &file_dir_abs).unwrap_or_else(|| target_abs.clone());
+    let rel =
+        pathdiff::diff_paths(&target_abs, &file_dir_abs).unwrap_or_else(|| target_abs.clone());
     let mut s = rel.to_string_lossy().to_string().replace('\\', "/");
 
     if !s.starts_with('.') && !s.starts_with('/') {
@@ -163,7 +168,17 @@ pub(crate) fn make_relative_or_prefixed(file_dir: &Path, target: &Path) -> Strin
     }
 
     // Rewrite TS extensions to JS extensions for Node.js ESM
-    if s.ends_with(".mts") || s.ends_with(".ts") {
+    // if s.ends_with(".mts") || s.ends_with(".ts") {
+    //     let pos = s.rfind('.').unwrap();
+    //     s.truncate(pos);
+    //     s.push_str(".js");
+    // }
+
+    if s.ends_with(".ts") {
+        let pos = s.rfind('.').unwrap();
+        s.truncate(pos);
+        s.push_str(".js");
+    } else if s.ends_with(".mts") {
         let pos = s.rfind('.').unwrap();
         s.truncate(pos);
         s.push_str(".mjs");

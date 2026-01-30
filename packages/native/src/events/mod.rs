@@ -60,7 +60,7 @@ pub fn write_events_manifest(config: &BuildConfig) -> Result<(), String> {
                 "events".to_string(),
             ],
             Some(ScanOptions {
-                include: Some(vec!["**/*.mjs".to_string()]),
+                include: Some(vec!["**/*.mjs".to_string(), "**/*.js".to_string()]),
                 ignore: None,
             }),
         )

@@ -25,7 +25,7 @@ impl NativeEventTransformer {
     pub fn new() -> Self {
         Self {
             // Matches .mts or .mjs at the end of the string.
-            remove_ext: Regex::new(r"\.(mts|mjs)$").unwrap(),
+            remove_ext: Regex::new(r"\.(mts|mjs|ts|js)$").unwrap(),
             // Matches segments in parentheses followed by a slash: (group)/
             remove_groups: Regex::new(r"\(([^(/\\]+)\)[/\\]").unwrap(),
         }

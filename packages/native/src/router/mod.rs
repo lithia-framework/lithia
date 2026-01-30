@@ -90,7 +90,7 @@ pub fn write_routes_manifest(config: &BuildConfig) -> Result<(), String> {
                 "routes".to_string(),
             ],
             Some(ScanOptions {
-                include: Some(vec!["**/*.mjs".to_string()]),
+                include: Some(vec!["**/*.mjs".to_string(), "**/*.js".to_string()]),
                 ignore: None,
             }),
         )

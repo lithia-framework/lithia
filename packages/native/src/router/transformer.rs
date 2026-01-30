@@ -58,7 +58,7 @@ pub struct NativePathTransformer {
 impl NativePathTransformer {
     pub fn new() -> Self {
         Self {
-            remove_ext: Regex::new(r"\.(mts|mjs)$").unwrap(),
+            remove_ext: Regex::new(r"\.(mts|mjs|ts|js)$").unwrap(),
             remove_groups: Regex::new(r"\(([^(/\\]+)\)[/\\]").unwrap(),
             // Matches [...name]
             catch_all_named: Regex::new(r"\[\.\.\.(\w+)\]").unwrap(),

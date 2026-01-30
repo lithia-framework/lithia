@@ -4,9 +4,9 @@
  * These must be used exclusively within functions executed by the LithiaEventProcessor.
  */
 
-import type { Event } from "@lithia-js/native";
 import type { Socket } from "socket.io";
 import { getEventContext } from "../context/event-context.mjs";
+import type { Event } from "../strategy/events/index.mjs";
 
 /**
  * Retrieves the payload (data) sent by the client for the current event.
@@ -16,7 +16,7 @@ import { getEventContext } from "../context/event-context.mjs";
  * const { message } = useData<{ message: string }>();
  */
 export function useData<T = any>(): T {
-  return getEventContext().data as T;
+	return getEventContext().data as T;
 }
 
 /**
@@ -25,7 +25,7 @@ export function useData<T = any>(): T {
  * * @returns The active Socket instance.
  */
 export function useSocket(): Socket {
-  return getEventContext().socket;
+	return getEventContext().socket;
 }
 
 /**
@@ -33,7 +33,7 @@ export function useSocket(): Socket {
  * * @returns The Event object containing name, file path, and flags.
  */
 export function useEvent(): Event {
-  return getEventContext().event;
+	return getEventContext().event;
 }
 
 /**
@@ -41,5 +41,5 @@ export function useEvent(): Event {
  * * @returns The socket ID string.
  */
 export function useSocketId(): string {
-  return getEventContext().socket.id;
+	return getEventContext().socket.id;
 }

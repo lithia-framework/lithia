@@ -46,7 +46,7 @@ const dev = defineCommand({
 
 		// 1. Initial Host Setup
 		await lithia.setup();
-		lithia.build();
+		await lithia.build();
 
 		try {
 			await lithia.start();
@@ -56,7 +56,7 @@ const dev = defineCommand({
 
 		// 2. Define Hot-Reload Actions
 		const performRebuild = debounce(async () => {
-			lithia.build();
+			await lithia.build();
 			await lithia.reload();
 		});
 

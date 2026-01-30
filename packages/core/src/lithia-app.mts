@@ -5,12 +5,13 @@
  */
 
 import { isMainThread, workerData } from "node:worker_threads";
-import type { Event, Route } from "@lithia-js/native";
 import { logger } from "@lithia-js/utils";
 import type { LithiaOptions } from "./config.mjs";
 import type { EventMiddleware } from "./server/event-processor.mjs";
 import type { RouteMiddleware } from "./server/request-processor.mjs";
 import { LithiaServer } from "./server/server.mjs";
+import type { Event } from "./strategy/events/index.mjs";
+import type { Route } from "./strategy/routes/index.mjs";
 import type { Environment } from "./types.js";
 
 /**
@@ -19,149 +20,150 @@ import type { Environment } from "./types.js";
 export type InjectionKey<T> = symbol | string | { new (...args: any[]): T };
 
 /**
- * The core application instance. 
- * Managed by the Lithia CLI, it encapsulates the configuration, 
+ * The core application instance.
+ * Managed by the Lithia CLI, it encapsulates the configuration,
  * routing manifest, and server engine.
  */
 export class LithiaApp {
-  private readonly _environment: Environment;
-  private readonly _config: LithiaOptions;
-  private readonly _routes: Route[];
-  private readonly _events: Event[];
-  private readonly _isFirstWorker: boolean;
-  
-  private readonly _globalRouteMiddlewares: RouteMiddleware[] = [];
-  private readonly _globalEventMiddlewares: EventMiddleware[] = [];
-  private readonly _dependencies = new Map<any, any>();
-  private readonly _server: LithiaServer;
+	private readonly _environment: Environment;
+	private readonly _config: LithiaOptions;
+	private readonly _routes: Route[];
+	private readonly _events: Event[];
+	private readonly _isFirstApp: boolean;
 
-  /**
-   * Initializes the application container.
-   * Validates the execution context to ensure it is running within a managed worker.
-   */
-  constructor() {
-    this.validateExecutionContext();
+	private readonly _globalRouteMiddlewares: RouteMiddleware[] = [];
+	private readonly _globalEventMiddlewares: EventMiddleware[] = [];
+	private readonly _dependencies = new Map<any, any>();
+	private readonly _server: LithiaServer;
 
-    this._config = workerData.config;
-    this._routes = workerData.routes;
-    this._events = workerData.events;
-    this._environment = workerData.environment;
-    this._isFirstWorker = workerData.isFirstWorker;
+	/**
+	 * Initializes the application container.
+	 * Validates the execution context to ensure it is running within a managed worker.
+	 */
+	constructor() {
+		this.validateExecutionContext();
 
-    this._server = new LithiaServer(this);
-  }
+		this._config = workerData.config;
+		this._routes = workerData.routes;
+		this._events = workerData.events;
+		this._environment = workerData.environment;
+		this._isFirstApp = workerData.isFirstApp;
 
-  // --- Accessors ---
+		this._server = new LithiaServer(this);
+	}
 
-  public get config(): LithiaOptions {
-    return this._config;
-  }
+	// --- Accessors ---
 
-  public get environment(): Environment {
-    return this._environment;
-  }
+	public get config(): LithiaOptions {
+		return this._config;
+	}
 
-  public get dependencies(): Map<any, any> {
-    return this._dependencies;
-  }
+	public get environment(): Environment {
+		return this._environment;
+	}
 
-  public get routes(): Route[] {
-    return this._routes;
-  }
+	public get dependencies(): Map<any, any> {
+		return this._dependencies;
+	}
 
-  public get events(): Event[] {
-    return this._events;
-  }
+	public get routes(): Route[] {
+		return this._routes;
+	}
 
-  public get globalRouteMiddlewares(): RouteMiddleware[] {
-    return this._globalRouteMiddlewares;
-  }
+	public get events(): Event[] {
+		return this._events;
+	}
 
-  public get globalEventMiddlewares(): EventMiddleware[] {
-    return this._globalEventMiddlewares;
-  }
+	public get globalRouteMiddlewares(): RouteMiddleware[] {
+		return this._globalRouteMiddlewares;
+	}
 
-  public get isFirstWorker(): boolean {
-    return this._isFirstWorker;
-  }
+	public get globalEventMiddlewares(): EventMiddleware[] {
+		return this._globalEventMiddlewares;
+	}
 
-  // --- Registry & Configuration ---
+	public get isFirstApp(): boolean {
+		return this._isFirstApp;
+	}
 
-  /**
-   * Provides a dependency to the application-wide injection container.
-   */
-  public provide<T>(key: InjectionKey<T>, value: T): void {
-    this._dependencies.set(key, value);
-  }
+	// --- Registry & Configuration ---
 
-  /**
-   * Registers a global middleware for either HTTP routes or WebSocket events.
-   * @param context The target stack ('route' or 'event').
-   * @param middleware The middleware function to register.
-   */
-  public use<K extends "route" | "event">(
-    context: K,
-    middleware: K extends "route" ? RouteMiddleware : EventMiddleware,
-  ): void {
-    if (context === "route") {
-      this._globalRouteMiddlewares.push(middleware as RouteMiddleware);
-    } else if (context === "event") {
-      this._globalEventMiddlewares.push(middleware as EventMiddleware);
-    } else {
-      logger.warn(`Unknown middleware context: ${context}. Registration ignored.`);
-    }
-  }
+	/**
+	 * Provides a dependency to the application-wide injection container.
+	 */
+	public provide<T>(key: InjectionKey<T>, value: T): void {
+		this._dependencies.set(key, value);
+	}
 
-  // --- Lifecycle Orchestration ---
+	/**
+	 * Registers a global middleware for either HTTP routes or WebSocket events.
+	 * @param context The target stack ('route' or 'event').
+	 * @param middleware The middleware function to register.
+	 */
+	public use<K extends "route" | "event">(
+		context: K,
+		middleware: K extends "route" ? RouteMiddleware : EventMiddleware,
+	): void {
+		if (context === "route") {
+			this._globalRouteMiddlewares.push(middleware as RouteMiddleware);
+		} else if (context === "event") {
+			this._globalEventMiddlewares.push(middleware as EventMiddleware);
+		} else {
+			logger.warn(
+				`Unknown middleware context: ${context}. Registration ignored.`,
+			);
+		}
+	}
 
-  /**
-   * Starts the internal server and begins accepting connections.
-   */
-  public async start(): Promise<void> {
-    this.executeOnce(() => logger.info("Starting Lithia server..."));
+	// --- Lifecycle Orchestration ---
 
-    try {
-      await this._server.listen();
-      this.executeOnce(() => logger.ready("Lithia is ready!"));
-    } catch (error) {
-      this.executeOnce(() => logger.error("Failed to start Lithia server."));
-      throw error;
-    }
-  }
+	/**
+	 * Starts the internal server and begins accepting connections.
+	 */
+	public async start(): Promise<void> {
+		this.executeOnce(() => logger.info("Starting Lithia server..."));
 
-  /**
-   * Gracefully shuts down the application and its underlying server.
-   */
-  public async stop(): Promise<void> {
-    await this._server.close();
-  }
+		try {
+			await this._server.listen();
+			this.executeOnce(() => logger.ready("Lithia is ready!"));
+		} catch (error) {
+			this.executeOnce(() => logger.error("Failed to start Lithia server."));
+			throw error;
+		}
+	}
 
-  // --- Internals ---
+	/**
+	 * Gracefully shuts down the application and its underlying server.
+	 */
+	public async stop(): Promise<void> {
+		await this._server.close();
+	}
+	// --- Internals ---
 
-  /**
-   * Executes a callback only if this worker is designated as the primary worker.
-   * Useful for preventing log duplication in multi-worker environments.
-   */
-  private executeOnce(fn: () => void): void {
-    if (this.isFirstWorker) {
-      fn();
-    }
-  }
+	/**
+	 * Executes a callback only if this worker is designated as the primary worker.
+	 * Useful for preventing log duplication in multi-worker environments.
+	 */
+	private executeOnce(fn: () => void): void {
+		if (this.isFirstApp) {
+			fn();
+		}
+	}
 
-  /**
-   * Ensures the application is not running in the main thread and is managed by Lithia.
-   */
-  private validateExecutionContext(): void {
-    if (isMainThread) {
-      throw new Error(
-        "Execution Error: LithiaApp cannot be instantiated on the main thread. It must run within a Worker Thread.",
-      );
-    }
+	/**
+	 * Ensures the application is not running in the main thread and is managed by Lithia.
+	 */
+	private validateExecutionContext(): void {
+		if (isMainThread) {
+			throw new Error(
+				"Execution Error: LithiaApp cannot be instantiated on the main thread. It must run within a Worker Thread.",
+			);
+		}
 
-    if (workerData?.managedBy !== "lithia") {
-      throw new Error(
-        "Compatibility Error: LithiaApp must be managed by the Lithia CLI. Independent execution is not supported.",
-      );
-    }
-  }
+		if (workerData?.managedBy !== "lithia") {
+			throw new Error(
+				"Compatibility Error: LithiaApp must be managed by the Lithia CLI. Independent execution is not supported.",
+			);
+		}
+	}
 }

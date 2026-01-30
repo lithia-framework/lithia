@@ -73,7 +73,7 @@ impl NativeRouteConvention {
         Self {
             // Matches: route.ts, route.get.mts, /route.post.mjs, etc.
             route_regex: Regex::new(
-                r"(^|/)route(\.(delete|get|head|options|patch|post|put))?\.(mts|mjs)$",
+                r"(^|/)route(\.(delete|get|head|options|patch|post|put))?\.(mts|mjs|ts|js)$",
             )
             .unwrap(),
             transformer: transformer.unwrap_or_else(|| Box::new(NativePathTransformer::new())),

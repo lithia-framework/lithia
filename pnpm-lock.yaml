@@ -7,20 +7,16 @@ settings:
 importers:
 
   .:
-    dependencies:
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
     devDependencies:
       '@biomejs/biome':
         specifier: 2.3.13
         version: 2.3.13
       '@changesets/cli':
         specifier: ^2.29.8
-        version: 2.29.8(@types/node@25.0.10)
+        version: 2.29.8(@types/node@25.1.0)
       '@types/node':
-        specifier: ^25.0.10
-        version: 25.0.10
+        specifier: ^25.1.0
+        version: 25.1.0
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -28,11 +24,8 @@ importers:
         specifier: ^2.7.6
         version: 2.7.6
       typescript:
-        specifier: ^5.9.3
+        specifier: ^5.7.0
         version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0)
 
   packages/better-auth:
     dependencies:
@@ -41,7 +34,7 @@ importers:
         version: link:../core
       better-auth:
         specifier: ^1.4.17
-        version: 1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0))
+        version: 1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0))
 
   packages/cli:
     dependencies:
@@ -66,6 +59,9 @@ importers:
       '@lithia-js/utils':
         specifier: workspace:*
         version: link:../utils
+      '@swc/core':
+        specifier: ^1.15.11
+        version: 1.15.11
       busboy:
         specifier: ^1.6.0
         version: 1.6.0
@@ -75,6 +71,9 @@ importers:
       cookie:
         specifier: ^1.1.1
         version: 1.1.1
+      fast-glob:
+        specifier: ^3.3.3
+        version: 3.3.3
       klona:
         specifier: ^2.0.6
         version: 2.0.6
@@ -121,7 +120,7 @@ importers:
     devDependencies:
       '@napi-rs/cli':
         specifier: ^3.5.1
-        version: 3.5.1(@emnapi/runtime@1.8.1)(@types/node@25.0.10)
+        version: 3.5.1(@emnapi/runtime@1.8.1)(@types/node@25.1.0)
 
   packages/utils: {}
 
@@ -132,14 +131,14 @@ importers:
         version: file:packages/core
     devDependencies:
       '@biomejs/biome':
-        specifier: 2.3.13
+        specifier: ^2.3.13
         version: 2.3.13
       '@lithia-js/cli':
         specifier: file:../../packages/cli
         version: file:packages/cli
       '@types/node':
-        specifier: ^25.0.10
-        version: 25.0.10
+        specifier: ^25.1.0
+        version: 25.1.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -148,29 +147,32 @@ importers:
     dependencies:
       '@lithia-js/better-auth':
         specifier: file:../../packages/better-auth
-        version: file:packages/better-auth(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0))
+        version: file:packages/better-auth(@lithia-js/core@file:packages/core)(better-auth@1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0)))
       '@lithia-js/core':
         specifier: file:../../packages/core
         version: file:packages/core
       better-auth:
         specifier: ^1.4.17
-        version: 1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0))
+        version: 1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0))
       drizzle-orm:
         specifier: ^0.45.1
-        version: 0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.10)(pg@8.17.2)
+        version: 0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2)
       pg:
-        specifier: ^8.17.2
+        specifier: ^8.13.1
         version: 8.17.2
     devDependencies:
       '@biomejs/biome':
-        specifier: 2.3.13
+        specifier: ^2.3.13
         version: 2.3.13
       '@lithia-js/cli':
         specifier: file:../../packages/cli
         version: file:packages/cli
       '@types/node':
-        specifier: ^25.0.10
-        version: 25.0.10
+        specifier: ^25.1.0
+        version: 25.1.0
+      '@types/pg':
+        specifier: ^8.11.10
+        version: 8.16.0
       drizzle-kit:
         specifier: ^0.31.8
         version: 0.31.8
@@ -185,14 +187,14 @@ importers:
         version: file:packages/core
     devDependencies:
       '@biomejs/biome':
-        specifier: 2.3.13
+        specifier: ^2.3.13
         version: 2.3.13
       '@lithia-js/cli':
         specifier: file:../../packages/cli
         version: file:packages/cli
       '@types/node':
-        specifier: ^25.0.10
-        version: 25.0.10
+        specifier: ^25.1.0
+        version: 25.1.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -204,17 +206,23 @@ importers:
         version: file:packages/core
       drizzle-orm:
         specifier: ^0.45.1
-        version: 0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.10)(pg@8.17.2)
+        version: 0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2)
+      pg:
+        specifier: ^8.13.1
+        version: 8.17.2
     devDependencies:
       '@biomejs/biome':
-        specifier: 2.3.13
+        specifier: ^2.3.13
         version: 2.3.13
       '@lithia-js/cli':
         specifier: file:../../packages/cli
         version: file:packages/cli
       '@types/node':
-        specifier: ^25.0.10
-        version: 25.0.10
+        specifier: ^25.1.0
+        version: 25.1.0
+      '@types/pg':
+        specifier: ^8.11.10
+        version: 8.16.0
       drizzle-kit:
         specifier: ^0.31.8
         version: 0.31.8
@@ -970,6 +978,9 @@ packages:
   '@lithia-js/better-auth@file:packages/better-auth':
     resolution: {directory: packages/better-auth, type: directory}
     engines: {node: '>=20'}
+    peerDependencies:
+      '@lithia-js/core': workspace:*
+      better-auth: ^1.4.17
 
   '@lithia-js/cli@file:packages/cli':
     resolution: {directory: packages/cli, type: directory}
@@ -1391,6 +1402,9 @@ packages:
   '@octokit/types@16.0.0':
     resolution: {integrity: sha512-sKq+9r1Mm4efXW1FCk7hFSeJo4QKreL/tTbR0rz/qx/r1Oa2VV83LTA/H/MuCOX7uCIJmQVRKBcbmWoySjAnSg==}
 
+  '@petamoriken/float16@3.9.3':
+    resolution: {integrity: sha512-8awtpHXCx/bNpFt4mt2xdkgtgVvKqty8VbjHI/WWWQuEw+KLzFot3f4+LkQY9YmOtq7A5GdOnqoIC8Pdygjk2g==}
+
   '@prisma/client@5.22.0':
     resolution: {integrity: sha512-M0SVXfyHnQREBKxCgyo7sffrKttwE6R8PMq330MIUF0pTwjUhLbW84pFDlf06B27XyCR++VtjugEnIHdr07SVA==}
     engines: {node: '>=16.13'}
@@ -1531,6 +1545,81 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
+  '@swc/core-darwin-arm64@1.15.11':
+    resolution: {integrity: sha512-QoIupRWVH8AF1TgxYyeA5nS18dtqMuxNwchjBIwJo3RdwLEFiJq6onOx9JAxHtuPwUkIVuU2Xbp+jCJ7Vzmgtg==}
+    engines: {node: '>=10'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@swc/core-darwin-x64@1.15.11':
+    resolution: {integrity: sha512-S52Gu1QtPSfBYDiejlcfp9GlN+NjTZBRRNsz8PNwBgSE626/FUf2PcllVUix7jqkoMC+t0rS8t+2/aSWlMuQtA==}
+    engines: {node: '>=10'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@swc/core-linux-arm-gnueabihf@1.15.11':
+    resolution: {integrity: sha512-lXJs8oXo6Z4yCpimpQ8vPeCjkgoHu5NoMvmJZ8qxDyU99KVdg6KwU9H79vzrmB+HfH+dCZ7JGMqMF//f8Cfvdg==}
+    engines: {node: '>=10'}
+    cpu: [arm]
+    os: [linux]
+
+  '@swc/core-linux-arm64-gnu@1.15.11':
+    resolution: {integrity: sha512-chRsz1K52/vj8Mfq/QOugVphlKPWlMh10V99qfH41hbGvwAU6xSPd681upO4bKiOr9+mRIZZW+EfJqY42ZzRyA==}
+    engines: {node: '>=10'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@swc/core-linux-arm64-musl@1.15.11':
+    resolution: {integrity: sha512-PYftgsTaGnfDK4m6/dty9ryK1FbLk+LosDJ/RJR2nkXGc8rd+WenXIlvHjWULiBVnS1RsjHHOXmTS4nDhe0v0w==}
+    engines: {node: '>=10'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@swc/core-linux-x64-gnu@1.15.11':
+    resolution: {integrity: sha512-DKtnJKIHiZdARyTKiX7zdRjiDS1KihkQWatQiCHMv+zc2sfwb4Glrodx2VLOX4rsa92NLR0Sw8WLcPEMFY1szQ==}
+    engines: {node: '>=10'}
+    cpu: [x64]
+    os: [linux]
+
+  '@swc/core-linux-x64-musl@1.15.11':
+    resolution: {integrity: sha512-mUjjntHj4+8WBaiDe5UwRNHuEzLjIWBTSGTw0JT9+C9/Yyuh4KQqlcEQ3ro6GkHmBGXBFpGIj/o5VMyRWfVfWw==}
+    engines: {node: '>=10'}
+    cpu: [x64]
+    os: [linux]
+
+  '@swc/core-win32-arm64-msvc@1.15.11':
+    resolution: {integrity: sha512-ZkNNG5zL49YpaFzfl6fskNOSxtcZ5uOYmWBkY4wVAvgbSAQzLRVBp+xArGWh2oXlY/WgL99zQSGTv7RI5E6nzA==}
+    engines: {node: '>=10'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@swc/core-win32-ia32-msvc@1.15.11':
+    resolution: {integrity: sha512-6XnzORkZCQzvTQ6cPrU7iaT9+i145oLwnin8JrfsLG41wl26+5cNQ2XV3zcbrnFEV6esjOceom9YO1w9mGJByw==}
+    engines: {node: '>=10'}
+    cpu: [ia32]
+    os: [win32]
+
+  '@swc/core-win32-x64-msvc@1.15.11':
+    resolution: {integrity: sha512-IQ2n6af7XKLL6P1gIeZACskSxK8jWtoKpJWLZmdXTDj1MGzktUy4i+FvpdtxFmJWNavRWH1VmTr6kAubRDHeKw==}
+    engines: {node: '>=10'}
+    cpu: [x64]
+    os: [win32]
+
+  '@swc/core@1.15.11':
+    resolution: {integrity: sha512-iLmLTodbYxU39HhMPaMUooPwO/zqJWvsqkrXv1ZI38rMb048p6N7qtAtTp37sw9NzSrvH6oli8EdDygo09IZ/w==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      '@swc/helpers': '>=0.5.17'
+    peerDependenciesMeta:
+      '@swc/helpers':
+        optional: true
+
+  '@swc/counter@0.1.3':
+    resolution: {integrity: sha512-e2BR4lsJkkRlKZ/qCHPw9ZaSxc0MVUd7gtbtaB7aMvHeJVYe8sOB8DBZkP2DtISHGSku9sCK6T6cnY0CtXrOCQ==}
+
+  '@swc/types@0.1.25':
+    resolution: {integrity: sha512-iAoY/qRhNH8a/hBvm3zKj9qQ4oc2+3w1unPJa2XvTK3XjeLXtzcCingVPw/9e5mn1+0yPqxcBGp9Jf0pkfMb1g==}
+
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
@@ -1552,8 +1641,11 @@ packages:
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
 
-  '@types/node@25.0.10':
-    resolution: {integrity: sha512-zWW5KPngR/yvakJgGOmZ5vTBemDoSqF3AcV/LrO5u5wTWyEAVVh+IT39G4gtyAkh3CtTZs8aX/yRM82OfzHJRg==}
+  '@types/node@22.19.7':
+    resolution: {integrity: sha512-MciR4AKGHWl7xwxkBa6xUGxQJ4VBOmPTF7sL+iGzuahOFaO0jHCsuEfS80pan1ef4gWId1oWOweIhrDEYLuaOw==}
+
+  '@types/node@25.1.0':
+    resolution: {integrity: sha512-t7frlewr6+cbx+9Ohpl0NOTKXZNV9xHRmNOvql47BFJKcEG1CxtxlPEEe+gR9uhVWM4DwhnvTF110mIL4yP9RA==}
 
   '@types/pg@8.16.0':
     resolution: {integrity: sha512-RmhMd/wD+CF8Dfo+cVIy3RR5cl8CyfXQ0tGgW6XBL8L4LM/UTEbNXYRbLwU6w+CgrKBNbrQWt4FUtTfaU5jSYQ==}
@@ -1963,6 +2055,10 @@ packages:
     resolution: {integrity: sha512-rRqJg/6gd538VHvR3PSrdRBb/1Vy2YfzHqzvbhGIQpDRKIa4FgV/54b5Q1xYSxOOwKvjXweS26E0Q+nAMwp2pQ==}
     engines: {node: '>=8.6'}
 
+  env-paths@3.0.0:
+    resolution: {integrity: sha512-dtJUTepzMW3Lm/NPxRf3wP4642UWhjL2sQxc+ym2YMj1m/H2zDNQOlezafzkHwn6sMstjHTwG6iQQsctDW/b1A==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+
   es-module-lexer@1.7.0:
     resolution: {integrity: sha512-jEQoCwk8hyb2AZziIOLhDqpm5+2ww5uIE6lkO/6jcOCusfk6LhMHpXXfBLXTZ7Ydyt0j4VoUQv6uGNYbdW+kBA==}
 
@@ -2057,6 +2153,11 @@ packages:
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
 
+  gel@2.2.0:
+    resolution: {integrity: sha512-q0ma7z2swmoamHQusey8ayo8+ilVdzDt4WTxSPzq/yRqvucWRfymRVMvNgmSC0XK7eNjjEZEcplxpgaNojKdmQ==}
+    engines: {node: '>= 18.0.0'}
+    hasBin: true
+
   get-east-asian-width@1.4.0:
     resolution: {integrity: sha512-QZjmEOC+IT1uk6Rx0sX22V6uHWVwbdbxf1faPqJ1QhLdGgsRGCZoyaQBm/piRdJy/D2um6hM1UP7ZEeQ4EkP+Q==}
     engines: {node: '>=18'}
@@ -2125,6 +2226,10 @@ packages:
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
+
+  isexe@3.1.1:
+    resolution: {integrity: sha512-LpB/54B+/2J5hqQ7imZHfdU31OlgQqx7ZicVlkm9kzg9/w8GKLEcFfJl/t7DCEDueOyBAD6zCCwTO6Fzs0NoEQ==}
+    engines: {node: '>=16'}
 
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
@@ -2446,6 +2551,10 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
+  shell-quote@1.8.3:
+    resolution: {integrity: sha512-ObmnIF4hXNg1BqhnHmgbDETF8dLPCggZWBjkQfhZpbszZnYur5DUljTcCHii5LC3J5E0yeO/1LIMyH+UvHQgyw==}
+    engines: {node: '>= 0.4'}
+
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
 
@@ -2614,6 +2723,9 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  undici-types@6.21.0:
+    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
@@ -2708,6 +2820,11 @@ packages:
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
     engines: {node: '>= 8'}
+    hasBin: true
+
+  which@4.0.0:
+    resolution: {integrity: sha512-GlaYyEb07DPxYCKhKzplCWBJtvxZcZMrL+4UkrTSJHHPyZU4mYYTv3qaOe77H7EODLSSopAUFAc6W8U4yqvscg==}
+    engines: {node: ^16.13.0 || >=18.0.0}
     hasBin: true
 
   why-is-node-running@2.3.0:
@@ -2830,7 +2947,7 @@ snapshots:
     dependencies:
       '@changesets/types': 6.1.0
 
-  '@changesets/cli@2.29.8(@types/node@25.0.10)':
+  '@changesets/cli@2.29.8(@types/node@25.1.0)':
     dependencies:
       '@changesets/apply-release-plan': 7.0.14
       '@changesets/assemble-release-plan': 6.0.9
@@ -2846,7 +2963,7 @@ snapshots:
       '@changesets/should-skip-package': 0.1.2
       '@changesets/types': 6.1.0
       '@changesets/write': 0.4.0
-      '@inquirer/external-editor': 1.0.3(@types/node@25.0.10)
+      '@inquirer/external-editor': 1.0.3(@types/node@25.1.0)
       '@manypkg/get-packages': 1.1.3
       ansi-colors: 4.1.3
       ci-info: 3.9.0
@@ -3197,156 +3314,137 @@ snapshots:
 
   '@inquirer/ansi@2.0.3': {}
 
-  '@inquirer/checkbox@5.0.4(@types/node@25.0.10)':
+  '@inquirer/checkbox@5.0.4(@types/node@25.1.0)':
     dependencies:
       '@inquirer/ansi': 2.0.3
-      '@inquirer/core': 11.1.1(@types/node@25.0.10)
+      '@inquirer/core': 11.1.1(@types/node@25.1.0)
       '@inquirer/figures': 2.0.3
-      '@inquirer/type': 4.0.3(@types/node@25.0.10)
+      '@inquirer/type': 4.0.3(@types/node@25.1.0)
     optionalDependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
 
-  '@inquirer/confirm@6.0.4(@types/node@25.0.10)':
+  '@inquirer/confirm@6.0.4(@types/node@25.1.0)':
     dependencies:
-      '@inquirer/core': 11.1.1(@types/node@25.0.10)
-      '@inquirer/type': 4.0.3(@types/node@25.0.10)
+      '@inquirer/core': 11.1.1(@types/node@25.1.0)
+      '@inquirer/type': 4.0.3(@types/node@25.1.0)
     optionalDependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
 
-  '@inquirer/core@11.1.1(@types/node@25.0.10)':
+  '@inquirer/core@11.1.1(@types/node@25.1.0)':
     dependencies:
       '@inquirer/ansi': 2.0.3
       '@inquirer/figures': 2.0.3
-      '@inquirer/type': 4.0.3(@types/node@25.0.10)
+      '@inquirer/type': 4.0.3(@types/node@25.1.0)
       cli-width: 4.1.0
       mute-stream: 3.0.0
       signal-exit: 4.1.0
       wrap-ansi: 9.0.2
     optionalDependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
 
-  '@inquirer/editor@5.0.4(@types/node@25.0.10)':
+  '@inquirer/editor@5.0.4(@types/node@25.1.0)':
     dependencies:
-      '@inquirer/core': 11.1.1(@types/node@25.0.10)
-      '@inquirer/external-editor': 2.0.3(@types/node@25.0.10)
-      '@inquirer/type': 4.0.3(@types/node@25.0.10)
+      '@inquirer/core': 11.1.1(@types/node@25.1.0)
+      '@inquirer/external-editor': 2.0.3(@types/node@25.1.0)
+      '@inquirer/type': 4.0.3(@types/node@25.1.0)
     optionalDependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
 
-  '@inquirer/expand@5.0.4(@types/node@25.0.10)':
+  '@inquirer/expand@5.0.4(@types/node@25.1.0)':
     dependencies:
-      '@inquirer/core': 11.1.1(@types/node@25.0.10)
-      '@inquirer/type': 4.0.3(@types/node@25.0.10)
+      '@inquirer/core': 11.1.1(@types/node@25.1.0)
+      '@inquirer/type': 4.0.3(@types/node@25.1.0)
     optionalDependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
 
-  '@inquirer/external-editor@1.0.3(@types/node@25.0.10)':
-    dependencies:
-      chardet: 2.1.1
-      iconv-lite: 0.7.2
-    optionalDependencies:
-      '@types/node': 25.0.10
-
-  '@inquirer/external-editor@2.0.3(@types/node@25.0.10)':
+  '@inquirer/external-editor@1.0.3(@types/node@25.1.0)':
     dependencies:
       chardet: 2.1.1
       iconv-lite: 0.7.2
     optionalDependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
+
+  '@inquirer/external-editor@2.0.3(@types/node@25.1.0)':
+    dependencies:
+      chardet: 2.1.1
+      iconv-lite: 0.7.2
+    optionalDependencies:
+      '@types/node': 25.1.0
 
   '@inquirer/figures@2.0.3': {}
 
-  '@inquirer/input@5.0.4(@types/node@25.0.10)':
+  '@inquirer/input@5.0.4(@types/node@25.1.0)':
     dependencies:
-      '@inquirer/core': 11.1.1(@types/node@25.0.10)
-      '@inquirer/type': 4.0.3(@types/node@25.0.10)
+      '@inquirer/core': 11.1.1(@types/node@25.1.0)
+      '@inquirer/type': 4.0.3(@types/node@25.1.0)
     optionalDependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
 
-  '@inquirer/number@4.0.4(@types/node@25.0.10)':
+  '@inquirer/number@4.0.4(@types/node@25.1.0)':
     dependencies:
-      '@inquirer/core': 11.1.1(@types/node@25.0.10)
-      '@inquirer/type': 4.0.3(@types/node@25.0.10)
+      '@inquirer/core': 11.1.1(@types/node@25.1.0)
+      '@inquirer/type': 4.0.3(@types/node@25.1.0)
     optionalDependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
 
-  '@inquirer/password@5.0.4(@types/node@25.0.10)':
-    dependencies:
-      '@inquirer/ansi': 2.0.3
-      '@inquirer/core': 11.1.1(@types/node@25.0.10)
-      '@inquirer/type': 4.0.3(@types/node@25.0.10)
-    optionalDependencies:
-      '@types/node': 25.0.10
-
-  '@inquirer/prompts@8.2.0(@types/node@25.0.10)':
-    dependencies:
-      '@inquirer/checkbox': 5.0.4(@types/node@25.0.10)
-      '@inquirer/confirm': 6.0.4(@types/node@25.0.10)
-      '@inquirer/editor': 5.0.4(@types/node@25.0.10)
-      '@inquirer/expand': 5.0.4(@types/node@25.0.10)
-      '@inquirer/input': 5.0.4(@types/node@25.0.10)
-      '@inquirer/number': 4.0.4(@types/node@25.0.10)
-      '@inquirer/password': 5.0.4(@types/node@25.0.10)
-      '@inquirer/rawlist': 5.2.0(@types/node@25.0.10)
-      '@inquirer/search': 4.1.0(@types/node@25.0.10)
-      '@inquirer/select': 5.0.4(@types/node@25.0.10)
-    optionalDependencies:
-      '@types/node': 25.0.10
-
-  '@inquirer/rawlist@5.2.0(@types/node@25.0.10)':
-    dependencies:
-      '@inquirer/core': 11.1.1(@types/node@25.0.10)
-      '@inquirer/type': 4.0.3(@types/node@25.0.10)
-    optionalDependencies:
-      '@types/node': 25.0.10
-
-  '@inquirer/search@4.1.0(@types/node@25.0.10)':
-    dependencies:
-      '@inquirer/core': 11.1.1(@types/node@25.0.10)
-      '@inquirer/figures': 2.0.3
-      '@inquirer/type': 4.0.3(@types/node@25.0.10)
-    optionalDependencies:
-      '@types/node': 25.0.10
-
-  '@inquirer/select@5.0.4(@types/node@25.0.10)':
+  '@inquirer/password@5.0.4(@types/node@25.1.0)':
     dependencies:
       '@inquirer/ansi': 2.0.3
-      '@inquirer/core': 11.1.1(@types/node@25.0.10)
-      '@inquirer/figures': 2.0.3
-      '@inquirer/type': 4.0.3(@types/node@25.0.10)
+      '@inquirer/core': 11.1.1(@types/node@25.1.0)
+      '@inquirer/type': 4.0.3(@types/node@25.1.0)
     optionalDependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
 
-  '@inquirer/type@4.0.3(@types/node@25.0.10)':
-    optionalDependencies:
-      '@types/node': 25.0.10
-
-  '@jridgewell/sourcemap-codec@1.5.5': {}
-
-  '@lithia-js/better-auth@file:packages/better-auth(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0))':
+  '@inquirer/prompts@8.2.0(@types/node@25.1.0)':
     dependencies:
-      '@lithia-js/core': link:packages/core
-      better-auth: 1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0))
-    transitivePeerDependencies:
-      - '@lynx-js/react'
-      - '@prisma/client'
-      - '@sveltejs/kit'
-      - '@tanstack/react-start'
-      - '@tanstack/solid-start'
-      - better-sqlite3
-      - drizzle-kit
-      - drizzle-orm
-      - mongodb
-      - mysql2
-      - next
-      - pg
-      - prisma
-      - react
-      - react-dom
-      - solid-js
-      - svelte
-      - vitest
-      - vue
+      '@inquirer/checkbox': 5.0.4(@types/node@25.1.0)
+      '@inquirer/confirm': 6.0.4(@types/node@25.1.0)
+      '@inquirer/editor': 5.0.4(@types/node@25.1.0)
+      '@inquirer/expand': 5.0.4(@types/node@25.1.0)
+      '@inquirer/input': 5.0.4(@types/node@25.1.0)
+      '@inquirer/number': 4.0.4(@types/node@25.1.0)
+      '@inquirer/password': 5.0.4(@types/node@25.1.0)
+      '@inquirer/rawlist': 5.2.0(@types/node@25.1.0)
+      '@inquirer/search': 4.1.0(@types/node@25.1.0)
+      '@inquirer/select': 5.0.4(@types/node@25.1.0)
+    optionalDependencies:
+      '@types/node': 25.1.0
+
+  '@inquirer/rawlist@5.2.0(@types/node@25.1.0)':
+    dependencies:
+      '@inquirer/core': 11.1.1(@types/node@25.1.0)
+      '@inquirer/type': 4.0.3(@types/node@25.1.0)
+    optionalDependencies:
+      '@types/node': 25.1.0
+
+  '@inquirer/search@4.1.0(@types/node@25.1.0)':
+    dependencies:
+      '@inquirer/core': 11.1.1(@types/node@25.1.0)
+      '@inquirer/figures': 2.0.3
+      '@inquirer/type': 4.0.3(@types/node@25.1.0)
+    optionalDependencies:
+      '@types/node': 25.1.0
+
+  '@inquirer/select@5.0.4(@types/node@25.1.0)':
+    dependencies:
+      '@inquirer/ansi': 2.0.3
+      '@inquirer/core': 11.1.1(@types/node@25.1.0)
+      '@inquirer/figures': 2.0.3
+      '@inquirer/type': 4.0.3(@types/node@25.1.0)
+    optionalDependencies:
+      '@types/node': 25.1.0
+
+  '@inquirer/type@4.0.3(@types/node@25.1.0)':
+    optionalDependencies:
+      '@types/node': 25.1.0
+
+  '@jridgewell/sourcemap-codec@1.5.5':
+    optional: true
+
+  '@lithia-js/better-auth@file:packages/better-auth(@lithia-js/core@file:packages/core)(better-auth@1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0)))':
+    dependencies:
+      '@lithia-js/core': file:packages/core
+      better-auth: 1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0))
 
   '@lithia-js/cli@file:packages/cli':
     dependencies:
@@ -3359,14 +3457,17 @@ snapshots:
     dependencies:
       '@lithia-js/native': link:packages/native
       '@lithia-js/utils': link:packages/utils
+      '@swc/core': 1.15.11
       busboy: 1.6.0
       c12: 3.3.3
       cookie: 1.1.1
+      fast-glob: 3.3.3
       klona: 2.0.6
       socket.io: 4.8.3
       source-map-support: 0.5.21
       zod: 4.3.6
     transitivePeerDependencies:
+      - '@swc/helpers'
       - bufferutil
       - magicast
       - supports-color
@@ -3388,9 +3489,9 @@ snapshots:
       globby: 11.1.0
       read-yaml-file: 1.1.0
 
-  '@napi-rs/cli@3.5.1(@emnapi/runtime@1.8.1)(@types/node@25.0.10)':
+  '@napi-rs/cli@3.5.1(@emnapi/runtime@1.8.1)(@types/node@25.1.0)':
     dependencies:
-      '@inquirer/prompts': 8.2.0(@types/node@25.0.10)
+      '@inquirer/prompts': 8.2.0(@types/node@25.1.0)
       '@napi-rs/cross-toolchain': 1.0.3
       '@napi-rs/wasm-tools': 1.0.1
       '@octokit/rest': 22.0.1
@@ -3711,6 +3812,9 @@ snapshots:
     dependencies:
       '@octokit/openapi-types': 27.0.0
 
+  '@petamoriken/float16@3.9.3':
+    optional: true
+
   '@prisma/client@5.22.0':
     optional: true
 
@@ -3793,6 +3897,58 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
+  '@swc/core-darwin-arm64@1.15.11':
+    optional: true
+
+  '@swc/core-darwin-x64@1.15.11':
+    optional: true
+
+  '@swc/core-linux-arm-gnueabihf@1.15.11':
+    optional: true
+
+  '@swc/core-linux-arm64-gnu@1.15.11':
+    optional: true
+
+  '@swc/core-linux-arm64-musl@1.15.11':
+    optional: true
+
+  '@swc/core-linux-x64-gnu@1.15.11':
+    optional: true
+
+  '@swc/core-linux-x64-musl@1.15.11':
+    optional: true
+
+  '@swc/core-win32-arm64-msvc@1.15.11':
+    optional: true
+
+  '@swc/core-win32-ia32-msvc@1.15.11':
+    optional: true
+
+  '@swc/core-win32-x64-msvc@1.15.11':
+    optional: true
+
+  '@swc/core@1.15.11':
+    dependencies:
+      '@swc/counter': 0.1.3
+      '@swc/types': 0.1.25
+    optionalDependencies:
+      '@swc/core-darwin-arm64': 1.15.11
+      '@swc/core-darwin-x64': 1.15.11
+      '@swc/core-linux-arm-gnueabihf': 1.15.11
+      '@swc/core-linux-arm64-gnu': 1.15.11
+      '@swc/core-linux-arm64-musl': 1.15.11
+      '@swc/core-linux-x64-gnu': 1.15.11
+      '@swc/core-linux-x64-musl': 1.15.11
+      '@swc/core-win32-arm64-msvc': 1.15.11
+      '@swc/core-win32-ia32-msvc': 1.15.11
+      '@swc/core-win32-x64-msvc': 1.15.11
+
+  '@swc/counter@0.1.3': {}
+
+  '@swc/types@0.1.25':
+    dependencies:
+      '@swc/counter': 0.1.3
+
   '@tybys/wasm-util@0.10.1':
     dependencies:
       tslib: 2.8.1
@@ -3800,37 +3956,43 @@ snapshots:
 
   '@types/busboy@1.5.4':
     dependencies:
-      '@types/node': 25.0.10
+      '@types/node': 22.19.7
 
   '@types/chai@5.2.3':
     dependencies:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
+    optional: true
 
   '@types/cors@2.8.19':
     dependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
 
-  '@types/deep-eql@4.0.2': {}
+  '@types/deep-eql@4.0.2':
+    optional: true
 
-  '@types/estree@1.0.8': {}
+  '@types/estree@1.0.8':
+    optional: true
 
   '@types/node@12.20.55': {}
 
-  '@types/node@25.0.10':
+  '@types/node@22.19.7':
+    dependencies:
+      undici-types: 6.21.0
+
+  '@types/node@25.1.0':
     dependencies:
       undici-types: 7.16.0
 
   '@types/pg@8.16.0':
     dependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
       pg-protocol: 1.11.0
       pg-types: 2.2.0
-    optional: true
 
   '@types/prompts@2.4.9':
     dependencies:
-      '@types/node': 25.0.10
+      '@types/node': 22.19.7
       kleur: 3.0.3
 
   '@types/source-map-support@0.5.10':
@@ -3845,36 +4007,43 @@ snapshots:
       '@vitest/utils': 4.0.18
       chai: 6.2.2
       tinyrainbow: 3.0.3
+    optional: true
 
-  '@vitest/mocker@4.0.18(vite@7.3.1(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0))':
+  '@vitest/mocker@4.0.18(vite@7.3.1(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0))':
     dependencies:
       '@vitest/spy': 4.0.18
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 7.3.1(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0)
+      vite: 7.3.1(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0)
+    optional: true
 
   '@vitest/pretty-format@4.0.18':
     dependencies:
       tinyrainbow: 3.0.3
+    optional: true
 
   '@vitest/runner@4.0.18':
     dependencies:
       '@vitest/utils': 4.0.18
       pathe: 2.0.3
+    optional: true
 
   '@vitest/snapshot@4.0.18':
     dependencies:
       '@vitest/pretty-format': 4.0.18
       magic-string: 0.30.21
       pathe: 2.0.3
+    optional: true
 
-  '@vitest/spy@4.0.18': {}
+  '@vitest/spy@4.0.18':
+    optional: true
 
   '@vitest/utils@4.0.18':
     dependencies:
       '@vitest/pretty-format': 4.0.18
       tinyrainbow: 3.0.3
+    optional: true
 
   accepts@1.3.8:
     dependencies:
@@ -3897,7 +4066,8 @@ snapshots:
 
   array-union@2.1.0: {}
 
-  assertion-error@2.0.1: {}
+  assertion-error@2.0.1:
+    optional: true
 
   base64-js@1.5.1:
     optional: true
@@ -3906,7 +4076,7 @@ snapshots:
 
   before-after-hook@4.0.0: {}
 
-  better-auth@1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0)):
+  better-auth@1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0)):
     dependencies:
       '@better-auth/core': 1.4.17(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.10)(nanostores@1.1.0)
       '@better-auth/telemetry': 1.4.17(@better-auth/core@1.4.17(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.3.6))(jose@6.1.3)(kysely@0.28.10)(nanostores@1.1.0))
@@ -3924,9 +4094,9 @@ snapshots:
       '@prisma/client': 5.22.0
       better-sqlite3: 12.6.2
       drizzle-kit: 0.31.8
-      drizzle-orm: 0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.10)(pg@8.17.2)
+      drizzle-orm: 0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2)
       pg: 8.17.2
-      vitest: 4.0.18(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0)
+      vitest: 4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0)
 
   better-call@1.1.8(zod@4.3.6):
     dependencies:
@@ -3990,7 +4160,8 @@ snapshots:
       pkg-types: 2.3.0
       rc9: 2.1.2
 
-  chai@6.2.2: {}
+  chai@6.2.2:
+    optional: true
 
   chardet@2.1.1: {}
 
@@ -4072,11 +4243,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.10)(pg@8.17.2):
+  drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2):
     optionalDependencies:
       '@prisma/client': 5.22.0
       '@types/pg': 8.16.0
       better-sqlite3: 12.6.2
+      gel: 2.2.0
       kysely: 0.28.10
       pg: 8.17.2
 
@@ -4094,7 +4266,7 @@ snapshots:
   engine.io@6.6.5:
     dependencies:
       '@types/cors': 2.8.19
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
       accepts: 1.3.8
       base64id: 2.0.0
       cookie: 0.7.2
@@ -4112,7 +4284,11 @@ snapshots:
       ansi-colors: 4.1.3
       strip-ansi: 6.0.1
 
-  es-module-lexer@1.7.0: {}
+  env-paths@3.0.0:
+    optional: true
+
+  es-module-lexer@1.7.0:
+    optional: true
 
   es-toolkit@1.44.0: {}
 
@@ -4211,11 +4387,13 @@ snapshots:
   estree-walker@3.0.3:
     dependencies:
       '@types/estree': 1.0.8
+    optional: true
 
   expand-template@2.0.3:
     optional: true
 
-  expect-type@1.3.0: {}
+  expect-type@1.3.0:
+    optional: true
 
   exsolve@1.0.8: {}
 
@@ -4238,6 +4416,7 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.3):
     optionalDependencies:
       picomatch: 4.0.3
+    optional: true
 
   file-uri-to-path@1.0.0:
     optional: true
@@ -4267,6 +4446,18 @@ snapshots:
       universalify: 0.1.2
 
   fsevents@2.3.3:
+    optional: true
+
+  gel@2.2.0:
+    dependencies:
+      '@petamoriken/float16': 3.9.3
+      debug: 4.4.3
+      env-paths: 3.0.0
+      semver: 7.7.3
+      shell-quote: 1.8.3
+      which: 4.0.0
+    transitivePeerDependencies:
+      - supports-color
     optional: true
 
   get-east-asian-width@1.4.0: {}
@@ -4335,6 +4526,9 @@ snapshots:
 
   isexe@2.0.0: {}
 
+  isexe@3.1.1:
+    optional: true
+
   jiti@2.6.1: {}
 
   jose@6.1.3: {}
@@ -4367,6 +4561,7 @@ snapshots:
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
+    optional: true
 
   merge2@1.4.1: {}
 
@@ -4396,7 +4591,8 @@ snapshots:
 
   mute-stream@3.0.0: {}
 
-  nanoid@3.3.11: {}
+  nanoid@3.3.11:
+    optional: true
 
   nanostores@1.1.0: {}
 
@@ -4500,7 +4696,8 @@ snapshots:
 
   picomatch@2.3.1: {}
 
-  picomatch@4.0.3: {}
+  picomatch@4.0.3:
+    optional: true
 
   pify@4.0.1: {}
 
@@ -4515,6 +4712,7 @@ snapshots:
       nanoid: 3.3.11
       picocolors: 1.1.1
       source-map-js: 1.2.1
+    optional: true
 
   postgres-array@2.0.0: {}
 
@@ -4624,6 +4822,7 @@ snapshots:
       '@rollup/rollup-win32-x64-gnu': 4.57.0
       '@rollup/rollup-win32-x64-msvc': 4.57.0
       fsevents: 2.3.3
+    optional: true
 
   rou3@0.7.12: {}
 
@@ -4646,7 +4845,11 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  siginfo@2.0.0: {}
+  shell-quote@1.8.3:
+    optional: true
+
+  siginfo@2.0.0:
+    optional: true
 
   signal-exit@4.1.0: {}
 
@@ -4694,7 +4897,8 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  source-map-js@1.2.1: {}
+  source-map-js@1.2.1:
+    optional: true
 
   source-map-support@0.5.21:
     dependencies:
@@ -4712,9 +4916,11 @@ snapshots:
 
   sprintf-js@1.0.3: {}
 
-  stackback@0.0.2: {}
+  stackback@0.0.2:
+    optional: true
 
-  std-env@3.10.0: {}
+  std-env@3.10.0:
+    optional: true
 
   streamsearch@1.1.0: {}
 
@@ -4761,7 +4967,8 @@ snapshots:
 
   term-size@2.2.1: {}
 
-  tinybench@2.9.0: {}
+  tinybench@2.9.0:
+    optional: true
 
   tinyexec@1.0.2: {}
 
@@ -4769,8 +4976,10 @@ snapshots:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.3)
       picomatch: 4.0.3
+    optional: true
 
-  tinyrainbow@3.0.3: {}
+  tinyrainbow@3.0.3:
+    optional: true
 
   to-regex-range@5.0.1:
     dependencies:
@@ -4822,6 +5031,8 @@ snapshots:
 
   typescript@5.9.3: {}
 
+  undici-types@6.21.0: {}
+
   undici-types@7.16.0: {}
 
   universal-user-agent@7.0.3: {}
@@ -4833,7 +5044,7 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite@7.3.1(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0):
+  vite@7.3.1(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0):
     dependencies:
       esbuild: 0.27.2
       fdir: 6.5.0(picomatch@4.0.3)
@@ -4842,15 +5053,16 @@ snapshots:
       rollup: 4.57.0
       tinyglobby: 0.2.15
     optionalDependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
       fsevents: 2.3.3
       jiti: 2.6.1
       tsx: 4.21.0
+    optional: true
 
-  vitest@4.0.18(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0):
+  vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0):
     dependencies:
       '@vitest/expect': 4.0.18
-      '@vitest/mocker': 4.0.18(vite@7.3.1(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0))
+      '@vitest/mocker': 4.0.18(vite@7.3.1(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0))
       '@vitest/pretty-format': 4.0.18
       '@vitest/runner': 4.0.18
       '@vitest/snapshot': 4.0.18
@@ -4867,10 +5079,10 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: 7.3.1(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0)
+      vite: 7.3.1(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 25.0.10
+      '@types/node': 25.1.0
     transitivePeerDependencies:
       - jiti
       - less
@@ -4883,15 +5095,22 @@ snapshots:
       - terser
       - tsx
       - yaml
+    optional: true
 
   which@2.0.2:
     dependencies:
       isexe: 2.0.0
 
+  which@4.0.0:
+    dependencies:
+      isexe: 3.1.1
+    optional: true
+
   why-is-node-running@2.3.0:
     dependencies:
       siginfo: 2.0.0
       stackback: 0.0.2
+    optional: true
 
   wrap-ansi@9.0.2:
     dependencies:

@@ -8,8 +8,8 @@
 
 import { parentPort } from "node:worker_threads";
 import { logger } from "@lithia-js/utils";
-import { LithiaError } from "./errors/base.mjs";
-import { LithiaApp } from "./lithia-app.mjs";
+import { LithiaError } from "../errors/base.mjs";
+import { LithiaApp } from "../lithia-app.mjs";
 
 /**
  * Flag to prevent multiple bootstrap attempts within the same worker.

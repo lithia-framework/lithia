@@ -1,19 +1,28 @@
 {
   "name": "@lithia-js/native-win32-ia32-msvc",
-  "version": "0.1.0",
+  "version": "1.0.0-canary.14",
+  "description": "Native binary for Lithia.js on Windows ia32 (32-bit)",
   "os": [
     "win32"
   ],
   "cpu": [
-    "x64"
+    "ia32"
   ],
   "main": "lithia.win32-ia32-msvc.node",
   "files": [
     "lithia.win32-ia32-msvc.node"
   ],
   "author": "Lucas Arch <luketsx@icloud.com>",
-  "homepage": "https://lithiajs.com",
   "license": "MIT",
+  "homepage": "https://lithiajs.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lithia-framework/lithia.git",
+    "directory": "packages/native"
+  },
+  "bugs": {
+    "url": "https://github.com/lithia-framework/lithia/issues"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -21,12 +30,5 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public",
     "provenance": true
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/lithia-framework/lithia.git"
-  },
-  "bugs": {
-    "url": "https://github.com/lithia-framework/lithia/issues"
   }
 }

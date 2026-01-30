@@ -33,17 +33,17 @@ const build = defineCommand({
 		logger.info("Initializing production build sequence...");
 
 		// Trigger the core build process
-    try {
-      lithia.build();
-    } catch {
-      process.exit(1);
-    }
+		try {
+			await lithia.build();
+		} catch {
+			process.exit(1);
+		}
 
 		const { config } = lithia;
 		const workingDirectory = process.cwd();
 
 		// Path resolution for entry point generation
-		const entryPath = join(workingDirectory, config.outDir, "server.mjs");
+		const entryPath = join(workingDirectory, config.outDir, "server.js");
 		const templatePath = resolve(import.meta.dirname, "..", "_entrypoint.mjs");
 
 		// Generate production entry point by injecting runtime configuration

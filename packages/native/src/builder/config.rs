@@ -57,7 +57,9 @@ impl BuildConfig {
         out_path.push(input_relative);
         
         // Ensure the output is always treated as an ES Module (.mjs)
-        out_path.set_extension("mjs");
+        // out_path.set_extension("mjs");
+
+        out_path.set_extension("js");
         out_path
     }
 }
