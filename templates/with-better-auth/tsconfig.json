@@ -8,10 +8,9 @@
     "types": ["node"],
     "outDir": "./dist",
     "rootDir": ".",
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "#lithia/*": [".lithia/*"]
+      "#lithia/*": ["./.lithia/*"]
     }
   },
   "include": [

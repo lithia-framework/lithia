@@ -107,6 +107,10 @@ export class Builder {
 		files: FileInfo[],
 		config: BuildConfig,
 	): Promise<void> {
+		const { compilerOptions } = await fs
+			.readFile(path.join(process.cwd(), "tsconfig.json"), "utf-8")
+			.then((data) => JSON.parse(data));
+
 		await Promise.all(
 			files.map(async (file) => {
 				// Determine the target output path
@@ -126,10 +130,17 @@ export class Builder {
 							syntax: "typescript",
 							dynamicImport: true,
 						},
-						target: "esnext", // Modern Node.js target
+						target: "esnext",
+						baseUrl: path.resolve(
+							process.cwd(),
+							compilerOptions.baseUrl || ".",
+						),
+						paths: {
+							...(compilerOptions.paths || {}),
+						},
 					},
 					module: {
-						type: "es6", // Keeping it ESM
+						type: "es6",
 					},
 					sourceMaps: true,
 				});
