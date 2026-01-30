@@ -37,29 +37,24 @@ describe("FunctionManifestGenerator", () => {
 	});
 
 	it("should filter function files and write a complete functions.json", async () => {
-		const outRoot = "/out";
-		const files: FileInfo[] =
-			process.platform === "win32"
-				? [
-						{
-							path: "app\\functions\\billing\\cleanup.cron.ts",
-							fullPath: "/abs/cleanup.ts",
-						},
-						{
-							path: "functions\\resize.ts",
-							fullPath: "/abs/resize.ts",
-						},
-					]
-				: [
-						{
-							path: "app/functions/billing/cleanup.cron.ts",
-							fullPath: "/abs/cleanup.ts",
-						},
-						{
-							path: "functions/resize.ts",
-							fullPath: "/abs/resize.ts",
-						},
-					];
+		const outRoot = "out";
+		let files: FileInfo[] = [
+			{
+				path: "app/functions/billing/cleanup.cron.ts",
+				fullPath: "/abs/cleanup.ts",
+			},
+			{
+				path: "functions/resize.ts",
+				fullPath: "/abs/resize.ts",
+			},
+		];
+
+		if (process.platform === "win32") {
+			files = files.map((file) => ({
+				path: file.path.replace(/\//g, "\\"),
+				fullPath: `C:${file.fullPath.replace(/\//g, "\\")}`,
+			}));
+		}
 
 		const result = await generator.generateManifest(outRoot, files);
 

@@ -32,29 +32,24 @@ describe("EventManifestGenerator", () => {
 	});
 
 	it("should filter event files and generate a valid manifest", async () => {
-		const outRoot = "/dist";
-		const files: FileInfo[] =
-			process.platform === "win32"
-				? [
-						{
-							path: "app\\events\\chat\\message.ts",
-							fullPath: "C:\\abs\\app\\events\\chat\\message.ts",
-						},
-						{
-							path: "src\\not-an-event.ts",
-							fullPath: "C:\\abs\\src\\not-an-event.ts",
-						},
-					]
-				: [
-						{
-							path: "app/events/chat/message.ts",
-							fullPath: "/abs/app/events/chat/message.ts",
-						},
-						{
-							path: "src/not-an-event.ts",
-							fullPath: "/abs/src/not-an-event.ts",
-						},
-					];
+		const outRoot = "dist";
+		let files: FileInfo[] = [
+			{
+				path: "app/events/chat/message.ts",
+				fullPath: "/abs/app/events/chat/message.ts",
+			},
+			{
+				path: "src/not-an-event.ts",
+				fullPath: "/abs/src/not-an-event.ts",
+			},
+		];
+
+		if (process.platform === "win32") {
+			files = files.map((file) => ({
+				path: file.path.replace(/\//g, "\\"),
+				fullPath: `C:${file.fullPath.replace(/\//g, "\\")}`,
+			}));
+		}
 
 		const result = await generator.generateManifest(outRoot, files);
 

@@ -20,11 +20,10 @@ export class FunctionManifestGenerator {
 		outRoot: string,
 		scannedFiles: FileInfo[],
 	): Promise<FunctionsManifest | null> {
-		const functionFiles = scannedFiles.filter(
-			(file) =>
-				file.path.includes("functions/") ||
-				file.path.includes("app/functions/"),
-		);
+		const functionFiles = scannedFiles.filter((file) => {
+			const p = file.path.split(path.sep).join("/");
+			return p.includes("functions/") || p.includes("app/functions/");
+		});
 
 		if (functionFiles.length === 0) {
 			return null;

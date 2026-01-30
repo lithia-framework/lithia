@@ -27,10 +27,10 @@ export class RouteManifestGenerator {
 		outRoot: string,
 		scannedFiles: { path: string; fullPath: string }[],
 	): Promise<RoutesManifest> {
-		const routeFiles = scannedFiles.filter(
-			(file) =>
-				file.path.includes("routes/") || file.path.includes("app/routes/"),
-		);
+		const routeFiles = scannedFiles.filter((file) => {
+			const p = file.path.split(path.sep).join("/");
+			return p.includes("routes/") || p.includes("app/routes/");
+		});
 
 		const routes = routeFiles.map((file) =>
 			this.processor.processRouteFile(file),

@@ -30,15 +30,19 @@ describe("Builder", () => {
 	it("should orchestrate the full build process", async () => {
 		const config = { sourceDir: "src", outRoot: "dist" };
 
-		const mockFiles: FileInfo[] =
-			process.platform === "win32"
-				? [
-						{
-							path: "routes/user.ts",
-							fullPath: "C:\\abs\\src\\routes\\user.ts",
-						},
-					]
-				: [{ path: "routes/user.ts", fullPath: "/abs/src/routes/user.ts" }];
+		let expectedOutPath = "dist/routes/user.js";
+		let mockFiles: FileInfo[] = [
+			{ path: "routes/user.ts", fullPath: "/abs/src/routes/user.ts" },
+		];
+
+		if (process.platform === "win32") {
+			mockFiles = mockFiles.map((file) => ({
+				path: file.path.replace(/\//g, "\\"),
+				fullPath: `C:${file.fullPath.replace(/\//g, "\\")}`,
+			}));
+
+			expectedOutPath = expectedOutPath.replace(/\//g, "\\");
+		}
 
 		vi.spyOn(FileScanner.prototype, "scanDir").mockResolvedValue(mockFiles);
 
@@ -60,7 +64,7 @@ describe("Builder", () => {
 		);
 
 		expect(fs.writeFile).toHaveBeenCalledWith(
-			expect.stringContaining("dist/routes/user.js"),
+			expect.stringContaining(expectedOutPath),
 			"console.log('compiled')",
 		);
 

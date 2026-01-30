@@ -20,10 +20,10 @@ export class EventManifestGenerator {
 		outRoot: string,
 		scannedFiles: FileInfo[],
 	): Promise<EventsManifest | null> {
-		const eventFiles = scannedFiles.filter(
-			(file) =>
-				file.path.includes("events/") || file.path.includes("app/events/"),
-		);
+		const eventFiles = scannedFiles.filter((file) => {
+			const p = file.path.split(path.sep).join("/");
+			return p.includes("events/") || p.includes("app/events/");
+		});
 
 		if (eventFiles.length === 0) {
 			return null;

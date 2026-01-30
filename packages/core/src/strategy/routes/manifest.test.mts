@@ -31,37 +31,28 @@ describe("RouteManifestGenerator", () => {
 	});
 
 	it("should filter routes correctly and generate a valid routes.json", async () => {
-		const outRoot = "/build";
-		const files: FileInfo[] =
-			process.platform === "win32"
-				? [
-						{
-							path: "app/routes/api/v1/route.get.ts",
-							fullPath: "C:\\abs\\app\\routes\\api\\v1\\route.get.ts",
-						},
-						{
-							path: "routes/users/[id]/route.post.ts",
-							fullPath: "C:\\abs\\routes\\users\\[id]\\route.post.ts",
-						},
-						{
-							path: "src/utils/helper.ts",
-							fullPath: "C:\\abs\\helper.ts",
-						},
-					]
-				: [
-						{
-							path: "app/routes/api/v1/route.get.ts",
-							fullPath: "/abs/app/routes/api/v1/route.get.ts",
-						},
-						{
-							path: "routes/users/[id]/route.post.ts",
-							fullPath: "/abs/routes/users/[id]/route.post.ts",
-						},
-						{
-							path: "src/utils/helper.ts",
-							fullPath: "/abs/helper.ts",
-						},
-					];
+		const outRoot = "build";
+		let files: FileInfo[] = [
+			{
+				path: "app/routes/api/v1/route.get.ts",
+				fullPath: "/abs/app/routes/api/v1/route.get.ts",
+			},
+			{
+				path: "routes/users/[id]/route.post.ts",
+				fullPath: "/abs/routes/users/[id]/route.post.ts",
+			},
+			{
+				path: "src/utils/helper.ts",
+				fullPath: "/abs/helper.ts",
+			},
+		];
+
+		if (process.platform === "win32") {
+			files = files.map((file) => ({
+				path: file.path.replace(/\//g, "\\"),
+				fullPath: `C:${file.fullPath.replace(/\//g, "\\")}`,
+			}));
+		}
 
 		const result = await generator.generateManifest(outRoot, files);
 
