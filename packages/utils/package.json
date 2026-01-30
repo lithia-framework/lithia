@@ -1,6 +1,6 @@
 {
   "name": "@lithia-js/utils",
-  "version": "1.0.0-canary.15",
+  "version": "1.0.0-canary.16",
   "description": "Common internal utilities and helper functions for the Lithia.js ecosystem.",
   "keywords": [
     "lithia",
