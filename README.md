@@ -29,11 +29,10 @@ Lithia uses a clean, file-based routing convention. No boilerplate, just focus o
 
 ```typescript
 // routes/hello/route.get.ts
-import type { RouteHandler } from "@lithia-js/core";
+import { type RouteHandler } from "@lithia-js/core";
 
-const Hello: RouteHandler = async (req, res) => {
-  const name = req.query.name || "World";
-  return res.json({ message: `Hello, ${name}!` });
+const Hello: RouteHandler = async (_, res) => {
+  return res.json({ message: `Hello, World!` });
 }
 
 export default Hello;
