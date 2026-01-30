@@ -1,5 +1,11 @@
 # @lithia-js/utils
 
+## 1.0.0-canary.16
+
+### Patch Changes
+
+- 3716944: Fix tsconfigPaths support during the SWC compilation
+
 ## 1.0.0-canary.15
 
 ### Patch Changes

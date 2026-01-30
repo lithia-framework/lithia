@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/cli",
-	"version": "1.0.0-canary.15",
+	"version": "1.0.0-canary.16",
 	"description": "Command line interface for the Lithia.js framework - The fast, native-powered backend engine.",
 	"keywords": [
 		"lithia",
