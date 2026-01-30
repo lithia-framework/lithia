@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/middlewares",
-	"version": "1.0.0-canary.14",
+	"version": "1.0.0-canary.15",
 	"description": "A collection of standard, high-performance middlewares for the Lithia.js framework.",
 	"keywords": [
 		"lithia",

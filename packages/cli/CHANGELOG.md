@@ -1,5 +1,14 @@
 # @lithia-js/cli
 
+## 1.0.0-canary.15
+
+### Patch Changes
+
+- 5abc79a: Refactored the entire core and fixed unexpected bugfixes
+- Updated dependencies [5abc79a]
+  - @lithia-js/core@1.0.0-canary.15
+  - @lithia-js/utils@1.0.0-canary.15
+
 ## 1.0.0-canary.14
 
 ### Patch Changes
