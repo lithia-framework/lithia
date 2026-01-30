@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Core server orchestration for the Lithia Framework.
+ * Manages the dual-stack execution of HTTP/HTTPS and WebSocket (Socket.io) servers,
+ * handles connection tracking, and injects execution contexts.
+ */
+
 import {
 	createServer as createHttpServer,
 	type Server as HttpServer,
@@ -12,10 +18,13 @@ import type { Socket as ActiveRequest } from "node:net";
 import type { Event } from "@lithia-js/native";
 import { logger } from "@lithia-js/utils";
 import { type Socket, Server as SocketServer } from "socket.io";
-import { type EventContext, eventContext } from "../context/event-context.mjs";
+import {
+	type EventContext,
+	eventContextStore,
+} from "../context/event-context.mjs";
 import {
 	type RouteContext,
-	routeContext,
+	routeContextStore,
 } from "../context/request-context.mjs";
 import type { LithiaApp } from "../lithia-app.mjs";
 import { LithiaEventProcessor } from "./event-processor.mjs";
@@ -23,6 +32,9 @@ import { LithiaRequest } from "./request.mjs";
 import { LithiaRequestProcessor } from "./request-processor.mjs";
 import { LithiaResponse } from "./response.mjs";
 
+/**
+ * Configuration options for the Lithia Server instance.
+ */
 export interface LithiaServerOpts {
 	port: number;
 	host: string;
@@ -33,119 +45,167 @@ export interface LithiaServerOpts {
 	};
 }
 
+/**
+ * The LithiaServer class serves as the entry point for network traffic.
+ * It coordinates the request processor for REST/HTTP and the event processor for WebSockets.
+ */
 export class LithiaServer {
-	private _httpServer?: HttpServer | HttpsServer;
-	private _socketServer?: SocketServer;
-	private requestProcessor: LithiaRequestProcessor;
-	private eventProcessor: LithiaEventProcessor;
-	private _activeRequests: Set<ActiveRequest>;
+	private readonly _httpServer: HttpServer | HttpsServer;
+	private readonly _socketServer: SocketServer;
+	private readonly requestProcessor: LithiaRequestProcessor;
+	private readonly eventProcessor: LithiaEventProcessor;
+	private readonly _activeRequests: Set<ActiveRequest>;
 
+	/**
+	 * Initializes the server infrastructure and processors.
+	 * @param app The parent Lithia application instance.
+	 */
 	constructor(private readonly app: LithiaApp) {
 		this._activeRequests = new Set<ActiveRequest>();
 		this.requestProcessor = new LithiaRequestProcessor(this.app);
 		this.eventProcessor = new LithiaEventProcessor(this.app);
+
+		// Provision underlying server engines
 		this._httpServer = this.createServer();
 		this._socketServer = this.createSocketServer(this._httpServer);
 	}
 
-	get activeRequests(): Set<ActiveRequest> {
+	// --- Accessors ---
+
+	/**
+	 * Provides access to the set of currently active network sockets.
+	 */
+	public get activeRequests(): Set<ActiveRequest> {
 		return this._activeRequests;
 	}
 
-	get httpServer(): HttpServer | HttpsServer | undefined {
+	/**
+	 * Returns the underlying Node.js HTTP or HTTPS server instance.
+	 */
+	public get httpServer(): HttpServer | HttpsServer {
 		return this._httpServer;
 	}
 
-	get socketServer(): SocketServer | undefined {
+	/**
+	 * Returns the initialized Socket.io server instance.
+	 */
+	public get socketServer(): SocketServer {
 		return this._socketServer;
 	}
 
-	async listen(): Promise<void> {
+	// --- Lifecycle Management ---
+
+	/**
+	 * Starts the server and begins listening for incoming connections.
+	 * @returns A promise that resolves when the server is ready.
+	 */
+	public async listen(): Promise<void> {
+		const { port, host } = this.app.config.http;
+
 		return new Promise((resolve, reject) => {
-			if (this._httpServer?.listening) return resolve();
+			if (this._httpServer.listening) {
+				return resolve();
+			}
 
-			this._httpServer?.listen(
-				this.app.config.http.port,
-				this.app.config.http.host,
-				resolve,
-			);
+			this._httpServer.listen(port, host, resolve);
 
-			this.httpServer?.on("error", (err) => {
-				logger.error("Server error:", err);
+			this._httpServer.on("error", (err) => {
+				logger.error("Critical server error encountered:", err);
 				reject(err);
 			});
 		});
 	}
 
-	async close(): Promise<void> {
-		if (!this.httpServer) return;
-
-		if (this.socketServer) {
-			await this.socketServer.close();
+	/**
+	 * Gracefully shuts down the server, closing active sockets and socket.io connections.
+	 */
+	public async close(): Promise<void> {
+		if (this._socketServer) {
+			await this._socketServer.close();
 		}
 
-		this.httpServer.close((err) => {
-			if (err) throw err;
+		await new Promise<void>((resolve, reject) => {
+			this._httpServer.close((err) => {
+				if (err) return reject(err);
+				resolve();
+			});
 		});
 
-		for (const request of this._activeRequests) {
-			request.destroy();
+		// Force-terminate any remaining active requests
+		for (const socket of this._activeRequests) {
+			socket.destroy();
 		}
 
 		this._activeRequests.clear();
+		logger.info("Lithia server stopped.");
 	}
 
+	// --- Internal Factories ---
+
+	/**
+	 * Configures the Node.js server with appropriate SSL settings and connection tracking.
+	 */
 	private createServer(): HttpServer | HttpsServer {
 		const handler = this.handleRequest();
-		const server = this.app.config.http.ssl
-			? createHttpsServer(this.app.config.http.ssl, handler)
+		const sslConfig = this.app.config.http.ssl;
+
+		const server = sslConfig
+			? createHttpsServer(sslConfig, handler)
 			: createHttpServer(handler);
 
+		// Monitor active connections for graceful shutdown support
 		server.on("connection", (socket: ActiveRequest) => {
 			this._activeRequests.add(socket);
-			socket.on("close", () => {
-				this._activeRequests.delete(socket);
-			});
+			socket.on("close", () => this._activeRequests.delete(socket));
 		});
 
 		return server;
 	}
 
+	/**
+	 * Initializes Socket.io and registers the event-driven architecture.
+	 */
 	private createSocketServer(
 		httpServer: HttpServer | HttpsServer,
 	): SocketServer {
 		const handler = this.handleEvent();
+		const { cors } = this.app.config.http;
 
 		const io = new SocketServer(httpServer, {
 			cors: {
-				origin: this.app.config.http.cors.origin,
-				methods: this.app.config.http.cors.methods,
-				credentials: this.app.config.http.cors.credentials,
+				origin: cors.origin,
+				methods: cors.methods,
+				credentials: cors.credentials,
 			},
 		});
 
-		io.on("connection", async (socket: Socket) => {
-			const eventMap = new Map<string, Event>(
-				this.app.events.map((e) => [e.name, e]),
-			);
+		io.on("connection", (socket: Socket) => {
+			const eventMap = new Map(this.app.events.map((e) => [e.name, e]));
 
-			const event = eventMap.get("connection");
-			if (event) handler(socket, event);
+			// Handle standard lifecycle events
+			const connectionEvent = eventMap.get("connection");
+			if (connectionEvent) handler(socket, connectionEvent);
 
-			socket.on("disconnect", async (...args: any[]) => {
-				const event = eventMap.get("disconnect");
-				if (event) handler(socket, event, ...args);
+			socket.on("disconnect", (...args: any[]) => {
+				const disconnectEvent = eventMap.get("disconnect");
+				if (disconnectEvent) handler(socket, disconnectEvent, ...args);
 			});
 
-			socket.onAny(async (eventName: string, ...args: any[]) => {
-				const event = this.app.events.find((e) => e.name === eventName);
-				if (event) handler(socket, event, ...args);
+			// Handle wildcard custom events
+			socket.onAny((eventName: string, ...args: any[]) => {
+				const customEvent = this.app.events.find((e) => e.name === eventName);
+				if (customEvent) handler(socket, customEvent, ...args);
 			});
 		});
 
 		return io;
 	}
 
+	// --- Request & Event Handling ---
+
+	/**
+	 * Creates a closure to process Socket.io events within an EventContext.
+	 */
 	private handleEvent() {
 		return (socket: Socket, event: Event, ...args: any[]) => {
 			try {
@@ -156,13 +216,19 @@ export class LithiaServer {
 					event,
 				};
 
-				eventContext.run(eventCtx, async () => {
+				// Execute processing within the AsyncLocalStorage store
+				eventContextStore.run(eventCtx, async () => {
 					await this.eventProcessor.process(socket, event);
 				});
-			} catch (_) {}
+			} catch {
+				// Errors are handled within the eventProcessor
+			}
 		};
 	}
 
+	/**
+	 * Creates a closure to process HTTP requests within a RouteContext.
+	 */
 	private handleRequest() {
 		return (req: IncomingMessage, res: ServerResponse) => {
 			try {
@@ -176,16 +242,14 @@ export class LithiaServer {
 					req: lithiaReq,
 					res: lithiaRes,
 					dependencies: new Map(this.app.dependencies),
-					socketServer: this.socketServer!,
+					socketServer: this._socketServer,
 				};
 
-				routeContext.run(routeCtx, async () => {
+				// Execute processing within the AsyncLocalStorage store
+				routeContextStore.run(routeCtx, async () => {
 					await this.requestProcessor.process(lithiaReq, lithiaRes);
 				});
-			} catch (_) {
-				try {
-				} catch {}
-			}
+			} catch {}
 		};
 	}
 }

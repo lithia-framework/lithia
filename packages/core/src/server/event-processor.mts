@@ -1,59 +1,81 @@
+/**
+ * @fileoverview Event processing engine for the Lithia Framework.
+ * Orchestrates the execution of Socket.io event handlers and their
+ * associated middleware pipelines with comprehensive error handling
+ * synchronized with the HTTP request processor style.
+ */
+
 import type { Event } from "@lithia-js/native";
+import { logger, red } from "@lithia-js/utils";
 import type { Socket } from "socket.io";
+import { InternalServerError } from "../errors/app/index.mjs";
+import { LithiaClientError } from "../errors/base.mjs";
 import type { LithiaApp } from "../lithia-app.mjs";
 import { loadModule } from "../module-loader.js";
+import { produceDigest } from "../utils.mjs";
 
 /**
- * Tipagens para suporte a Middlewares em Events
+ * Represents the next function in the event middleware chain.
  */
 export type NextEvent = () => Promise<void> | void;
 
+/**
+ * Standard middleware signature for Socket.io events.
+ */
 export type EventMiddleware = (
 	socket: Socket,
 	next: NextEvent,
 ) => Promise<void>;
 
-export type EventErrorMiddleware = (
-	error: Error,
-	socket: Socket,
-	next: NextEvent,
-) => Promise<void>;
-
+/**
+ * Terminal handler for a specific WebSocket event.
+ */
 export type EventHandler = (socket: Socket, data?: any) => Promise<void>;
 
+/**
+ * Structure of a resolved event module.
+ */
 export type EventModule = {
 	default: EventHandler;
 	middlewares?: EventMiddleware[];
 };
 
+/**
+ * Orchestrates the lifecycle of a WebSocket event, ensuring consistent
+ * error reporting and telemetry across the framework.
+ */
 export class LithiaEventProcessor {
 	constructor(private readonly app: LithiaApp) {}
 
 	/**
-	 * Processa um evento específico do Socket.io
-	 * @param socket A instância do socket
-	 * @param event Definição do evento (metadados)
-	 * @param data Dados enviados pelo cliente
+	 * Processes an incoming Socket.io event by executing its middleware chain and handler.
+	 * @param socket The active Socket.io instance.
+	 * @param event The event metadata definition.
+	 * @param data Optional payload sent by the client.
 	 */
-	async process(socket: Socket, event: Event, data?: any): Promise<void> {
+	public async process(
+		socket: Socket,
+		event: Event,
+		data?: any,
+	): Promise<void> {
 		try {
-			// 1. Carregamento do Módulo
-			const mod = await loadModule<EventModule>(event.filePath);
+			const module = await loadModule<EventModule>(event.filePath);
 
-			// 2. Montagem da Pipeline (Global + Local)
-			const pipeline: EventMiddleware[] = [...(mod.middlewares || [])];
+			const pipeline: EventMiddleware[] = [
+				// Note: Future global event middlewares would be injected here
+				...(module.middlewares || []),
+			];
 
-			// 3. Execução em Cascata
 			await this.runPipeline(pipeline, socket, async () => {
-				await mod.default(socket, data);
+				await module.default(socket, data);
 			});
-		} catch (err) {
-			this.handleEventError(socket, event.name, err);
+		} catch (error) {
+			this.handleEventError(socket, event.name, error);
 		}
 	}
 
 	/**
-	 * Pipeline Onion para eventos
+	 * Executes the middleware chain using a recursive dispatch pattern.
 	 */
 	private async runPipeline(
 		middlewares: EventMiddleware[],
@@ -80,23 +102,46 @@ export class LithiaEventProcessor {
 	}
 
 	/**
-	 * Central de tratamento de erros para Sockets
+	 * Centralized error handler for WebSocket events.
+	 * Aligns with the HTTP Request Processor logging style, providing
+	 * unique digests and standardized client error objects.
 	 */
 	private handleEventError(socket: Socket, eventName: string, err: any): void {
+		// Normalize the error to a LithiaEventError structure
+		const error =
+			err instanceof LithiaClientError
+				? err
+				: new InternalServerError(
+						"An internal server error occurred during event processing.",
+						err,
+					);
+
 		const isProd = this.app.environment === "production";
+		const statusCode = error.statusCode || 500;
+		const digest = produceDigest(err);
 
-		// Log interno (essencial, já que sockets não têm logs de acesso nativos como HTTP)
-		console.error(
-			`[Lithia Event Error] Event: ${eventName} | ID: ${socket.id}`,
-			err,
-		);
+		// Obfuscate message for internal errors in production
+		const message =
+			isProd && statusCode >= 500 ? "Internal Server Error" : error.message;
 
-		// Notifica o cliente sobre o erro de forma padronizada
+		// 1. Notify the client using a standardized structure
 		socket.emit("error", {
-			event: eventName,
-			message: isProd ? "Internal Server Error" : err.message,
-			timestamp: new Date().toISOString(),
-			...(!isProd && { stack: err.stack }),
+			error: {
+				statusCode,
+				message,
+				timestamp: new Date().toISOString(),
+				digest,
+				event: eventName,
+				details: error.details,
+			},
 		});
+
+		// 2. Log to server console with consistent Lithia formatting
+		if (statusCode >= 500) {
+			logger.error(`Digest: ${red(digest)}`);
+			logger.info(`Event: ${eventName}`);
+			logger.info(`Socket ID: ${socket.id}`);
+			logger.info(err.stack || err);
+		}
 	}
 }

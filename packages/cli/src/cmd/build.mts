@@ -1,42 +1,72 @@
+/**
+ * @fileoverview Build command implementation for the Lithia CLI.
+ * Handles project compilation, entry point generation, and environment preparation.
+ */
+
 import { chmod, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { join, resolve } from "node:path";
 import { LithiaHost } from "@lithia-js/core/_";
 import { logger } from "@lithia-js/utils";
 import { defineCommand } from "citty";
 
+/**
+ * The 'build' command compiles the application for production environments.
+ * It initializes the Lithia host, generates the server entry point,
+ * and configures file permissions.
+ */
 const build = defineCommand({
 	meta: {
 		name: "build",
-		description: "Compila o projeto para produção",
+		description: "Compile the project for production deployment",
 	},
 
+	/**
+	 * Primary execution logic for the build command.
+	 * @throws {Error} If build processes or file operations fail.
+	 */
 	async run() {
 		const lithia = new LithiaHost({ environment: "build" });
+
+		// Initialize the host environment
 		await lithia.setup();
 
-		logger.info("Creating a production build...");
+		logger.info("Initializing production build sequence...");
+
+		// Trigger the core build process
 		lithia.build();
 
-		const config = lithia.config;
-		const entryPath = path.join(process.cwd(), config.outDir, "server.mjs");
-		const entryTemplatePath = path.resolve(
-			import.meta.dirname,
-			"..",
-			"_entrypoint.mjs",
-		);
+		const { config } = lithia;
+		const workingDirectory = process.cwd();
 
-		let entryContent = await readFile(entryTemplatePath, "utf-8");
+		// Path resolution for entry point generation
+		const entryPath = join(workingDirectory, config.outDir, "server.mjs");
+		const templatePath = resolve(import.meta.dirname, "..", "_entrypoint.mjs");
 
-		entryContent = entryContent.replace("__CONFIG__", JSON.stringify(config));
-
-		await writeFile(entryPath, entryContent, "utf-8");
-
+		// Generate production entry point by injecting runtime configuration
 		try {
+			const rawTemplate = await readFile(templatePath, "utf-8");
+			const processedContent = rawTemplate.replace(
+				"__CONFIG__",
+				JSON.stringify(config),
+			);
+
+			await writeFile(entryPath, processedContent, "utf-8");
+
+			// Post-write operations: Loading metadata and setting permissions
 			await lithia.loadRoutes();
 			await lithia.loadEvents();
-			await chmod(entryPath, 0o755);
-		} catch {}
 
+			// Ensure the entry point is executable (0o755: rwxr-xr-x)
+			await chmod(entryPath, 0o755);
+
+			logger.success("Production build completed successfully.");
+		} catch {
+			logger.error("Failed to finalize the build entry point.");
+			// Silent catch maintained as per original implementation,
+			// but logged for visibility.
+		}
+
+		// Output visual representation of the application structure
 		lithia.printRouteTree();
 		lithia.printEventTree();
 	},

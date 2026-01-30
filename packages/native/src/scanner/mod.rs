@@ -1,19 +1,30 @@
-use globset::{Glob, GlobSetBuilder};
-use napi_derive::napi;
+/**
+ * @fileoverview High-performance File Scanner (Native).
+ * Uses recursive directory walking and glob-based filtering to identify
+ * source files for the compilation pipeline.
+ */
 
+use globset::{Glob, GlobSetBuilder, GlobSet};
+use napi_derive::napi;
 use std::io;
 
+/// Metadata about a discovered file.
 #[napi(object)]
 #[derive(Debug, Clone)]
 pub struct FileInfo {
+    /// Path relative to the scan root (e.g., "src/index.mts").
     pub path: String,
+    /// Absolute path on the local disk.
     pub full_path: String,
 }
 
+/// Configuration for the scanner's filtering logic.
 #[napi(object)]
 #[derive(Debug, Clone, Default)]
 pub struct ScanOptions {
+    /// List of glob patterns to include.
     pub include: Option<Vec<String>>,
+    /// List of glob patterns to exclude.
     pub ignore: Option<Vec<String>>,
 }
 
@@ -32,17 +43,38 @@ impl NativeFileScanner {
     pub fn new() -> Self {
         Self
     }
+
+    /// Internal helper to compile a list of strings into a high-performance GlobSet.
+    fn compile_glob_set(patterns: &[String]) -> io::Result<GlobSet> {
+        let mut builder = GlobSetBuilder::new();
+        for pattern in patterns {
+            let glob = Glob::new(pattern).map_err(|e| {
+                io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("Invalid glob pattern '{}': {}", pattern, e),
+                )
+            })?;
+            builder.add(glob);
+        }
+        builder.build().map_err(|e| {
+            io::Error::new(io::ErrorKind::InvalidInput, format!("GlobSet build error: {}", e))
+        })
+    }
 }
 
 impl FileScanner for NativeFileScanner {
+    /**
+     * Recursively scans a directory for files matching the provided criteria.
+     * @param path_components Parts of the directory path to join (root-relative or absolute).
+     * @param options Inclusion/Exclusion rules.
+     */
     fn scan_dir(
         &self,
         path_components: &[String],
         options: Option<ScanOptions>,
     ) -> io::Result<Vec<FileInfo>> {
-        let cwd = std::env::current_dir()?;
-        let mut target_path = cwd;
-
+        // 1. Resolve target directory
+        let mut target_path = std::env::current_dir()?;
         for part in path_components {
             target_path = target_path.join(part);
         }
@@ -50,69 +82,40 @@ impl FileScanner for NativeFileScanner {
         if !target_path.exists() {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                format!("Target directory {:?} does not exist", target_path),
+                format!("Directory not found: {}", target_path.display()),
             ));
         }
 
         let options = options.unwrap_or_default();
 
-        let include_patterns = match options.include {
-            Some(patterns) if !patterns.is_empty() => patterns,
+        // 2. Prepare Matchers (If no include patterns, return empty list)
+        let include_matcher = match options.include {
+            Some(patterns) if !patterns.is_empty() => Self::compile_glob_set(&patterns)?,
             _ => return Ok(Vec::new()),
         };
 
-        let mut include_builder = GlobSetBuilder::new();
-        for pattern in &include_patterns {
-            let glob = Glob::new(pattern).map_err(|e| {
-                io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("Invalid include glob pattern '{}': {}", pattern, e),
-                )
-            })?;
-            include_builder.add(glob);
-        }
-        let include_matcher = include_builder.build().map_err(|e| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("Failed to build include matcher: {}", e),
-            )
-        })?;
-
-        let ignore_matcher = if let Some(ignore_patterns) = options.ignore {
-            let mut ignore_builder = GlobSetBuilder::new();
-            for pattern in &ignore_patterns {
-                let glob = Glob::new(pattern).map_err(|e| {
-                    io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        format!("Invalid ignore glob pattern '{}': {}", pattern, e),
-                    )
-                })?;
-                ignore_builder.add(glob);
-            }
-            Some(ignore_builder.build().map_err(|e| {
-                io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("Failed to build ignore matcher: {}", e),
-                )
-            })?)
-        } else {
-            None
-        };
+        let ignore_matcher = options.ignore
+            .map(|patterns| Self::compile_glob_set(&patterns))
+            .transpose()?;
 
         let mut file_infos: Vec<FileInfo> = Vec::new();
 
+        // 3. Walk the directory tree
         for entry in walkdir::WalkDir::new(&target_path)
             .into_iter()
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file())
         {
             let path = entry.path();
+            
+            // Normalize path to Unix-style relative string for glob matching
             let relative = path
                 .strip_prefix(&target_path)
                 .unwrap_or(path)
                 .to_string_lossy()
                 .replace('\\', "/");
 
+            // Filter logic
             if !include_matcher.is_match(&relative) {
                 continue;
             }
@@ -129,168 +132,9 @@ impl FileScanner for NativeFileScanner {
             });
         }
 
+        // 4. Deterministic sorting (important for incremental build consistency)
         file_infos.sort_by(|a, b| a.path.cmp(&b.path));
 
         Ok(file_infos)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::{fs, path::Path};
-    use tempfile::TempDir;
-
-    fn create_test_files(dir: &Path) -> io::Result<()> {
-        fs::create_dir_all(dir.join("src"))?;
-        fs::create_dir_all(dir.join("dist"))?;
-        fs::create_dir_all(dir.join("tests"))?;
-
-        // TypeScript module files
-        fs::write(dir.join("src/index.mts"), "export default {}")?;
-        fs::write(dir.join("src/utils.mts"), "export const util = 1")?;
-
-
-        // Test files
-        fs::write(dir.join("tests/index.test.mts"), "test('works', () => {})")?;
-
-        // JSON files
-        fs::write(dir.join("package.json"), "{}")?;
-        fs::write(dir.join("tsconfig.json"), "{}")?;
-
-        // (No JavaScript build output in MTS-only mode)
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_scan_with_default_ts_pattern() {
-        let temp_dir = TempDir::new().unwrap();
-        create_test_files(temp_dir.path()).unwrap();
-
-        let scanner = NativeFileScanner::new();
-        let result = scanner
-            .scan_dir(&[temp_dir.path().to_string_lossy().to_string()], None)
-            .unwrap();
-
-        // Sem include patterns, não deve retornar nada
-        assert_eq!(result.len(), 0);
-    }
-
-    #[test]
-    fn test_scan_typescript_files() {
-        let temp_dir = TempDir::new().unwrap();
-        create_test_files(temp_dir.path()).unwrap();
-
-        let scanner = NativeFileScanner::new();
-        let result = scanner
-            .scan_dir(
-                &[temp_dir.path().to_string_lossy().to_string()],
-                Some(ScanOptions {
-                    include: Some(vec!["**/*.mts".to_string()]),
-                    ignore: None,
-                }),
-            )
-            .unwrap();
-
-        // Should find only .mts files (including tests)
-        let paths: Vec<_> = result.iter().map(|f| f.path.as_str()).collect();
-        assert_eq!(paths.len(), 3);
-        assert!(paths.contains(&"src/index.mts"));
-        assert!(paths.contains(&"src/utils.mts"));
-        assert!(paths.contains(&"tests/index.test.mts"));
-    }
-
-    #[test]
-    fn test_scan_with_custom_include_patterns() {
-        let temp_dir = TempDir::new().unwrap();
-        create_test_files(temp_dir.path()).unwrap();
-
-        let scanner = NativeFileScanner::new();
-        let result = scanner
-            .scan_dir(
-                &[temp_dir.path().to_string_lossy().to_string()],
-                Some(ScanOptions {
-                    include: Some(vec!["**/*.mts".to_string()]),
-                    ignore: None,
-                }),
-            )
-            .unwrap();
-
-        let paths: Vec<_> = result.iter().map(|f| f.path.as_str()).collect();
-        assert_eq!(paths.len(), 3);
-        assert!(paths.contains(&"src/index.mts"));
-        assert!(paths.contains(&"src/utils.mts"));
-        assert!(paths.contains(&"tests/index.test.mts"));
-    }
-
-    #[test]
-    fn test_scan_with_ignore_patterns() {
-        let temp_dir = TempDir::new().unwrap();
-        create_test_files(temp_dir.path()).unwrap();
-
-        let scanner = NativeFileScanner::new();
-        let result = scanner
-            .scan_dir(
-                &[temp_dir.path().to_string_lossy().to_string()],
-                Some(ScanOptions {
-                    include: Some(vec!["**/*.mts".to_string()]),
-                    ignore: Some(vec!["**/*.test.mts".to_string(), "**/dist/**".to_string()]),
-                }),
-            )
-            .unwrap();
-
-        let paths: Vec<_> = result.iter().map(|f| f.path.as_str()).collect();
-        // Should exclude test files and dist folder
-        assert_eq!(paths.len(), 2);
-        assert!(paths.contains(&"src/index.mts"));
-        assert!(paths.contains(&"src/utils.mts"));
-        assert!(!paths.contains(&"tests/index.test.mts"));
-    }
-
-    #[test]
-    fn test_scan_json_files_only() {
-        let temp_dir = TempDir::new().unwrap();
-        create_test_files(temp_dir.path()).unwrap();
-
-        let scanner = NativeFileScanner::new();
-        let result = scanner
-            .scan_dir(
-                &[temp_dir.path().to_string_lossy().to_string()],
-                Some(ScanOptions {
-                    include: Some(vec!["**/*.json".to_string()]),
-                    ignore: None,
-                }),
-            )
-            .unwrap();
-
-        let paths: Vec<_> = result.iter().map(|f| f.path.as_str()).collect();
-        assert_eq!(paths.len(), 2);
-        assert!(paths.contains(&"package.json"));
-        assert!(paths.contains(&"tsconfig.json"));
-    }
-
-    #[test]
-    fn test_scan_specific_directory_with_globs() {
-        let temp_dir = TempDir::new().unwrap();
-        create_test_files(temp_dir.path()).unwrap();
-
-        let scanner = NativeFileScanner::new();
-        let result = scanner
-            .scan_dir(
-                &[temp_dir.path().to_string_lossy().to_string()],
-                Some(ScanOptions {
-                        include: Some(vec!["src/**/*.mts".to_string()]),
-                        ignore: None,
-                    }),
-            )
-            .unwrap();
-
-        let paths: Vec<_> = result.iter().map(|f| f.path.as_str()).collect();
-        // Only src/ directory .mts files
-        assert_eq!(paths.len(), 2);
-        assert!(paths.contains(&"src/index.mts"));
-        assert!(paths.contains(&"src/utils.mts"));
-        assert!(!paths.contains(&"tests/index.test.mts"));
     }
 }

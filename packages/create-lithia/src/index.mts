@@ -1,5 +1,11 @@
 #! /usr/bin/env node
 
+/**
+ * @fileoverview Scaffolding CLI for Lithia.js.
+ * Handles interactive project creation, template cloning,
+ * dependency management, and Git initialization.
+ */
+
 import { execSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -7,19 +13,20 @@ import path from "node:path";
 import { defineCommand, runMain } from "citty";
 import prompts from "prompts";
 import { version } from "./meta.mjs";
-import { green } from "./picocolors.mjs";
+import { blue, green, red, yellow } from "./picocolors.mjs";
 
-// ANSI colors for better logging (consistent with green from utils)
-const red = (str: string) => `\x1b[31m${str}\x1b[0m`;
-const yellow = (str: string) => `\x1b[33m${str}\x1b[0m`;
-const blue = (str: string) => `\x1b[34m${str}\x1b[0m`;
+// --- UI Helpers ---
 
-// Pretty log helpers
-const success = (msg: string) => console.log(green(`✔ ${msg}`));
-const info = (msg: string) => console.log(blue(`ℹ ${msg}`));
-const warnLog = (msg: string) => console.log(yellow(`⚠ ${msg}`));
-const errorLog = (msg: string) => console.error(red(`✖ ${msg}`));
+const ui = {
+	success: (msg: string) => console.log(green(`✔ ${msg}`)),
+	info: (msg: string) => console.log(blue(`ℹ ${msg}`)),
+	warn: (msg: string) => console.log(yellow(`⚠ ${msg}`)),
+	error: (msg: string) => console.error(red(`✖ ${msg}`)),
+};
 
+/**
+ * Checks if a system command (like git or pnpm) is available in the PATH.
+ */
 function isCommandAvailable(cmd: string): boolean {
 	try {
 		execSync(`${cmd} --version`, { stdio: "ignore" });
@@ -29,9 +36,12 @@ function isCommandAvailable(cmd: string): boolean {
 	}
 }
 
+/**
+ * Safely executes operations within a temporary directory.
+ * Automatically cleans up the directory after completion.
+ */
 async function withTmpDir(fn: (tmpDir: string) => Promise<void>) {
 	const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "lithia-"));
-
 	try {
 		await fn(tmpDir);
 	} finally {
@@ -39,86 +49,62 @@ async function withTmpDir(fn: (tmpDir: string) => Promise<void>) {
 	}
 }
 
+// --- CLI Command Definition ---
+
 const main = defineCommand({
 	meta: {
 		name: "create-lithia",
-		description: "Create Lithia App CLI",
+		description: "Initialize a new Lithia.js project",
 		version,
 	},
 	async run(ctx) {
-		const repo = "https://github.com/lithia-framework/lithia.git";
-		const templates = [
+		const REPO_URL = "https://github.com/lithia-framework/lithia.git";
+		const TEMPLATES = [
 			"starter",
 			"with-docker",
 			"with-drizzle",
 			"with-better-auth",
 		];
-		let projectName = ctx.rawArgs[0];
-		let template: string;
-		let installDependencies: boolean;
-		let packageManager: string | undefined;
-		let initializeGit: boolean;
 
 		if (!isCommandAvailable("git")) {
-			errorLog(
-				"git is required to run this CLI. Please install git and try again.",
+			ui.error(
+				"Git is required to use this CLI. Please install Git and try again.",
 			);
 			process.exit(1);
 		}
 
-		if (!projectName) {
-			const response = await prompts(
+		// 1. Interactive Prompts
+		const response = await prompts(
+			[
 				{
-					type: "text",
+					type: ctx.rawArgs[0] ? null : "text",
 					name: "projectName",
-					message: `What is the ${green("name")} of your project?`,
+					message: `Project ${green("name")}:`,
 					initial: "my-lithia-app",
 				},
-				{ onCancel: () => process.exit(1) },
-			);
-			projectName = response.projectName;
-		}
-
-		const templateResponse = await prompts(
-			{
-				type: "select",
-				name: "template",
-				message: `Select a ${green("template")}:`,
-				choices: templates.map((t) => ({ title: t, value: t })),
-				initial: 0,
-			},
-			{ onCancel: () => process.exit(1) },
-		);
-		template = templateResponse.template;
-
-		const installResponse = await prompts(
-			{
-				type: "confirm",
-				name: "installDependencies",
-				message: `Do you want to ${green("install dependencies")}?`,
-				initial: true,
-			},
-			{ onCancel: () => process.exit(1) },
-		);
-		installDependencies = installResponse.installDependencies;
-
-		if (installDependencies) {
-			const pmResponse = await prompts(
 				{
 					type: "select",
-					name: "packageManager",
-					message: `Select a ${green("package manager")}:`,
+					name: "template",
+					message: "Select a template:",
+					choices: TEMPLATES.map((t) => ({ title: t, value: t })),
+				},
+				{
+					type: "confirm",
+					name: "install",
+					message: "Install dependencies?",
+					initial: true,
+				},
+				{
+					type: (prev) => (prev ? "select" : null),
+					name: "pm",
+					message: "Package manager:",
 					choices: [
 						{
 							title: "pnpm",
 							value: "pnpm",
 							disabled: !isCommandAvailable("pnpm"),
 						},
-						{
-							title: "npm",
-							value: "npm",
-							disabled: !isCommandAvailable("npm"),
-						},
+						{ title: "npm", value: "npm" },
 						{
 							title: "bun",
 							value: "bun",
@@ -131,186 +117,109 @@ const main = defineCommand({
 						},
 					],
 				},
-				{ onCancel: () => process.exit(1) },
-			);
-			packageManager = pmResponse.packageManager;
-		}
-
-		const gitResponse = await prompts(
-			{
-				type: "confirm",
-				name: "initializeGit",
-				message: `Do you want to ${green("initialize a git repository")}?`,
-				initial: true,
-			},
+				{
+					type: "confirm",
+					name: "git",
+					message: "Initialize Git repository?",
+					initial: true,
+				},
+			],
 			{ onCancel: () => process.exit(1) },
 		);
-		initializeGit = gitResponse.initializeGit;
 
+		const projectName = ctx.rawArgs[0] || response.projectName;
 		const targetDir = path.join(process.cwd(), projectName);
-		const pmToUse =
-			installDependencies && packageManager ? packageManager : "npm";
 
-		info(`Creating a new Lithia project in ${projectName}...`);
+		ui.info(`Scaffolding project in ${green(targetDir)}...`);
 
+		// 2. Project Generation Logic
 		await withTmpDir(async (tmpDir) => {
-			if (!isCommandAvailable("git")) {
-				errorLog(
-					"git is required to clone the template repository. Please install git and try again.",
-				);
-				process.exit(1);
-			}
-
 			const repoDir = path.join(tmpDir, "repo");
 
-			info("Cloning template repository...");
+			// Clone template
+			ui.info("Fetching templates from GitHub...");
 			try {
-				execSync(`git clone --depth 1 --branch canary ${repo} "${repoDir}"`, {
-					stdio: "ignore",
-				});
-				success("Template repository cloned.");
-			} catch (err) {
-				errorLog(`Failed to clone repository: ${err}`);
-				process.exit(1);
-			}
-
-			const templateSrc = path.join(repoDir, "templates", template);
-
-			// ensure template exists
-			try {
-				await fs.access(templateSrc);
-			} catch (_) {
-				errorLog(`Template ${template} not found in repository.`);
-				process.exit(1);
-			}
-
-			// if target exists, ask for confirmation
-			let targetExists = false;
-			try {
-				await fs.access(targetDir);
-				targetExists = true;
-			} catch (_) {
-				// does not exist
-			}
-
-			if (targetExists) {
-				const confirmResponse = await prompts(
-					{
-						type: "confirm",
-						name: "overwrite",
-						message: `Target ${green(targetDir)} already exists. Overwrite?`,
-						initial: false,
-					},
-					{ onCancel: () => process.exit(1) },
+				execSync(
+					`git clone --depth 1 --branch canary ${REPO_URL} "${repoDir}"`,
+					{ stdio: "ignore" },
 				);
-
-				if (!confirmResponse.overwrite) {
-					throw new Error(
-						"Cannot create project: target directory already exists.",
-					);
-				}
+			} catch (err) {
+				ui.error(`Failed to clone repository: ${err}`);
+				process.exit(1);
 			}
 
-			// ensure target exists
+			const templateSrc = path.join(repoDir, "templates", response.template);
+
+			// Directory safety check
+			if (await fs.stat(targetDir).catch(() => null)) {
+				const { overwrite } = await prompts({
+					type: "confirm",
+					name: "overwrite",
+					message: `Directory ${projectName} already exists. ${red("Overwrite?")}`,
+					initial: false,
+				});
+				if (!overwrite) process.exit(1);
+				await fs.rm(targetDir, { recursive: true, force: true });
+			}
+
 			await fs.mkdir(targetDir, { recursive: true });
 
-			// copy contents of the template directory into the target directory
-			info("Copying template files...");
-			const entries = await fs.readdir(templateSrc);
-			for (const name of entries) {
-				const srcPath = path.join(templateSrc, name);
-				const destPath = path.join(targetDir, name);
-				await fs.cp(srcPath, destPath, { recursive: true, force: true });
-			}
-			success("Template files copied.");
+			// Copy template files
+			ui.info("Copying files...");
+			await fs.cp(templateSrc, targetDir, { recursive: true, force: true });
 
-			// Update package.json: set name and pin internal lithia packages to current meta version
-			const pkgJsonPath = path.join(targetDir, "package.json");
-			try {
-				const raw = await fs.readFile(pkgJsonPath, "utf-8");
-				const pkg = JSON.parse(raw);
+			// 3. Post-processing (package.json)
+			const pkgPath = path.join(targetDir, "package.json");
+			const hasPkg = await fs.stat(pkgPath).catch(() => null);
 
+			if (hasPkg) {
+				const pkg = JSON.parse(await fs.readFile(pkgPath, "utf-8"));
 				pkg.name = projectName;
 
-				const pinDeps = (deps: Record<string, string> | undefined) => {
+				// Pin internal packages (@lithia-js/*) to current framework version
+				const pin = (deps?: Record<string, string>) => {
 					if (!deps) return;
-
-					Object.keys(deps).forEach((dep) => {
-						if (dep.startsWith("@lithia-js/")) {
-							deps[dep] = `^${version}`;
-						}
-					});
+					for (const dep in deps) {
+						if (dep.startsWith("@lithia-js/")) deps[dep] = `^${version}`;
+					}
 				};
+				pin(pkg.dependencies);
+				pin(pkg.devDependencies);
 
-				pinDeps(pkg.dependencies);
-				pinDeps(pkg.devDependencies);
-
-				await fs.writeFile(pkgJsonPath, JSON.stringify(pkg, null, 2), "utf-8");
-
-				success(
-					`package.json updated (name set + internal packages pinned to v${version}).`,
-				);
-
-				// initialize git if requested (git availability was validated earlier)
-				if (initializeGit) {
-					info("Initializing Git repository...");
-					try {
-						execSync("git init", { cwd: targetDir, stdio: "ignore" });
-						execSync("git add -A", { cwd: targetDir, stdio: "ignore" });
-						execSync('git commit -m "chore: initial commit"', {
-							cwd: targetDir,
-							stdio: "ignore",
-						});
-						success("Git repository initialized.");
-					} catch (err) {
-						warnLog(`Failed to initialize git repository: ${err}`);
-					}
-				}
-
-				// install dependencies if requested
-				if (installDependencies) {
-					let cmd: string;
-					switch (pmToUse) {
-						case "pnpm":
-							cmd = "pnpm install";
-							break;
-						case "yarn":
-							cmd = "yarn install";
-							break;
-						case "bun":
-							cmd = "bun install";
-							break;
-						default:
-							cmd = "npm install";
-					}
-
-					info(`Installing dependencies with ${pmToUse}...`);
-					try {
-						execSync(cmd, { cwd: targetDir, stdio: "ignore" });
-						success("Dependencies installed.");
-					} catch (err) {
-						warnLog(`Failed to install dependencies: ${err}`);
-					}
-				}
-			} catch {
-				// package.json might not exist in template — that's fine
-				warnLog("No package.json found in template, skipping updates.");
+				await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2));
 			}
 
-			success(`Project created at ${targetDir}!`);
-
-			// Next steps
-			console.log(green("\nNext steps:"));
-			console.log(`  cd ${projectName}`);
-			if (installDependencies) {
-				console.log(`  ${pmToUse} run dev`);
-			} else {
-				console.log(`  ${pmToUse} install`);
-				console.log(`  ${pmToUse} run dev`);
+			// 4. Git & Install
+			if (response.git) {
+				try {
+					execSync("git init", { cwd: targetDir, stdio: "ignore" });
+					ui.success("Git initialized.");
+				} catch  {
+					ui.warn("Could not initialize Git.");
+				}
 			}
-			console.log(green("\nHappy coding! 🚀"));
+
+			if (response.install) {
+				ui.info(`Installing dependencies with ${response.pm}...`);
+				try {
+					execSync(`${response.pm} install`, {
+						cwd: targetDir,
+						stdio: "ignore",
+					});
+					ui.success("Dependencies installed.");
+				} catch  {
+					ui.warn("Dependency installation failed. Please run it manually.");
+				}
+			}
+
+			// 5. Final output
+			ui.success(`Lithia project "${projectName}" is ready!`);
+			console.log(
+				`\nNext steps:\n  ${blue(`cd ${projectName}`)}\n  ${blue(`${response.pm || "npm"} run dev`)}\n`,
+			);
+			console.log(green("Happy coding! 🚀"));
 		});
 	},
 });
 
-runMain(main).then();
+runMain(main);

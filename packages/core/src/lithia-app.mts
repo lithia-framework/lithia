@@ -1,135 +1,167 @@
 /**
- * This instance is supposed to run inside the worker thread.
+ * @fileoverview Main Application Container for the Lithia Framework.
+ * This class orchestrates the server, global middlewares, and dependency injection.
+ * Designed to run exclusively within isolated worker threads for dev-mode stability.
  */
 
 import { isMainThread, workerData } from "node:worker_threads";
 import type { Event, Route } from "@lithia-js/native";
 import { logger } from "@lithia-js/utils";
 import type { LithiaOptions } from "./config.mjs";
-import type {
-	EventErrorMiddleware,
-	EventMiddleware,
-} from "./server/event-processor.mjs";
-import type {
-	RouteErrorMiddleware,
-	RouteMiddleware,
-} from "./server/request-processor.mjs";
+import type { EventMiddleware } from "./server/event-processor.mjs";
+import type { RouteMiddleware } from "./server/request-processor.mjs";
 import { LithiaServer } from "./server/server.mjs";
 import type { Environment } from "./types.js";
 
+/**
+ * Valid types for dependency injection keys.
+ */
 export type InjectionKey<T> = symbol | string | { new (...args: any[]): T };
 
+/**
+ * The core application instance. 
+ * Managed by the Lithia CLI, it encapsulates the configuration, 
+ * routing manifest, and server engine.
+ */
 export class LithiaApp {
-	private _environment: Environment;
-	private _config: LithiaOptions;
-	private _routes: Route[];
-	private _events: Event[];
-	private _globalRouteMiddlewares: RouteMiddleware[];
-	private _globalEventMiddlewares: EventMiddleware[];
-	private _customRouteErrorMiddleware: RouteErrorMiddleware | null;
-	private _customEventErrorMiddleware: EventErrorMiddleware | null;
-	private _dependencies: Map<any, any>;
-	private _server: LithiaServer;
-	private _isFirstWorker: boolean;
+  private readonly _environment: Environment;
+  private readonly _config: LithiaOptions;
+  private readonly _routes: Route[];
+  private readonly _events: Event[];
+  private readonly _isFirstWorker: boolean;
+  
+  private readonly _globalRouteMiddlewares: RouteMiddleware[] = [];
+  private readonly _globalEventMiddlewares: EventMiddleware[] = [];
+  private readonly _dependencies = new Map<any, any>();
+  private readonly _server: LithiaServer;
 
-	constructor() {
-		if (isMainThread) {
-			throw new Error(
-				"LithiaApp can only be instantiated inside a worker thread.",
-			);
-		}
+  /**
+   * Initializes the application container.
+   * Validates the execution context to ensure it is running within a managed worker.
+   */
+  constructor() {
+    this.validateExecutionContext();
 
-		if (!workerData.managedBy || workerData.managedBy !== `lithia`) {
-			throw new Error(
-				"LithiaApp must be managed by Lithia. Using it outside our CLI is currently not supported, and may lead to unexpected behavior.",
-			);
-		}
+    this._config = workerData.config;
+    this._routes = workerData.routes;
+    this._events = workerData.events;
+    this._environment = workerData.environment;
+    this._isFirstWorker = workerData.isFirstWorker;
 
-		this._config = workerData.config;
-		this._routes = workerData.routes;
-		this._events = workerData.events;
-		this._environment = workerData.environment;
-		this._isFirstWorker = workerData.isFirstWorker;
-
-		this._server = new LithiaServer(this);
-	}
-
-	get config(): LithiaOptions {
-		return this._config;
-	}
-
-	get environment(): Environment {
-		return this._environment;
-	}
-
-	get dependencies(): Map<any, any> {
-		return this._dependencies;
-	}
-
-	get routes(): Route[] {
-		return this._routes;
-	}
-
-	get events(): Event[] {
-		return this._events;
-	}
-
-	get globalRouteMiddlewares(): RouteMiddleware[] {
-		return this._globalRouteMiddlewares;
-	}
-
-	get globalEventMiddlewares(): EventMiddleware[] {
-		return this._globalEventMiddlewares;
-	}
-
-	get isFirstWorker(): boolean {
-		return this._isFirstWorker;
-	}
-
-  get customRouteErrorMiddleware(): RouteErrorMiddleware | null {
-    return this._customRouteErrorMiddleware;
+    this._server = new LithiaServer(this);
   }
 
-  get customEventErrorMiddleware(): EventErrorMiddleware | null {
-    return this._customEventErrorMiddleware;
+  // --- Accessors ---
+
+  public get config(): LithiaOptions {
+    return this._config;
   }
 
-	provide<T>(key: InjectionKey<T>, value: T): void {
-		this._dependencies.set(key, value);
-	}
+  public get environment(): Environment {
+    return this._environment;
+  }
 
-	use<K extends "route" | "event">(
-		context: K,
-		middleware: K extends "route" ? RouteMiddleware : EventMiddleware,
-	): void {
-		if (context === "route") {
-			this._globalRouteMiddlewares.push(middleware as RouteMiddleware);
-			return;
-		}
+  public get dependencies(): Map<any, any> {
+    return this._dependencies;
+  }
 
-		if (context === "event") {
-			this._globalEventMiddlewares.push(middleware as EventMiddleware);
-			return;
-		}
+  public get routes(): Route[] {
+    return this._routes;
+  }
 
-		logger.warn(
-			`Unknown middleware context: ${context}. Middleware not registered.`,
-		);
-	}
+  public get events(): Event[] {
+    return this._events;
+  }
 
-	async start(): Promise<void> {
-		this.once(() => logger.info("Starting Lithia server..."));
+  public get globalRouteMiddlewares(): RouteMiddleware[] {
+    return this._globalRouteMiddlewares;
+  }
 
-		await this._server.listen().then(() => {
-			this.once(() => logger.success("Lithia is ready!"));
-		});
-	}
+  public get globalEventMiddlewares(): EventMiddleware[] {
+    return this._globalEventMiddlewares;
+  }
 
-	async stop(): Promise<void> {
-		await this._server.close();
-	}
+  public get isFirstWorker(): boolean {
+    return this._isFirstWorker;
+  }
 
-	private once(fn: () => void): void {
-		if (this.isFirstWorker) fn();
-	}
+  // --- Registry & Configuration ---
+
+  /**
+   * Provides a dependency to the application-wide injection container.
+   */
+  public provide<T>(key: InjectionKey<T>, value: T): void {
+    this._dependencies.set(key, value);
+  }
+
+  /**
+   * Registers a global middleware for either HTTP routes or WebSocket events.
+   * @param context The target stack ('route' or 'event').
+   * @param middleware The middleware function to register.
+   */
+  public use<K extends "route" | "event">(
+    context: K,
+    middleware: K extends "route" ? RouteMiddleware : EventMiddleware,
+  ): void {
+    if (context === "route") {
+      this._globalRouteMiddlewares.push(middleware as RouteMiddleware);
+    } else if (context === "event") {
+      this._globalEventMiddlewares.push(middleware as EventMiddleware);
+    } else {
+      logger.warn(`Unknown middleware context: ${context}. Registration ignored.`);
+    }
+  }
+
+  // --- Lifecycle Orchestration ---
+
+  /**
+   * Starts the internal server and begins accepting connections.
+   */
+  public async start(): Promise<void> {
+    this.executeOnce(() => logger.info("Starting Lithia server..."));
+
+    try {
+      await this._server.listen();
+      this.executeOnce(() => logger.success("Lithia is ready!"));
+    } catch (error) {
+      this.executeOnce(() => logger.error("Failed to start Lithia server."));
+      throw error;
+    }
+  }
+
+  /**
+   * Gracefully shuts down the application and its underlying server.
+   */
+  public async stop(): Promise<void> {
+    await this._server.close();
+  }
+
+  // --- Internals ---
+
+  /**
+   * Executes a callback only if this worker is designated as the primary worker.
+   * Useful for preventing log duplication in multi-worker environments.
+   */
+  private executeOnce(fn: () => void): void {
+    if (this.isFirstWorker) {
+      fn();
+    }
+  }
+
+  /**
+   * Ensures the application is not running in the main thread and is managed by Lithia.
+   */
+  private validateExecutionContext(): void {
+    if (isMainThread) {
+      throw new Error(
+        "Execution Error: LithiaApp cannot be instantiated on the main thread. It must run within a Worker Thread.",
+      );
+    }
+
+    if (workerData?.managedBy !== "lithia") {
+      throw new Error(
+        "Compatibility Error: LithiaApp must be managed by the Lithia CLI. Independent execution is not supported.",
+      );
+    }
+  }
 }

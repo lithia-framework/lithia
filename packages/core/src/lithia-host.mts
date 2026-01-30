@@ -1,3 +1,9 @@
+/**
+ * @fileoverview LithiaHost Orchestrator.
+ * Responsible for the main-thread logic: building the project, loading manifests,
+ * managing environment variables, and orchestrating worker thread lifecycles.
+ */
+
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { parseEnv } from "node:util";
@@ -12,7 +18,8 @@ import {
 } from "@lithia-js/native";
 import { green, logger } from "@lithia-js/utils";
 import { type LithiaOptions, loadConfig } from "./config.mjs";
-import { LithiaError, ManifestVersionMismatchError } from "./errors.mjs";
+import { LithiaError } from "./errors/base.mjs";
+import { ManifestVersionMismatchError } from "./errors/internal/index.mjs";
 import { version } from "./meta.mjs";
 import type { Environment } from "./types.js";
 import { fileExists } from "./utils.mjs";
@@ -22,12 +29,15 @@ declare namespace globalThis {
 	var __lithia_host_config_v1: LithiaOptions;
 }
 
+export const CFG_GLOBAL_KEY = "__lithia_host_config_v1" as const;
+
 export interface LithiaOpts {
 	environment: Environment;
 }
 
-export const CFG_GLOBAL_KEY = "__lithia_host_config_v1" as const;
-
+/**
+ * Standard communication protocol from Worker back to Host.
+ */
 export type WorkerToHostEvent =
 	| { type: "ready" }
 	| {
@@ -35,276 +45,181 @@ export type WorkerToHostEvent =
 			error: {
 				name: string;
 				message: string;
-				context?: LithiaError["context"];
 				stack?: string;
 			};
 	  };
 
+/**
+ * The Host is the manager of the Lithia process.
+ * It stays alive even when the application code (running in the worker) crashes or reloads.
+ */
 export class LithiaHost {
+	private _worker: Worker | null = null;
+	private _config!: LithiaOptions;
+	private _env: Record<string, string> = {};
+
 	private _isWorkerRunning = false;
 	private _isAppReady = false;
 	private _workerCount = 0;
-	private _worker: Worker | null = null;
-	private _config: LithiaOptions;
-	private _env: Record<string, string> = {};
-	private _lastPortUsed: number;
+	private _lastPortUsed: number = 0;
+
 	private _routes: Route[] = [];
 	private _events: Event[] = [];
 
 	constructor(private readonly opts: LithiaOpts) {
 		if (!isMainThread) {
-			throw new Error(
-				"LithiaHost can only be instantiated in the main thread.",
-			);
+			throw new Error("LithiaHost must be instantiated in the Main Thread.");
 		}
 	}
 
-	get config(): LithiaOptions {
-		if (this.environment === "production") {
-			return globalThis[CFG_GLOBAL_KEY];
-		}
+	// --- Getters ---
 
-		return this._config;
+	public get config(): LithiaOptions {
+		return this.environment === "production"
+			? globalThis[CFG_GLOBAL_KEY]
+			: this._config;
 	}
 
-	get environment(): Environment {
+	public get environment(): Environment {
 		return this.opts.environment;
 	}
-
-	get isAppReady(): boolean {
+	public get isAppReady(): boolean {
 		return this._isAppReady;
 	}
-
-	get workerCount(): number {
-		return this._workerCount;
-	}
-
-	get lastPortUsed(): number {
-		return this._lastPortUsed;
-	}
-
-	get routes(): Route[] {
+	public get routes(): Route[] {
 		return this._routes;
 	}
-
-	get events(): Event[] {
+	public get events(): Event[] {
 		return this._events;
 	}
 
-	async getAvailableEnvFiles(): Promise<string[]> {
-		if (!this.config) {
-			throw new LithiaError(
-				"internal",
-				"Config must be loaded before retrieving available env files.",
-			);
-		}
+	// --- Configuration & Env Loading ---
 
-		const cwd = process.cwd();
-		const availableEnvFiles: string[] = [];
-
-		for (const envFile of this.config.envFiles) {
-			const filePath = path.join(cwd, envFile);
-			if (await fileExists(filePath)) {
-				availableEnvFiles.push(envFile);
-			}
-		}
-
-		return availableEnvFiles;
-	}
-
-	async loadConfig(): Promise<void> {
-		if (this.environment === "production") {
-			return;
-		}
-
+	/**
+	 * Loads the Lithia configuration file.
+	 */
+	public async loadConfig(): Promise<void> {
+		if (this.environment === "production") return;
 		this._config = await loadConfig();
 		this._lastPortUsed = this._config.http.port;
 	}
 
-	async loadEnv(): Promise<void> {
-		if (!this.config) {
-			throw new LithiaError(
-				"internal",
-				"Config must be loaded before loading environment variables.",
-			);
-		}
-
+	/**
+	 * Resolves and parses defined .env files.
+	 */
+	public async loadEnv(): Promise<void> {
+		this.ensureConfigLoaded();
 		const cwd = process.cwd();
 		const envFiles = await this.getAvailableEnvFiles();
 
-		for (const envFile of envFiles) {
-			const filePath = path.join(cwd, envFile);
+		for (const file of envFiles) {
 			try {
-				const raw = await readFile(filePath, "utf-8");
+				const raw = await readFile(path.join(cwd, file), "utf-8");
 				const parsed = parseEnv(raw);
 				Object.assign(this._env, parsed);
 			} catch {
-				logger.warn(`Failed to parse env file: ${envFile}`);
+				logger.warn(`Failed to parse env file: ${file}`);
 			}
 		}
 	}
 
-	async loadEvents(): Promise<void> {
-		const manifestPath = path.join(
-			process.cwd(),
-			this.config.outDir,
-			"events.json",
-		);
+	// --- Manifest Management ---
 
-		if (await fileExists(manifestPath)) {
-			const raw = await readFile(manifestPath, "utf-8");
-			const manifest = JSON.parse(raw) as EventsManifest;
-
-			const expectedVersion = schemaVersion();
-
-			if (manifest.version !== expectedVersion) {
-				throw new ManifestVersionMismatchError(
-					manifest.version,
-					expectedVersion,
-				);
-			}
-
-			this._events = manifest.events;
-		}
+	/**
+	 * Loads the routes manifest generated by the compiler.
+	 */
+	public async loadRoutes(): Promise<void> {
+		const routes = await this.loadManifest<RoutesManifest>("routes.json");
+		if (routes) this._routes = routes.routes;
 	}
 
-	async loadRoutes(): Promise<void> {
-		const manifestPath = path.join(
-			process.cwd(),
-			this.config.outDir,
-			"routes.json",
-		);
-
-		if (await fileExists(manifestPath)) {
-			const raw = await readFile(manifestPath, "utf-8");
-			const manifest = JSON.parse(raw) as RoutesManifest;
-
-			const expectedVersion = schemaVersion();
-
-			if (manifest.version !== expectedVersion) {
-				throw new ManifestVersionMismatchError(
-					manifest.version,
-					expectedVersion,
-				);
-			}
-
-			this._routes = manifest.routes;
-		}
+	/**
+	 * Loads the events manifest generated by the compiler.
+	 */
+	public async loadEvents(): Promise<void> {
+		const events = await this.loadManifest<EventsManifest>("events.json");
+		if (events) this._events = events.events;
 	}
 
-	async printHeader(): Promise<void> {
-		const envFiles = await this.getAvailableEnvFiles();
+	private async loadManifest<T extends { version: string }>(
+		fileName: string,
+	): Promise<T | null> {
+		this.ensureConfigLoaded();
+		const manifestPath = path.join(process.cwd(), this.config.outDir, fileName);
 
-		logger.event(green(`Lithia.js ${version}`));
-		if (envFiles.length >= 1) logger.info(`Environment: ${envFiles.join(" ")}`);
+		if (!(await fileExists(manifestPath))) return null;
 
-		console.log();
-	}
+		const raw = await readFile(manifestPath, "utf-8");
+		const manifest = JSON.parse(raw) as T;
+		const currentSchema = schemaVersion();
 
-	printRouteTree(): void {
-		if (this.routes.length === 0) return;
-
-		console.log("\n\x1b[4mRoute Tree:\x1b[0m");
-		for (const [idx, route] of this.routes.entries()) {
-			const isFirst = idx === 0 && this.routes.length > 1;
-			const isLast = idx === this.routes.length - 1;
-			const prefix = isFirst ? "┌" : isLast ? "└" : "├";
-			const indicator = route.dynamic ? "ƒ" : "○";
-			console.log(
-				`${prefix} ${indicator} ${(route.method || "all").toUpperCase()} ${route.path}`,
-			);
-		}
-	}
-
-	printEventTree(): void {
-		if (this.events.length === 0) return;
-
-		console.log("\n\x1b[4mEvent Tree:\x1b[0m");
-		for (const [idx, event] of this.events.entries()) {
-			const isFirst = idx === 0 && this.events.length > 1;
-			const isLast = idx === this.events.length - 1;
-			const prefix = isFirst ? "┌" : isLast ? "└" : "├";
-      const indicator = "λ";
-			console.log(`${prefix} ${indicator} ${event.name}`);
-		}
-	}
-
-	async setup() {
-		await this.loadConfig();
-		await this.loadEnv();
-		await this.printHeader();
-	}
-
-	async reload() {
-		await this.loadRoutes();
-		await this.loadEvents();
-		await this.swapWorker();
-	}
-
-	build(): void {
-		if (!this.config) {
-			throw new LithiaError(
-				"internal",
-				"Config must be loaded before calling Lithia build.",
-			);
+		if (manifest.version !== currentSchema) {
+			throw new ManifestVersionMismatchError(currentSchema, manifest.version);
 		}
 
+		return manifest;
+	}
+
+	// --- Build & Lifecycle ---
+
+	/**
+	 * Compiles the source code into the output directory using @lithia-js/native.
+	 * @param throwOnError When true (default) rethrows the error to the caller
+	 *                     (useful for CLI `build`). When false, errors are
+	 *                     logged but the host keeps running (useful for dev).
+	 */
+	public build(throwOnError: boolean = true): void {
+		this.ensureConfigLoaded();
 		const start = process.hrtime.bigint();
 
 		try {
 			const cwd = process.cwd();
-
 			buildProject(
 				path.join(cwd, this.config.sourceDir),
 				path.join(cwd, this.config.outDir),
 			);
 
-			const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
-
-			logger.success(`Compiled successfully in ${durationMs.toFixed(2)}ms`);
+			const duration = Number(process.hrtime.bigint() - start) / 1e6;
+			logger.success(`Compiled successfully in ${duration.toFixed(2)}ms`);
 		} catch (err) {
 			logger.error("Build failed:", err);
-			throw err;
+			if (throwOnError) throw err;
 		}
 	}
 
-	async start(): Promise<void> {
-		if (!this.config) await this.loadConfig();
-		if (!this.routes) await this.loadRoutes();
-		if (!this.events) await this.loadEvents();
+	public async setup(): Promise<void> {
+		await this.loadConfig();
+		await this.loadEnv();
+		await this.printHeader();
+	}
+
+	public async start(): Promise<void> {
+		if (!this._config) await this.loadConfig();
+		if (this._routes.length === 0) await this.loadRoutes();
+		if (this._events.length === 0) await this.loadEvents();
 
 		this.createWorker();
-
-		logger.debug(
-			`The Lithia instance has been started in ${this.environment} mode.`,
-		);
+		logger.debug(`Instance started in ${this.environment} mode.`);
 	}
 
-	async stop(): Promise<void> {
-		if (this._worker) {
-			await this.disposeWorker();
-		}
-
-		logger.debug(`The Lithia instance has been stopped.`);
+	/**
+	 * Restarts the worker thread (Hot Reload).
+	 */
+	public async reload(): Promise<void> {
+		await this.loadRoutes();
+		await this.loadEvents();
+		await this.swapWorker();
 	}
 
-	async swapWorker(): Promise<void> {
-		if (!this._worker) {
-			logger.debug("No worker to swap. Skipping swap...");
-			return;
-		}
-
-		if (!this._isWorkerRunning) {
-			logger.debug("Worker is not running, no need to swap. Skipping swap...");
-			return;
-		}
-
+	public async stop(): Promise<void> {
 		await this.disposeWorker();
-		this.createWorker();
+		logger.debug("Lithia instance stopped.");
 	}
+
+	// --- Worker Operations ---
 
 	private createWorker(): void {
-		logger.debug("Creating worker...");
+		logger.debug("Spawning background worker...");
 
 		this._worker = new Worker(path.join(import.meta.dirname, "_worker.mjs"), {
 			workerData: {
@@ -315,35 +230,90 @@ export class LithiaHost {
 				events: this.events,
 				isFirstWorker:
 					++this._workerCount === 1 ||
-					this.lastPortUsed !== this.config.http.port,
+					this._lastPortUsed !== this.config.http.port,
 			},
-			env: {
-				FORCE_COLOR: "1",
-				...this._env,
-			},
+			env: { FORCE_COLOR: "1", ...this._env },
 		});
 
-		this._worker.on("message", (message: WorkerToHostEvent) => {
-			switch (message.type) {
-				case "ready":
-					this._isAppReady = true;
-					logger.debug("Worker reported ready.");
-					break;
+		this._worker.on("message", (msg: WorkerToHostEvent) => {
+			if (msg.type === "ready") {
+				this._isAppReady = true;
+				this._isWorkerRunning = true;
 			}
 		});
 
-		this._isWorkerRunning = true;
-
-		logger.debug("Worker created successfully.");
+		this._worker.on("error", (err) => {
+			logger.error("Worker Thread crashed:", err);
+			this._isWorkerRunning = false;
+		});
 	}
 
 	private async disposeWorker(): Promise<void> {
-		if (this._worker) {
-			logger.debug("Disposing worker...");
-			await this._worker.terminate();
-			this._worker = null;
-			this._isWorkerRunning = false;
-			logger.debug("Worker disposed successfully.");
+		if (!this._worker) return;
+		await this._worker.terminate();
+		this._worker = null;
+		this._isWorkerRunning = false;
+		this._isAppReady = false;
+	}
+
+	public async swapWorker(): Promise<void> {
+		if (this._worker && this._isWorkerRunning) {
+			await this.disposeWorker();
 		}
+		this.createWorker();
+	}
+
+	// --- UI Helpers ---
+
+	public async printHeader(): Promise<void> {
+		const files = await this.getAvailableEnvFiles();
+		logger.event(green(`Lithia.js ${version}`));
+		if (files.length) logger.info(`Environment: ${files.join(", ")}`);
+		console.log();
+	}
+
+	public printRouteTree(): void {
+		this.printTree(
+			"Route",
+			this.routes,
+			(r) => `${(r.method || "all").toUpperCase()} ${r.path}`,
+			(r) => (r.dynamic ? "ƒ" : "○"),
+		);
+	}
+
+	public printEventTree(): void {
+		this.printTree(
+			"Event",
+			this.events,
+			(e) => e.name,
+			() => "λ",
+		);
+	}
+
+	private printTree<T>(
+		label: string,
+		items: T[],
+		nameFn: (i: T) => string,
+		symbolFn: (i: T) => string,
+	): void {
+		if (items.length === 0) return;
+		console.log(`\n\x1b[4m${label} Tree:\x1b[0m`);
+		items.forEach((item, idx) => {
+			const isLast = idx === items.length - 1;
+			const branch = isLast ? "└" : "├";
+			console.log(`${branch} ${symbolFn(item)} ${nameFn(item)}`);
+		});
+	}
+
+	private async getAvailableEnvFiles(): Promise<string[]> {
+		const existing: string[] = [];
+		for (const f of this.config.envFiles) {
+			if (await fileExists(path.join(process.cwd(), f))) existing.push(f);
+		}
+		return existing;
+	}
+
+	private ensureConfigLoaded(): void {
+		if (!this.config) throw new LithiaError("Configuration not loaded.");
 	}
 }

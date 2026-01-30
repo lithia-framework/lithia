@@ -1,24 +1,60 @@
+/**
+ * @fileoverview Base Lithia Execution Context.
+ * Provides the foundational AsyncLocalStorage layer for global framework state,
+ * primarily managing the Dependency Injection container.
+ */
+
 import { AsyncLocalStorage } from "node:async_hooks";
+import { NotInLithiaContextError } from "../errors/internal/index.mjs";
 
-
-export type LithiaContext = {
+/**
+ * The core context structure for any Lithia-managed execution.
+ */
+export interface LithiaContext {
+  /** The Dependency Injection container for the current execution scope. */
   container: Map<any, any>;
 }
 
-const GLOBAL_KEY = "__lithia_context_v1" as const;
-const globalAny = globalThis as any;
+/**
+ * Global key using a Symbol to prevent collision and ensure singleton 
+ * persistence across different module resolutions.
+ */
+const LITHIA_CONTEXT_KEY = Symbol.for("lithia.base_context.v1");
 
-if (!globalAny[GLOBAL_KEY]) {
-  globalAny[GLOBAL_KEY] = new AsyncLocalStorage<LithiaContext>();
+/**
+ * Retrieves or initializes the global AsyncLocalStorage instance for the base context.
+ */
+function getGlobalLithiaStore(): AsyncLocalStorage<LithiaContext> {
+  const globalAny = globalThis as any;
+  if (!globalAny[LITHIA_CONTEXT_KEY]) {
+    globalAny[LITHIA_CONTEXT_KEY] = new AsyncLocalStorage<LithiaContext>();
+  }
+  return globalAny[LITHIA_CONTEXT_KEY];
 }
 
-export const lithiaContext: AsyncLocalStorage<LithiaContext> =
-  globalAny[GLOBAL_KEY];
+/**
+ * The singleton store instance for the base Lithia context.
+ */
+export const lithiaContextStore = getGlobalLithiaStore();
 
+/**
+ * Accesses the current Lithia execution context.
+ * * @returns The active LithiaContext object.
+ * @throws {NotInLithiaContextError} If called outside a Lithia-managed scope.
+ */
 export function getLithiaContext(): LithiaContext {
-  const ctx = lithiaContext.getStore();
+  const ctx = lithiaContextStore.getStore();
   if (!ctx) {
-    throw new Error("Not in Lithia context");
+    throw new NotInLithiaContextError();
   }
   return ctx;
+}
+
+/**
+ * Helper to execute logic within a Lithia context.
+ * Useful during application bootstrap or testing.
+ * * @internal
+ */
+export function runInLithiaContext<T>(context: LithiaContext, fn: () => T): T {
+  return lithiaContextStore.run(context, fn);
 }

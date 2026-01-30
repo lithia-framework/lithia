@@ -8,9 +8,9 @@
 use napi_derive::napi;
 
 mod builder;
+mod events;
 mod router;
 mod scanner;
-mod events;
 
 /// Compile the project and emit artifacts.
 ///
@@ -35,13 +35,13 @@ use crate::scanner::FileScanner;
 /// files or an error which is converted into a `napi::Error` for the host.
 #[napi]
 pub fn scan_dir(
-  path_components: Vec<String>,
-  options: Option<ScanOptions>,
+    path_components: Vec<String>,
+    options: Option<ScanOptions>,
 ) -> napi::Result<Vec<FileInfo>> {
-  let scanner = scanner::NativeFileScanner::new();
-  scanner
-    .scan_dir(&path_components, options)
-    .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))
+    let scanner = scanner::NativeFileScanner::new();
+    scanner
+        .scan_dir(&path_components, options)
+        .map_err(|e| napi::Error::from_reason(format!("scan failed: {}", e)))
 }
 
 /// Return the native crate version embedded at compile time.
@@ -50,5 +50,5 @@ pub fn scan_dir(
 /// native binary version matches expectations.
 #[napi]
 pub fn schema_version() -> &'static str {
-  env!("CARGO_PKG_VERSION")
+    env!("CARGO_PKG_VERSION")
 }

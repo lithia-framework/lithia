@@ -1,106 +1,127 @@
-import path from "node:path";
+/**
+ * @fileoverview Development command for the Lithia CLI.
+ * Provides Hot Module Replacement (HMR) capabilities via file system watchers,
+ * automatic configuration reloading, and environment synchronization.
+ */
+
+import { join } from "node:path";
 import { LithiaHost } from "@lithia-js/core/_";
 import { logger } from "@lithia-js/utils";
 import chokidar from "chokidar";
 import { defineCommand } from "citty";
 
+/**
+ * Creates a debounced version of an asynchronous function.
+ * * @template T - A function returning void or a Promise of void.
+ * @param {T} fn - The function to debounce.
+ * @param {number} [delay=180] - Delay in milliseconds.
+ * @returns {() => void} A debounced wrapper function.
+ */
+const debounce = <T extends () => Promise<void> | void>(
+	fn: T,
+	delay: number = 180,
+): (() => void) => {
+	let timer: NodeJS.Timeout | null = null;
+	return () => {
+		if (timer) clearTimeout(timer);
+		timer = setTimeout(() => {
+			timer = null;
+			const result = fn();
+			if (result instanceof Promise) {
+				result.catch(logger.error);
+			}
+		}, delay);
+	};
+};
+
 const dev = defineCommand({
 	meta: {
 		name: "dev",
-		description: "Start the development server",
+		description: "Start the development server with hot-reload capabilities",
 	},
 
 	async run() {
 		const cwd = process.cwd();
 		const lithia = new LithiaHost({ environment: "development" });
-		await lithia.setup();
 
-		lithia.build();
+		// 1. Initial Host Setup
+		await lithia.setup();
+		lithia.build(false);
 
 		try {
 			await lithia.start();
-		} catch {}
+		} catch {
+			logger.error("Failed to start the development server.");
+		}
 
-		const debounce = <T extends () => Promise<void> | void>(
-			fn: T,
-			delay = 180,
-		) => {
-			let timer: NodeJS.Timeout | null = null;
-			return () => {
-				if (timer) clearTimeout(timer);
-				timer = setTimeout(() => {
-					timer = null;
-					fn()?.catch(logger.error);
-				}, delay);
-			};
-		};
-
-		const rebuild = debounce(async () => {
-			lithia.build();
+		// 2. Define Hot-Reload Actions
+		const performRebuild = debounce(async () => {
+			logger.info("Changes detected. Rebuilding application...");
+			lithia.build(false);
 			await lithia.reload();
 		});
 
-		const reloadConfig = debounce(async () => {
+		const performConfigReload = debounce(async () => {
+			logger.info("Configuration updated. Refreshing host...");
 			await lithia.loadConfig();
 			await lithia.reload();
 		});
 
-		const reloadEnv = debounce(async () => {
+		const performEnvReload = debounce(async () => {
+			logger.info("Environment variables updated. Refreshing host...");
 			await lithia.loadEnv();
 			await lithia.reload();
 		});
 
-		const srcWatcher = chokidar.watch(path.join(cwd, "src"), {
+		// 3. Source Code Watcher
+		const srcWatcher = chokidar.watch(join(cwd, "src"), {
 			ignored: [/(^|[/\\])\../, "**/node_modules/**"],
 			persistent: true,
 			ignoreInitial: true,
 		});
 
-		srcWatcher.on("all", async (event) => {
+		srcWatcher.on("all", (event) => {
 			if (["add", "change", "unlink"].includes(event)) {
-				rebuild();
+				performRebuild();
 			}
 		});
 
-		const availableExtensions = [".js", ".mjs", ".ts", ".mts", ".json"];
+		// 4. Configuration and Environment Watcher
+		const extensions = [".js", ".mjs", ".ts", ".mts", ".json"];
+		const configFiles = [
+			...lithia.config.envFiles,
+			...extensions.map((ext) => join(cwd, `lithia.config${ext}`)),
+		];
 
-		const configWatcher = chokidar.watch(
-			[
-				...lithia.config.envFiles,
-				...availableExtensions.map((ext) =>
-					path.join(cwd, `lithia.config${ext}`),
-				),
-			],
-			{
-				cwd,
-				ignoreInitial: true,
-			},
-		);
+		const configWatcher = chokidar.watch(configFiles, {
+			cwd,
+			ignoreInitial: true,
+		});
 
-		configWatcher.on("all", (event, path) => {
+		configWatcher.on("all", (event, filePath) => {
 			if (["change", "add"].includes(event)) {
-				if (path.includes("lithia.config")) {
-					logger.info(`Reloaded configuration: ${path}`);
-					reloadConfig();
+				if (filePath.includes("lithia.config")) {
+					performConfigReload();
 				} else {
-					logger.info(`Reloaded env: ${path}`);
-					reloadEnv();
+					performEnvReload();
 				}
 			}
 		});
 
+		// 5. Graceful Shutdown Orchestration
 		const shutdown = async () => {
+			logger.info("Shutting down development server...");
 			await Promise.allSettled([
 				srcWatcher.close(),
 				configWatcher.close(),
 				lithia.stop(),
 			]);
-
 			process.exit(0);
 		};
 
-		process.once("SIGINT", () => shutdown);
-		process.once("SIGTERM", () => shutdown);
+		// Correctly bind signal handlers to the shutdown sequence
+		process.once("SIGINT", shutdown);
+		process.once("SIGTERM", shutdown);
 	},
 });
 

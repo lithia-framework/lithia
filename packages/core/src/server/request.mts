@@ -1,39 +1,60 @@
+/**
+ * @fileoverview Request abstraction for the Lithia Framework.
+ * Wraps Node.js's native IncomingMessage to provide high-level APIs for
+ * body parsing, file uploads, cookie management, and metadata extraction.
+ */
+
 import type { IncomingHttpHeaders, IncomingMessage } from "node:http";
 import busboy, { type FileInfo } from "busboy";
 import { type Cookies, parse as parseCookie } from "cookie";
+import { BadRequestError } from "../errors/app/index.mjs";
 
+/**
+ * Represents dynamic URL parameters parsed from the route pattern.
+ */
 export type Params = Record<string, any>;
 
+/**
+ * Represents the parsed query string object.
+ */
 export type Query = Record<string, any>;
 
+/**
+ * Represents a file uploaded via multipart/form-data.
+ */
 export interface UploadedFile extends FileInfo {
 	fieldname: string;
 	buffer: Buffer;
 }
 
+/**
+ * The core Request object used across Lithia handlers and middlewares.
+ */
 export class LithiaRequest {
-	headers: Readonly<IncomingHttpHeaders>;
-	method: Readonly<string>;
-	params: Params;
-	pathname: Readonly<string>;
-	query: Query;
+	public readonly headers: Readonly<IncomingHttpHeaders>;
+	public readonly method: Readonly<string>;
+	public readonly pathname: Readonly<string>;
+	public query: Query;
+	public params: Params;
 
-	private storage = new Map<string, unknown>();
+	private readonly storage = new Map<string, unknown>();
 	private _bodyCache: unknown | null = null;
 	private _filesCache: UploadedFile[] | null = null;
 	private _cookies: Cookies | null = null;
 
+	/**
+	 * Initializes a new LithiaRequest instance.
+	 * @param req The native Node.js IncomingMessage.
+	 * @param opts Configuration options for request processing.
+	 */
 	constructor(
 		private readonly req: IncomingMessage,
 		private readonly opts: { maxBodySize?: number },
 	) {
-		const protocol =
-			(req.headers["x-forwarded-proto"] as string) === "https" ||
-			(req.socket as any)?.encrypted === true
-				? "https"
-				: "http";
-		const host = req.headers.host || "unknown";
-		const fullUrl = `${protocol}://${host}${req.url || "/"}`;
+		this.headers = req.headers;
+		const isSecure = this.isSecure();
+		const host = this.headers.host || req.headers.host || "unknown";
+		const fullUrl = `${isSecure ? "https" : "http"}://${host}${req.url || "/"}`;
 		const url = new URL(fullUrl);
 
 		this.pathname = url.pathname;
@@ -43,8 +64,61 @@ export class LithiaRequest {
 		this.params = {};
 	}
 
-	async body<T>(): Promise<T> {
-		if (!["POST", "PUT", "PATCH", "DELETE"].includes(this.method)) {
+	// --- Identity & Metadata ---
+
+	/**
+	 * Retrieves the client's IP address, accounting for proxies and load balancers.
+	 */
+	public ip(): string {
+		return (
+			(this.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+			(this.headers["x-real-ip"] as string) ||
+			(this.req.socket as any)?.remoteAddress ||
+			"unknown"
+		);
+	}
+
+	/**
+	 * Returns the User-Agent string from headers.
+	 */
+	public userAgent(): string {
+		return (this.headers["user-agent"] as string) || "";
+	}
+
+	/**
+	 * Determines if the request was made over a secure (HTTPS) connection.
+	 */
+	public isSecure(): boolean {
+		return (
+			(this.headers["x-forwarded-proto"] as string) === "https" ||
+			(this.req.socket as any)?.encrypted === true
+		);
+	}
+
+	/**
+	 * Retrieves the Host header.
+	 */
+	public host(): string {
+		return (this.headers.host as string) || "unknown";
+	}
+
+	/**
+	 * Returns the reconstructed full URL of the request.
+	 */
+	public url(): string {
+		return `${this.isSecure() ? "https" : "http"}://${this.host()}${this.pathname}`;
+	}
+
+	// --- Data Parsing (Async) ---
+
+	/**
+	 * Parses and returns the request body. Supports JSON, text, and Multipart.
+	 * Results are cached for subsequent calls.
+	 * @template T The expected structure of the body.
+	 */
+	public async body<T>(): Promise<T> {
+		const methodsWithBody = ["POST", "PUT", "PATCH", "DELETE"];
+		if (!methodsWithBody.includes(this.method)) {
 			return {} as T;
 		}
 
@@ -64,28 +138,33 @@ export class LithiaRequest {
 		const maxBodySize = this.opts.maxBodySize || 1024 * 1024;
 
 		if (contentLength > maxBodySize) {
-			throw new Error("Request body too large");
+			throw new BadRequestError("Request body too large.");
 		}
 
 		const body = await new Promise<T>((resolve, reject) => {
-			let bodyData = "";
-			this.req.on("data", (chunk) => {
-				bodyData += chunk;
-				if (bodyData.length > maxBodySize) {
-					reject(new Error("Request body too large"));
+			const chunks: Buffer[] = [];
+			let currentSize = 0;
+
+			this.req.on("data", (chunk: Buffer) => {
+				currentSize += chunk.length;
+				if (currentSize > maxBodySize) {
+					reject(new BadRequestError("Request body too large."));
 				}
+				chunks.push(chunk);
 			});
 
 			this.req.on("end", () => {
-				if (!bodyData) return resolve({} as T);
+				if (chunks.length === 0) return resolve({} as T);
+
+				const rawBody = Buffer.concat(chunks).toString("utf-8");
 				try {
 					if (contentType.includes("application/json")) {
-						resolve(JSON.parse(bodyData) as T);
+						resolve(JSON.parse(rawBody) as T);
 					} else {
-						resolve(bodyData as unknown as T);
+						resolve(rawBody as unknown as T);
 					}
-				} catch (err) {
-					reject(err);
+				} catch {
+					reject(new BadRequestError("Invalid request body format."));
 				}
 			});
 
@@ -97,21 +176,68 @@ export class LithiaRequest {
 		return body;
 	}
 
-	async files(): Promise<UploadedFile[]> {
+	/**
+	 * Parses and returns files uploaded via multipart/form-data.
+	 */
+	public async files(): Promise<UploadedFile[]> {
 		const contentType = (this.headers["content-type"] || "") as string;
 		if (!contentType.includes("multipart/form-data")) return [];
 
 		if (this._filesCache !== null) return this._filesCache;
 
 		await this.parseMultipart();
-		return this._filesCache!;
+		return this._filesCache || [];
 	}
 
-	setBody(value: unknown) {
+	/**
+	 * Manually overrides the body cache. Useful for specialized middlewares.
+	 */
+	public setBody(value: unknown): void {
 		this._bodyCache = value;
 		this.storage.set("body", value);
 	}
 
+	// --- Cookies ---
+
+	/**
+	 * Retrieves all cookies sent with the request.
+	 */
+	public cookies(): Cookies {
+		if (this._cookies === null) {
+			const cookieHeader = this.headers.cookie;
+			this._cookies = cookieHeader ? parseCookie(cookieHeader) : {};
+		}
+		return this._cookies;
+	}
+
+	/**
+	 * Retrieves a specific cookie by name.
+	 */
+	public cookie(name: string): string | undefined {
+		return this.cookies()[name];
+	}
+
+	// --- Custom Storage ---
+
+	/**
+	 * Retrieves a value from the request's internal storage.
+	 */
+	public get<T>(key: string): T | undefined {
+		return this.storage.get(key) as T | undefined;
+	}
+
+	/**
+	 * Sets a value in the request's internal storage for cross-middleware communication.
+	 */
+	public set(key: string, value: unknown): void {
+		this.storage.set(key, value);
+	}
+
+	// --- Internals ---
+
+	/**
+	 * Internal logic for handling multipart/form-data via Busboy.
+	 */
 	private async parseMultipart(): Promise<void> {
 		if (this._bodyCache !== null && this._filesCache !== null) return;
 
@@ -147,63 +273,22 @@ export class LithiaRequest {
 			this.req.pipe(bb);
 		});
 	}
-
-	get<T>(key: string): T | undefined {
-		return this.storage.get(key) as T | undefined;
-	}
-
-	set(key: string, value: unknown): void {
-		this.storage.set(key, value);
-	}
-
-	cookies(): Cookies {
-		if (this._cookies === null) {
-			const cookieHeader = this.headers.cookie;
-			const parsedCookies = cookieHeader ? parseCookie(cookieHeader) : {};
-			this._cookies = parsedCookies;
-		}
-		return this._cookies || {};
-	}
-
-	cookie(name: string): string | undefined {
-		return this.cookies()[name];
-	}
-
-	ip(): string {
-		return (
-			(this.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
-			(this.headers["x-real-ip"] as string) ||
-			(this.req.socket as any)?.remoteAddress ||
-			"unknown"
-		);
-	}
-
-	userAgent(): string {
-		return (this.headers["user-agent"] as string) || "";
-	}
-
-	isSecure(): boolean {
-		return (
-			(this.headers["x-forwarded-proto"] as string) === "https" ||
-			(this.req.socket as any)?.encrypted === true
-		);
-	}
-
-	host(): string {
-		return (this.headers.host as string) || "unknown";
-	}
-
-	url(): string {
-		return `${this.isSecure() ? "https" : "http"}://${this.host()}${this.pathname}`;
-	}
 }
 
-export function parseQueryToObject(raw: URLSearchParams) {
+/**
+ * Utility to convert URLSearchParams into a structured Query object.
+ * Handles multiple values for the same key by converting them into arrays.
+ */
+export function parseQueryToObject(raw: URLSearchParams): Query {
 	const obj: Query = {};
 	for (const [k, v] of raw.entries()) {
-		if (obj[k] === undefined) obj[k] = v;
-		else if (Array.isArray(obj[k])) (obj[k] as string[]).push(v);
-		else obj[k] = [obj[k] as string, v];
+		if (obj[k] === undefined) {
+			obj[k] = v;
+		} else if (Array.isArray(obj[k])) {
+			(obj[k] as string[]).push(v);
+		} else {
+			obj[k] = [obj[k] as string, v];
+		}
 	}
 	return obj;
 }

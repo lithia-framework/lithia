@@ -6,7 +6,8 @@
     "dev": "lithia dev",
     "build": "lithia build",
     "start": "node ./dist/server.mjs",
-    "check": "biome check"
+    "lint": "biome check",
+    "format": "biome format --write"
   },
   "dependencies": {
     "@lithia-js/core": "file:../../packages/core"
