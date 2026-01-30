@@ -1,7 +1,6 @@
 ---
 "@lithia-js/cli": major
 "@lithia-js/core": major
-"": major
 "@lithia-js/utils": major
 ---
 
