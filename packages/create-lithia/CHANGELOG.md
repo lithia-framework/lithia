@@ -1,5 +1,11 @@
 # create-lithia
 
+## 1.0.0-canary.18
+
+### Patch Changes
+
+- f584974: Fixed fully import resolve
+
 ## 1.0.0-canary.17
 
 ### Patch Changes
