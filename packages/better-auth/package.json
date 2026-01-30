@@ -49,7 +49,9 @@
 		"@lithia-js/core": "workspace:*",
 		"better-auth": "^1.4.17"
 	},
-	"dependencies": {},
+	"devDependencies": {
+		"@lithia-js/core": "workspace:*"
+	},
 	"publishConfig": {
 		"registry": "https://registry.npmjs.org/",
 		"access": "public",
