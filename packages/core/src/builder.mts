@@ -127,6 +127,7 @@ export class Builder {
 					},
 					module: {
 						type: "es6",
+            resolveFully: true
 					},
 					sourceMaps: true,
 				});
