@@ -5,11 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DEBUG: napi:*
-  CARGO_INCREMENTAL: 0
-  CARGO_PROFILE_RELEASE_LTO: "fat"
   CI: "1"
-  MACOSX_DEPLOYMENT_TARGET: "10.13"
 
 permissions:
   contents: write
@@ -19,173 +15,12 @@ permissions:
 on:
   push:
     branches:
-      - main
       - canary
   workflow_dispatch:
 
 jobs:
-  # Build native bindings for all platforms
-  build-native:
-    strategy:
-      fail-fast: false
-      matrix:
-        settings:
-          # macOS x64
-          - host: macos-latest
-            target: x86_64-apple-darwin
-            build: |
-              cd packages/native
-              pnpm build:rs --target x86_64-apple-darwin
-              strip -x *.node
-          
-          # macOS ARM64
-          - host: macos-latest
-            target: aarch64-apple-darwin
-            build: |
-              cd packages/native
-              sudo rm -Rf /Library/Developer/CommandLineTools/SDKs/*
-              export CC=$(xcrun -f clang)
-              export CXX=$(xcrun -f clang++)
-              SYSROOT=$(xcrun --sdk macosx --show-sdk-path)
-              export CFLAGS="-isysroot $SYSROOT -isystem $SYSROOT"
-              pnpm build:rs --target aarch64-apple-darwin
-              strip -x *.node
-          
-          # Windows x64
-          - host: windows-latest
-            target: x86_64-pc-windows-msvc
-            build: |
-              cd packages/native
-              pnpm build:rs --target x86_64-pc-windows-msvc
-          
-          # Windows x86
-          - host: windows-latest
-            target: i686-pc-windows-msvc
-            build: |
-              cd packages/native
-              export CARGO_PROFILE_RELEASE_LTO=false
-              pnpm build:rs --target i686-pc-windows-msvc
-          
-          # Windows ARM64
-          - host: windows-latest
-            target: aarch64-pc-windows-msvc
-            build: |
-              cd packages/native
-              export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=256
-              export CARGO_PROFILE_RELEASE_LTO=false
-              pnpm build:rs --target aarch64-pc-windows-msvc
-          
-          # Linux x64 GNU
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            build: |
-              cd packages/native
-              pnpm build:rs --target x86_64-unknown-linux-gnu --use-napi-cross
-          
-          # Linux x64 MUSL
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            build: |
-              cd packages/native
-              pnpm build:rs --target x86_64-unknown-linux-musl --use-napi-cross
-          
-          # Linux ARM64 GNU
-          - host: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            build: |
-              cd packages/native
-              pnpm build:rs --target aarch64-unknown-linux-gnu --use-napi-cross
-          
-          # Linux ARM64 MUSL
-          - host: ubuntu-latest
-            target: aarch64-unknown-linux-musl
-            docker: ghcr.io/lithia-framework/lithia-napi-rs:22-alpine
-            build: |
-                set -e &&
-                export JEMALLOC_SYS_WITH_LG_PAGE=16 &&
-                pnpm build:rs --target aarch64-unknown-linux-musl &&
-                /usr/bin/aarch64-linux-musl-strip *.node
-          
-          # Linux ARMv7
-          - host: ubuntu-latest
-            target: armv7-unknown-linux-gnueabihf
-            build: |
-              cd packages/native
-              pnpm build:rs --target armv7-unknown-linux-gnueabihf --use-napi-cross
-
-    name: Build Native - ${{ matrix.settings.target }}
-    runs-on: ${{ matrix.settings.host }}
-    
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-
-      - name: Setup Rust
-        if: ${{ !matrix.settings.docker }}
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.settings.target }}
-
-      - name: Setup Zig
-        if: ${{ matrix.settings.target == 'armv7-unknown-linux-gnueabihf' }}
-        uses: mlugg/setup-zig@v1
-        with:
-          version: 0.13.0
-
-      - name: Cache cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ matrix.settings.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Install musl tools (x86_64)
-        if: ${{ matrix.settings.target == 'x86_64-unknown-linux-musl' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        if: ${{ !matrix.settings.docker }}
-        run: ${{ matrix.settings.build }}
-        shell: bash
-
-      - name: Build in docker
-        uses: addnab/docker-run-action@v3
-        if: ${{ matrix.settings.docker }}
-        with:
-          image: ${{ matrix.settings.docker }}
-          options: -v ${{ env.HOME }}/.cargo/git:/root/.cargo/git -v ${{ env.HOME }}/.cargo/registry:/root/.cargo/registry -v ${{ github.workspace }}:/build -w /build
-          shell: bash
-          run: >-
-            cd ./packages/native &&
-            ${{ matrix.settings.build }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: native-${{ matrix.settings.target }}
-          path: packages/native/*.node
-          if-no-files-found: error
-
-  # Test native bindings
-  test-native:
-    name: Test Native - ${{ matrix.settings.target }} - Node ${{ matrix.node }}
-    needs: build-native
+  test:
+    name: Test Packages - ${{ matrix.settings.target }} - Node ${{ matrix.node }}
     strategy:
       fail-fast: false
       matrix:
@@ -198,9 +33,9 @@ jobs:
             target: x86_64-unknown-linux-gnu
         node:
           - "22"
-    
+
     runs-on: ${{ matrix.settings.host }}
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -213,16 +48,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Download native artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: native-${{ matrix.settings.target }}
-          path: packages/native
 
       - name: Build TypeScript packages
         run: pnpm build
@@ -230,13 +59,12 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-  # Publish all packages with changesets
   publish:
     name: Version & Publish
-    needs: test-native
+    needs: test
     runs-on: ubuntu-latest
     environment: npm-publish
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -251,17 +79,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Download all native artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: native-*
-          path: packages/native/artifacts
 
       - name: Create Release PR or Version Packages
         id: changesets
@@ -273,13 +95,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-
       - name: Build and prepare native artifacts
         if: steps.changesets.outputs.hasChangesets == 'false'
-        run: |
-          pnpm build
-          cd packages/native
-          pnpm artifacts
+        run: pnpm build
 
       - name: Publish packages
         if: steps.changesets.outputs.hasChangesets == 'false'

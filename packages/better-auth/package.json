@@ -1,43 +1,60 @@
 {
 	"name": "@lithia-js/better-auth",
 	"version": "1.0.0-canary.15",
-	"private": false,
-	"type": "module",
+	"description": "The official Better Auth adapter for the Lithia.js framework.",
+	"keywords": [
+		"lithia",
+		"lithia-js",
+		"better-auth",
+		"authentication",
+		"auth-adapter",
+		"backend",
+		"typescript",
+		"native-speed"
+	],
 	"author": "Lucas Arch <luketsx@icloud.com>",
-	"homepage": "https://lithiajs.com",
 	"license": "MIT",
+	"homepage": "https://lithiajs.com",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/lithia-framework/lithia.git",
+		"directory": "packages/better-auth"
+	},
+	"bugs": {
+		"url": "https://github.com/lithia-framework/lithia/issues"
+	},
+	"type": "module",
 	"main": "dist/index.mjs",
-	"types": "dist/index.d.mts",
 	"module": "dist/index.mjs",
+	"types": "dist/index.d.mts",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.mts",
+			"import": "./dist/index.mjs",
 			"default": "./dist/index.mjs"
 		}
 	},
 	"files": [
-		"dist"
+		"dist",
+		"README.md",
+		"LICENSE"
 	],
+	"engines": {
+		"node": ">=20"
+	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json"
 	},
-	"dependencies": {
+	"peerDependencies": {
 		"@lithia-js/core": "workspace:*",
 		"better-auth": "^1.4.17"
 	},
-	"engines": {
-		"node": ">=20"
+	"devDependencies": {
+		"@lithia-js/core": "workspace:*"
 	},
 	"publishConfig": {
 		"registry": "https://registry.npmjs.org/",
 		"access": "public",
 		"provenance": true
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lithia-framework/lithia.git"
-	},
-	"bugs": {
-		"url": "https://github.com/lithia-framework/lithia/issues"
 	}
 }

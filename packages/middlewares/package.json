@@ -1,43 +1,63 @@
 {
 	"name": "@lithia-js/middlewares",
 	"version": "1.0.0-canary.15",
-	"private": false,
-	"type": "module",
+	"description": "A collection of standard, high-performance middlewares for the Lithia.js framework.",
+	"keywords": [
+		"lithia",
+		"lithia-js",
+		"middlewares",
+		"cors",
+		"security",
+		"logging",
+		"validation",
+		"zod"
+	],
 	"author": "Lucas Arch <luketsx@icloud.com>",
-	"homepage": "https://lithiajs.com",
 	"license": "MIT",
-	"main": "dist/index.mjs",
-	"types": "dist/index.d.mts",
-	"module": "dist/index.mjs",
+	"homepage": "https://lithiajs.com",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/lithia-framework/lithia.git",
+		"directory": "packages/middlewares"
+	},
+	"bugs": {
+		"url": "https://github.com/lithia-framework/lithia/issues"
+	},
+	"type": "module",
+	"main": "./dist/index.mjs",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.mts",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.mts",
+			"import": "./dist/index.mjs",
 			"default": "./dist/index.mjs"
 		}
 	},
 	"files": [
 		"dist"
 	],
+	"engines": {
+		"node": ">=20"
+	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json"
 	},
-	"dependencies": {
+	"peerDependencies": {
 		"@lithia-js/core": "workspace:*",
 		"zod": "^4.2.1"
 	},
-	"engines": {
-		"node": ">=20"
+	"devDependencies": {
+		"@lithia-js/core": "workspace:*"
+	},
+	"peerDependenciesMeta": {
+		"zod": {
+			"optional": true
+		}
 	},
 	"publishConfig": {
 		"registry": "https://registry.npmjs.org/",
 		"access": "public",
 		"provenance": true
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lithia-framework/lithia.git"
-	},
-	"bugs": {
-		"url": "https://github.com/lithia-framework/lithia/issues"
 	}
 }

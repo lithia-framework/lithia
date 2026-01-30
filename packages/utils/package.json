@@ -1,36 +1,48 @@
 {
-	"name": "@lithia-js/utils",
-	"version": "1.0.0-canary.15",
-	"private": false,
-	"type": "module",
-	"author": "Lucas Arch <luketsx@icloud.com>",
-	"homepage": "https://lithiajs.com",
-	"license": "MIT",
-	"main": "dist/index.mjs",
-	"types": "dist/index.d.mts",
-	"module": "dist/index.mjs",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.mts",
-			"default": "./dist/index.mjs"
-		}
-	},
-	"scripts": {
-		"build": "tsc -p tsconfig.build.json"
-	},
-	"engines": {
-		"node": ">=20"
-	},
-	"publishConfig": {
-		"registry": "https://registry.npmjs.org/",
-		"access": "public",
-		"provenance": true
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lithia-framework/lithia.git"
-	},
-	"bugs": {
-		"url": "https://github.com/lithia-framework/lithia/issues"
-	}
+  "name": "@lithia-js/utils",
+  "version": "1.0.0-canary.15",
+  "description": "Common internal utilities and helper functions for the Lithia.js ecosystem.",
+  "keywords": [
+    "lithia",
+    "lithia-js",
+    "utils",
+    "helpers",
+    "shared"
+  ],
+  "author": "Lucas Arch <luketsx@icloud.com>",
+  "license": "MIT",
+  "homepage": "https://lithiajs.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lithia-framework/lithia.git",
+    "directory": "packages/utils"
+  },
+  "bugs": {
+    "url": "https://github.com/lithia-framework/lithia/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "provenance": true
+  }
 }

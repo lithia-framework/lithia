@@ -13,7 +13,7 @@ import type { Auth } from "better-auth/types";
  * * @param auth The Better-Auth instance.
  * @returns A RouteHandler compatible with Lithia's routing system.
  */
-export function handleAuth(auth: Auth): RouteHandler {
+export function BetterAuth(auth: Auth): RouteHandler {
 	return async (req, res) => {
 		// 1. Better-Auth typically only handles GET and POST
 		if (!["POST", "GET"].includes(req.method)) {

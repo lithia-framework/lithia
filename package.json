@@ -1,42 +1,52 @@
 {
-	"name": "lithia-framework",
-	"version": "0.0.0",
-	"packageManager": "pnpm@10.0.0",
-	"author": "Lucas Arch <luketsx@icloud.com>",
-	"homepage": "https://lithiajs.com",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lithia-framework/lithia.git"
-	},
-	"bugs": {
-		"url": "https://github.com/lithia-framework/lithia/issues"
-	},
-	"keywords": [],
-	"scripts": {
-		"build": "turbo build",
-		"build:rs": "turbo build:rs",
-		"test": "turbo test",
-		"check": "biome check --write",
-		"changeset": "changeset",
-		"version-packages": "changeset version",
-		"release": "changeset publish",
-		"pre:enter": "changeset pre enter canary",
-		"pre:exit": "changeset pre exit"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "2.3.13",
-		"@changesets/cli": "^2.29.8",
-		"@types/node": "^25.0.10",
-		"tsx": "^4.21.0",
-		"turbo": "^2.7.6",
-		"typescript": "^5.9.3",
-		"vitest": "^4.0.18"
-	},
-	"dependencies": {
-		"dotenv": "^17.2.3"
-	},
-	"engines": {
-		"node": ">=20"
-	}
+  "name": "lithia-framework",
+  "version": "0.0.0",
+  "private": true,
+  "description": "High-performance Node.js framework with Rust core, file-based routing and native ESM.",
+  "packageManager": "pnpm@10.0.0",
+  "author": "Lucas Arch <luketsx@icloud.com>",
+  "homepage": "https://lithiajs.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lithia-framework/lithia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lithia-framework/lithia/issues"
+  },
+  "keywords": [
+    "lithia",
+    "framework",
+    "node",
+    "rust",
+    "napi-rs",
+    "esm-only",
+    "typescript",
+    "backend",
+    "api",
+    "high-performance",
+    "monorepo",
+    "turborepo"
+  ],
+  "scripts": {
+    "build": "turbo build",
+    "test": "turbo test",
+    "check": "biome check --write .",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && pnpm build:rs && changeset publish",
+    "pre:enter": "changeset pre enter canary",
+    "pre:exit": "changeset pre exit"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.13",
+    "@changesets/cli": "^2.29.8",
+    "@types/node": "^25.1.0",
+    "tsx": "^4.21.0",
+    "turbo": "^2.7.6",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
 }

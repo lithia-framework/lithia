@@ -1,55 +1,71 @@
 {
-	"name": "@lithia-js/core",
-	"version": "1.0.0-canary.15",
-	"private": false,
-	"type": "module",
-	"author": "Lucas Arch <luketsx@icloud.com>",
-	"homepage": "https://lithiajs.com",
-	"license": "MIT",
-	"main": "dist/index.mjs",
-	"types": "dist/index.d.mts",
-	"module": "dist/index.mjs",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.mts",
-			"default": "./dist/index.mjs"
-		},
-		"./_": {
-			"types": "./dist/_index.d.mts",
-			"default": "./dist/_index.mjs"
-		}
-	},
-	"scripts": {
-		"build": "tsc -p tsconfig.build.json"
-	},
-	"devDependencies": {
-		"@types/busboy": "^1.5.4",
-		"@types/source-map-support": "^0.5.10"
-	},
-	"dependencies": {
-		"@lithia-js/native": "workspace:*",
-		"@lithia-js/utils": "workspace:*",
-		"busboy": "^1.6.0",
-		"c12": "^3.3.3",
-		"cookie": "^1.1.1",
-		"klona": "^2.0.6",
-		"socket.io": "^4.8.1",
-		"source-map-support": "^0.5.21",
-		"zod": "^4.2.1"
-	},
-	"engines": {
-		"node": ">=20"
-	},
-	"publishConfig": {
-		"registry": "https://registry.npmjs.org/",
-		"access": "public",
-		"provenance": true
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lithia-framework/lithia.git"
-	},
-	"bugs": {
-		"url": "https://github.com/lithia-framework/lithia/issues"
-	}
+  "name": "@lithia-js/core",
+  "version": "1.0.0-canary.15",
+  "description": "The high-performance core runtime for Lithia.js. Powered by Rust, built for modern TypeScript.",
+  "keywords": [
+    "lithia",
+    "lithia-js",
+    "runtime",
+    "http-server",
+    "socket.io",
+    "backend-framework",
+    "native"
+  ],
+  "author": "Lucas Arch <luketsx@icloud.com>",
+  "license": "MIT",
+  "homepage": "https://lithiajs.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lithia-framework/lithia.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/lithia-framework/lithia/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./_": {
+      "types": "./dist/_index.d.mts",
+      "import": "./dist/_index.mjs",
+      "default": "./dist/_index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@lithia-js/utils": "workspace:*",
+    "@swc/core": "^1.15.11",
+    "busboy": "^1.6.0",
+    "c12": "^3.3.3",
+    "cookie": "^1.1.1",
+    "fast-glob": "^3.3.3",
+    "klona": "^2.0.6",
+    "socket.io": "^4.8.1",
+    "source-map-support": "^0.5.21",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/busboy": "^1.5.4",
+    "@types/source-map-support": "^0.5.10"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "provenance": true
+  }
 }

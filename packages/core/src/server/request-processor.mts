@@ -6,7 +6,6 @@
 
 import { stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
-import type { Route } from "@lithia-js/native";
 import { green, logger, red, yellow } from "@lithia-js/utils";
 import { routeContextStore } from "../context/request-context.mjs";
 import {
@@ -16,6 +15,7 @@ import {
 import { LithiaClientError } from "../errors/base.mjs";
 import type { LithiaApp } from "../lithia-app.mjs";
 import { loadModule } from "../module-loader.js";
+import type { Route } from "../strategy/routes/index.mjs";
 import { produceDigest } from "../utils.mjs";
 import type { LithiaRequest, Params } from "./request.mjs";
 import type { LithiaResponse } from "./response.mjs";
@@ -334,8 +334,8 @@ export class LithiaRequestProcessor {
 		});
 
 		if (statusCode >= 500) {
-			logger.error(`[Internal Error] Digest: ${red(digest)}`);
-			logger.info(`Context: ${req.method} ${req.pathname}`);
+			logger.error(`Digest: ${red(digest)}`);
+			logger.info(`Path: ${req.method} ${req.pathname}`);
 			logger.info(err.stack || err);
 		}
 	}

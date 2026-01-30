@@ -194,7 +194,7 @@ const main = defineCommand({
 				try {
 					execSync("git init", { cwd: targetDir, stdio: "ignore" });
 					ui.success("Git initialized.");
-				} catch  {
+				} catch {
 					ui.warn("Could not initialize Git.");
 				}
 			}
@@ -207,7 +207,7 @@ const main = defineCommand({
 						stdio: "ignore",
 					});
 					ui.success("Dependencies installed.");
-				} catch  {
+				} catch {
 					ui.warn("Dependency installation failed. Please run it manually.");
 				}
 			}

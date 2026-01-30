@@ -1,14 +1,39 @@
 {
 	"name": "@lithia-js/cli",
 	"version": "1.0.0-canary.15",
-	"private": false,
+	"description": "Command line interface for the Lithia.js framework - The fast, native-powered backend engine.",
+	"keywords": [
+		"lithia",
+		"lithia-js",
+		"cli",
+		"framework",
+		"backend",
+		"generator",
+		"build-tool"
+	],
+	"author": "Lucas Arch <luketsx@icloud.com>",
+	"license": "MIT",
+	"homepage": "https://lithiajs.com",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/lithia-framework/lithia.git",
+		"directory": "packages/cli"
+	},
+	"bugs": {
+		"url": "https://github.com/lithia-framework/lithia/issues"
+	},
 	"type": "module",
 	"bin": {
-		"lithia": "dist/index.mjs"
+		"lithia": "./dist/index.mjs"
 	},
-	"author": "Lucas Arch <luketsx@icloud.com>",
-	"homepage": "https://lithiajs.com",
-	"license": "MIT",
+	"main": "./dist/index.mjs",
+	"files": [
+		"dist",
+		"templates"
+	],
+	"engines": {
+		"node": ">=20"
+	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json"
 	},
@@ -18,19 +43,9 @@
 		"citty": "^0.2.0",
 		"chokidar": "^5.0.0"
 	},
-	"engines": {
-		"node": ">=20"
-	},
 	"publishConfig": {
 		"registry": "https://registry.npmjs.org/",
 		"access": "public",
 		"provenance": true
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/lithia-framework/lithia.git"
-	},
-	"bugs": {
-		"url": "https://github.com/lithia-framework/lithia/issues"
 	}
 }

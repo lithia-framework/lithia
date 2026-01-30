@@ -2,20 +2,21 @@
   "name": "my-lithia-app",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "lithia dev",
     "build": "lithia build",
-    "start": "node ./dist/server.mjs",
-    "lint": "biome check",
-    "format": "biome format --write"
+    "start": "node ./dist/server.js",
+    "lint": "biome check .",
+    "format": "biome format --write ."
   },
   "dependencies": {
     "@lithia-js/core": "file:../../packages/core"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.13",
+    "@biomejs/biome": "^2.3.13",
     "@lithia-js/cli": "file:../../packages/cli",
-    "@types/node": "^25.0.10",
+    "@types/node": "^25.1.0",
     "typescript": "^5.9.3"
   },
   "engines": {

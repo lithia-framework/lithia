@@ -5,13 +5,13 @@
  * synchronized with the HTTP request processor style.
  */
 
-import type { Event } from "@lithia-js/native";
 import { logger, red } from "@lithia-js/utils";
 import type { Socket } from "socket.io";
 import { InternalServerError } from "../errors/app/index.mjs";
 import { LithiaClientError } from "../errors/base.mjs";
 import type { LithiaApp } from "../lithia-app.mjs";
 import { loadModule } from "../module-loader.js";
+import type { Event } from "../strategy/events/index.mjs";
 import { produceDigest } from "../utils.mjs";
 
 /**

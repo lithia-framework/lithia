@@ -5,18 +5,18 @@
  */
 
 import type { IncomingHttpHeaders } from "node:http";
-import type { Route } from "@lithia-js/native";
 import type { Server as SocketServer } from "socket.io";
 import { getRouteContext } from "../context/request-context.mjs";
 import type { LithiaRequest, Params, Query } from "../server/request.mjs";
 import type { LithiaResponse } from "../server/response.mjs";
+import type { Route } from "../strategy/routes/index.mjs";
 
 /**
  * Retrieves the Lithia-wrapped request object.
  * @returns The current LithiaRequest instance.
  */
 export function useRequest(): LithiaRequest {
-  return getRouteContext().req;
+	return getRouteContext().req;
 }
 
 /**
@@ -24,7 +24,7 @@ export function useRequest(): LithiaRequest {
  * @returns The current LithiaResponse instance.
  */
 export function useResponse(): LithiaResponse {
-  return getRouteContext().res;
+	return getRouteContext().res;
 }
 
 /**
@@ -32,7 +32,7 @@ export function useResponse(): LithiaResponse {
  * @returns The Route object or undefined if no specific route was matched.
  */
 export function useRoute(): Route | undefined {
-  return getRouteContext().route;
+	return getRouteContext().route;
 }
 
 /**
@@ -40,7 +40,7 @@ export function useRoute(): Route | undefined {
  * @returns The URL pathname string.
  */
 export function usePathname(): string {
-  return getRouteContext().req.pathname;
+	return getRouteContext().req.pathname;
 }
 
 /**
@@ -49,7 +49,7 @@ export function usePathname(): string {
  * @returns The typed route parameters object.
  */
 export function useParams<T extends Params = Params>(): T {
-  return getRouteContext().req.params as T;
+	return getRouteContext().req.params as T;
 }
 
 /**
@@ -58,7 +58,7 @@ export function useParams<T extends Params = Params>(): T {
  * @returns The typed query parameters object.
  */
 export function useQuery<T extends Query = Query>(): T {
-  return getRouteContext().req.query as T;
+	return getRouteContext().req.query as T;
 }
 
 /**
@@ -66,7 +66,7 @@ export function useQuery<T extends Query = Query>(): T {
  * @returns The Node.js IncomingHttpHeaders object.
  */
 export function useHeaders(): IncomingHttpHeaders {
-  return getRouteContext().req.headers;
+	return getRouteContext().req.headers;
 }
 
 /**
@@ -75,5 +75,5 @@ export function useHeaders(): IncomingHttpHeaders {
  * @returns The SocketServer (io) instance.
  */
 export function useSocketServer(): SocketServer {
-  return getRouteContext().socketServer;
+	return getRouteContext().socketServer;
 }
