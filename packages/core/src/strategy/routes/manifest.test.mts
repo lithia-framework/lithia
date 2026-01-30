@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { version } from "../../meta.mjs";
+import type { FileInfo } from "../../scanner.mjs";
 import { RouteManifestGenerator } from "./manifest.mjs";
 
 vi.mock("node:fs/promises");
@@ -31,20 +32,36 @@ describe("RouteManifestGenerator", () => {
 
 	it("should filter routes correctly and generate a valid routes.json", async () => {
 		const outRoot = "/build";
-		const files = [
-			{
-				path: "app/routes/api/v1/route.get.ts",
-				fullPath: "/abs/app/routes/api/v1/route.get.ts",
-			},
-			{
-				path: "routes/users/[id]/route.post.ts",
-				fullPath: "/abs/routes/users/[id]/route.post.ts",
-			},
-			{
-				path: "src/utils/helper.ts",
-				fullPath: "/abs/helper.ts",
-			},
-		];
+		const files: FileInfo[] =
+			process.platform === "win32"
+				? [
+						{
+							path: "app/routes/api/v1/route.get.ts",
+							fullPath: "C:\\abs\\app\\routes\\api\\v1\\route.get.ts",
+						},
+						{
+							path: "routes/users/[id]/route.post.ts",
+							fullPath: "C:\\abs\\routes\\users\\[id]\\route.post.ts",
+						},
+						{
+							path: "src/utils/helper.ts",
+							fullPath: "C:\\abs\\helper.ts",
+						},
+					]
+				: [
+						{
+							path: "app/routes/api/v1/route.get.ts",
+							fullPath: "/abs/app/routes/api/v1/route.get.ts",
+						},
+						{
+							path: "routes/users/[id]/route.post.ts",
+							fullPath: "/abs/routes/users/[id]/route.post.ts",
+						},
+						{
+							path: "src/utils/helper.ts",
+							fullPath: "/abs/helper.ts",
+						},
+					];
 
 		const result = await generator.generateManifest(outRoot, files);
 

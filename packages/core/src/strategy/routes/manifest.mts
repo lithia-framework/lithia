@@ -44,7 +44,7 @@ export class RouteManifestGenerator {
 		const manifestPath = path.join(outRoot, "routes.json");
 
 		try {
-			await fs.mkdir(path.dirname(manifestPath), { recursive: true });
+			await fs.mkdir(outRoot, { recursive: true });
 			await fs.writeFile(
 				manifestPath,
 				JSON.stringify(manifest, null, 2),
