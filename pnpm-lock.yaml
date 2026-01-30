@@ -29,12 +29,13 @@ importers:
 
   packages/better-auth:
     dependencies:
-      '@lithia-js/core':
-        specifier: workspace:*
-        version: link:../core
       better-auth:
         specifier: ^1.4.17
         version: 1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0))
+    devDependencies:
+      '@lithia-js/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/cli:
     dependencies:
@@ -106,12 +107,13 @@ importers:
 
   packages/middlewares:
     dependencies:
-      '@lithia-js/core':
-        specifier: workspace:*
-        version: link:../core
       zod:
         specifier: ^4.2.1
         version: 4.3.6
+    devDependencies:
+      '@lithia-js/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/utils: {}
 
