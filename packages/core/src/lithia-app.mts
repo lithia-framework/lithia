@@ -1,9 +1,3 @@
-/**
- * @fileoverview Main Application Container for the Lithia Framework.
- * This class orchestrates the server, global middlewares, and dependency injection.
- * Designed to run exclusively within isolated worker threads for dev-mode stability.
- */
-
 import { isMainThread, workerData } from "node:worker_threads";
 import { logger } from "@lithia-js/utils";
 import type { LithiaOptions } from "./config.mjs";
@@ -18,16 +12,8 @@ import type { Event } from "./strategy/events/index.mjs";
 import type { Route } from "./strategy/routes/index.mjs";
 import type { Environment } from "./types.js";
 
-/**
- * Valid types for dependency injection keys.
- */
 export type InjectionKey<T> = symbol | string | { new (...args: any[]): T };
 
-/**
- * The core application instance.
- * Managed by the Lithia CLI, it encapsulates the configuration,
- * routing manifest, and server engine.
- */
 export class LithiaApp {
 	private readonly _environment: Environment;
 	private readonly _config: LithiaOptions;
@@ -40,10 +26,6 @@ export class LithiaApp {
 	private readonly _dependencies = new Map<any, any>();
 	private readonly _server: LithiaServer;
 
-	/**
-	 * Initializes the application container.
-	 * Validates the execution context to ensure it is running within a managed worker.
-	 */
 	constructor() {
 		this.validateExecutionContext();
 
@@ -55,8 +37,6 @@ export class LithiaApp {
 
 		this._server = new LithiaServer(this);
 	}
-
-	// --- Accessors ---
 
 	public get config(): LithiaOptions {
 		return this._config;
@@ -99,20 +79,10 @@ export class LithiaApp {
 		return lithiaContextStore.run(lithiaCtx, fn);
 	}
 
-	// --- Registry & Configuration ---
-
-	/**
-	 * Provides a dependency to the application-wide injection container.
-	 */
 	public provide<T>(key: InjectionKey<T>, value: T): void {
 		this._dependencies.set(key, value);
 	}
 
-	/**
-	 * Registers a global middleware for either HTTP routes or WebSocket events.
-	 * @param context The target stack ('route' or 'event').
-	 * @param middleware The middleware function to register.
-	 */
 	public use<K extends "route" | "event">(
 		context: K,
 		middleware: K extends "route" ? RouteMiddleware : EventMiddleware,
@@ -128,11 +98,6 @@ export class LithiaApp {
 		}
 	}
 
-	// --- Lifecycle Orchestration ---
-
-	/**
-	 * Starts the internal server and begins accepting connections.
-	 */
 	public async start(): Promise<void> {
 		this.executeOnce(() => logger.info("Starting Lithia server..."));
 
@@ -145,27 +110,16 @@ export class LithiaApp {
 		}
 	}
 
-	/**
-	 * Gracefully shuts down the application and its underlying server.
-	 */
 	public async stop(): Promise<void> {
 		await this._server.close();
 	}
-	// --- Internals ---
 
-	/**
-	 * Executes a callback only if this worker is designated as the primary worker.
-	 * Useful for preventing log duplication in multi-worker environments.
-	 */
-	private executeOnce(fn: () => void): void {
+  private executeOnce(fn: () => void): void {
 		if (this.isFirstApp) {
 			fn();
 		}
 	}
 
-	/**
-	 * Ensures the application is not running in the main thread and is managed by Lithia.
-	 */
 	private validateExecutionContext(): void {
 		if (isMainThread) {
 			throw new Error(

@@ -15,6 +15,6 @@
     "removeComments": false,
 		"forceConsistentCasingInFileNames": true,
 		"strictPropertyInitialization": false,
-		"types": ["node"]
+		"types": ["node", "vitest/globals"],
 	}
 }

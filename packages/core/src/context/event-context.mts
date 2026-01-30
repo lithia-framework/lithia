@@ -9,27 +9,14 @@ import type { Socket } from "socket.io";
 import { NotInEventContextError } from "../errors/internal/index.mjs";
 import type { Event } from "../strategy/events/index.mjs";
 
-/**
- * The structure of the data stored within the Event execution context.
- */
 export interface EventContext {
-	/** The raw data payload received from the client. */
 	data: any;
-	/** The active Socket.io instance for this specific connection. */
 	socket: Socket;
-	/** Metadata about the event being handled. */
 	event: Event;
 }
 
-/**
- * Global key to ensure the AsyncLocalStorage singleton persists even if
- * the module is re-imported or bundled multiple times.
- */
 const CONTEXT_GLOBAL_KEY = Symbol.for("lithia.event_context.v1");
 
-/**
- * Retrieves or initializes the global AsyncLocalStorage instance.
- */
 function getGlobalStore(): AsyncLocalStorage<EventContext> {
 	const globalAny = globalThis as any;
 	if (!globalAny[CONTEXT_GLOBAL_KEY]) {
@@ -38,16 +25,8 @@ function getGlobalStore(): AsyncLocalStorage<EventContext> {
 	return globalAny[CONTEXT_GLOBAL_KEY];
 }
 
-/**
- * The internal store instance used by the framework to track event execution.
- */
 export const eventContextStore = getGlobalStore();
 
-/**
- * Accesses the current event context.
- * * @returns The active EventContext object.
- * @throws {NotInEventContextError} If called outside of an active event execution scope.
- */
 export function getEventContext(): EventContext {
 	const ctx = eventContextStore.getStore();
 	if (!ctx) {
@@ -56,10 +35,6 @@ export function getEventContext(): EventContext {
 	return ctx;
 }
 
-/**
- * Helper to run a callback within a specific event context.
- * * @internal
- */
 export function runInEventContext<T>(context: EventContext, fn: () => T): T {
 	return eventContextStore.run(context, fn);
 }

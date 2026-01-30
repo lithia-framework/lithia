@@ -5,5 +5,11 @@
 		"outDir": "dist"
 	},
 	"include": ["**/*"],
-	"exclude": ["node_modules", "dist", "tests", "**/*.spec.mts"]
+	"exclude": [
+		"node_modules",
+		"dist",
+		"tests",
+		"**/*.test.mts",
+		"vitest.config.ts"
+	]
 }

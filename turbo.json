@@ -6,7 +6,7 @@
       "outputs": ["dist/**"]
     },
     "test": {
-      "dependsOn": ["build"]
+      "cache": false
     },
     "check": {
       "cache": true
