@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/core",
-	"version": "1.0.0-canary.14",
+	"version": "1.0.0-canary.15",
 	"private": false,
 	"type": "module",
 	"author": "Lucas Arch <luketsx@icloud.com>",
