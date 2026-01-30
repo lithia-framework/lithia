@@ -1,5 +1,11 @@
 # @lithia-js/utils
 
+## 1.0.0-canary.17
+
+### Patch Changes
+
+- 61aff72: Fixed dynamic generated lithia types
+
 ## 1.0.0-canary.16
 
 ### Patch Changes
