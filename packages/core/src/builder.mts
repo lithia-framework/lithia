@@ -4,13 +4,17 @@
  * and manifest generation for framework domains.
  */
 
-import fs from "node:fs/promises";
+import fs, { rm } from "node:fs/promises";
 import path from "node:path";
 import * as swc from "@swc/core";
 import { type FileInfo, FileScanner } from "./scanner.mjs";
 import { EventManifestGenerator } from "./strategy/events/manifest.mjs";
 import { FunctionManifestGenerator } from "./strategy/functions/manifest.mjs";
 import { RouteManifestGenerator } from "./strategy/routes/manifest.mjs";
+import {
+	type GeneratorRegistry,
+	generateLithiaTypes,
+} from "./types-generation.mjs";
 
 export interface BuildConfig {
 	/** Source directory (e.g., "src" or project root). */
@@ -36,6 +40,8 @@ export class Builder {
 	 * Runs the full compilation pipeline: Scan -> Transpile (SWC) -> Manifest.
 	 */
 	public async build(config: BuildConfig): Promise<void> {
+		await rm(config.outRoot, { recursive: true, force: true });
+
 		// 1. Full Project Scan
 		// We scan the entire sourceDir to get everything that needs compilation
 		const allFiles = await this.scanner.scanDir([config.sourceDir], {
@@ -66,11 +72,40 @@ export class Builder {
 
 		// 3. Manifest Phase
 		// Use the metadata from scanned files to generate manifests in the outRoot
-		await Promise.all([
+		// 3. Manifest Phase
+		const [_, events, functions] = await Promise.all([
 			this.routeGenerator.generateManifest(config.outRoot, distFiles),
 			this.eventGenerator.generateManifest(config.outRoot, distFiles),
 			this.functionGenerator.generateManifest(config.outRoot, distFiles),
 		]);
+
+		// 4. Registry Mapping (Prepara dados para o gerador de tipos)
+		const registry: GeneratorRegistry = {};
+
+		if (functions?.functions) {
+			registry.functions = functions.functions.map((f) => ({
+				identifier: f.id,
+				// Buscamos o arquivo original (.ts) para que o "Go to Definition" funcione no VS Code
+				filePath:
+					allFiles.find((file) => file.fullPath.includes(f.id))?.fullPath ||
+					f.filePath,
+			}));
+		}
+
+		if (events?.events) {
+			registry.events = events.events.map((e) => ({
+				identifier: e.name,
+				filePath:
+					allFiles.find((file) => file.fullPath.includes(e.name))?.fullPath ||
+					e.filePath,
+			}));
+		}
+
+		// 5. Generate Types in .lithia/
+		if (Object.keys(registry).length > 0) {
+			// Passamos o diretório atual do processo (raiz do projeto)
+			await generateLithiaTypes(process.cwd(), registry);
+		}
 	}
 
 	/**

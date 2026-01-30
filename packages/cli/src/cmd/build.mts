@@ -59,6 +59,7 @@ const build = defineCommand({
 			// Post-write operations: Loading metadata and setting permissions
 			await lithia.loadRoutes();
 			await lithia.loadEvents();
+      await lithia.loadFunctions();
 
 			// Ensure the entry point is executable (0o755: rwxr-xr-x)
 			await chmod(entryPath, 0o755);
@@ -73,6 +74,7 @@ const build = defineCommand({
 		// Output visual representation of the application structure
 		lithia.printRouteTree();
 		lithia.printEventTree();
+    lithia.printFunctionTree();
 	},
 });
 

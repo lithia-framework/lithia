@@ -49,8 +49,18 @@ export type AppToHostEvent =
 	  };
 
 export type HostToAppEvent =
-	| { type: "invoke_success"; functionId: string; result: any }
-	| { type: "invoke_error"; functionId: string; error: string };
+	| {
+			type: "invoke_success";
+			functionId: string;
+			result: any;
+			requestId?: string;
+	  }
+	| {
+			type: "invoke_error";
+			functionId: string;
+			error: string;
+			requestId?: string;
+	  };
 
 /**
  * The LithiaHost acts as the process manager.
@@ -398,7 +408,7 @@ export class LithiaHost {
 	/** Prints the visual tree of HTTP routes. */
 	public printRouteTree(): void {
 		this.printTree(
-			"Route",
+			"Routes",
 			this.routes,
 			(r) => `${(r.method || "all").toUpperCase()} ${r.path}`,
 			(r) => (r.dynamic ? "ƒ" : "○"),
@@ -408,7 +418,7 @@ export class LithiaHost {
 	/** Prints the visual tree of WebSocket events. */
 	public printEventTree(): void {
 		this.printTree(
-			"Event",
+			"Events",
 			this.events,
 			(e) => e.name,
 			() => "λ",
@@ -418,10 +428,10 @@ export class LithiaHost {
 	/** Prints the visual tree of background functions (Cron/Task). */
 	public printFunctionTree(): void {
 		this.printTree(
-			"Function",
+			"Functions",
 			this.functions,
-			(f) => `${f.id} (${f.trigger})`,
-			(f) => (f.trigger === "CRON" ? "⌚" : "⚙️"),
+			(f) => `${f.id}`,
+			(f) => (f.trigger === "CRON" ? "⧖" : "⚙"),
 		);
 	}
 
@@ -435,7 +445,7 @@ export class LithiaHost {
 		symbolFn: (i: T) => string,
 	): void {
 		if (items.length === 0) return;
-		console.log(`\n\x1b[4m${label} Tree:\x1b[0m`);
+		console.log(`\n\x1b[4m${label}:\x1b[0m`);
 		items.forEach((item, idx) => {
 			const isLast = idx === items.length - 1;
 			const branch = isLast ? "└" : "├";
