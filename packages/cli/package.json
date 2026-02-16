@@ -40,7 +40,7 @@
 	"dependencies": {
 		"@lithia-js/core": "workspace:*",
 		"@lithia-js/utils": "workspace:*",
-		"citty": "^0.2.0",
+		"citty": "^0.2.1",
 		"chokidar": "^5.0.0"
 	},
 	"publishConfig": {

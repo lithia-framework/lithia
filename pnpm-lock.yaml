@@ -52,8 +52,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       citty:
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.2.1
+        version: 0.2.1
 
   packages/core:
     dependencies:
@@ -98,8 +98,8 @@ importers:
   packages/create-lithia:
     dependencies:
       citty:
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.2.1
+        version: 0.2.1
       prompts:
         specifier: ^2.4.2
         version: 2.4.2
@@ -119,62 +119,6 @@ importers:
         version: link:../core
 
   packages/utils: {}
-
-  templates/starter:
-    dependencies:
-      '@lithia-js/core':
-        specifier: file:../../packages/core
-        version: file:packages/core
-    devDependencies:
-      '@biomejs/biome':
-        specifier: ^2.3.13
-        version: 2.3.13
-      '@lithia-js/cli':
-        specifier: file:../../packages/cli
-        version: file:packages/cli
-      '@types/node':
-        specifier: ^25.1.0
-        version: 25.1.0
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  templates/with-better-auth:
-    dependencies:
-      '@lithia-js/better-auth':
-        specifier: file:../../packages/better-auth
-        version: file:packages/better-auth(@lithia-js/core@file:packages/core)(better-auth@1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0)))
-      '@lithia-js/core':
-        specifier: file:../../packages/core
-        version: file:packages/core
-      better-auth:
-        specifier: ^1.4.17
-        version: 1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0))
-      drizzle-orm:
-        specifier: ^0.45.1
-        version: 0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2)
-      pg:
-        specifier: ^8.13.1
-        version: 8.17.2
-    devDependencies:
-      '@biomejs/biome':
-        specifier: ^2.3.13
-        version: 2.3.13
-      '@lithia-js/cli':
-        specifier: file:../../packages/cli
-        version: file:packages/cli
-      '@types/node':
-        specifier: ^25.1.0
-        version: 25.1.0
-      '@types/pg':
-        specifier: ^8.11.10
-        version: 8.16.0
-      drizzle-kit:
-        specifier: ^0.31.8
-        version: 0.31.8
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
 
 packages:
 
@@ -778,22 +722,6 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
-  '@lithia-js/better-auth@file:packages/better-auth':
-    resolution: {directory: packages/better-auth, type: directory}
-    engines: {node: '>=20'}
-    peerDependencies:
-      '@lithia-js/core': workspace:*
-      better-auth: ^1.4.17
-
-  '@lithia-js/cli@file:packages/cli':
-    resolution: {directory: packages/cli, type: directory}
-    engines: {node: '>=20'}
-    hasBin: true
-
-  '@lithia-js/core@file:packages/core':
-    resolution: {directory: packages/core, type: directory}
-    engines: {node: '>=20'}
-
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
 
@@ -1260,8 +1188,8 @@ packages:
   citty@0.1.6:
     resolution: {integrity: sha512-tskPPKEs8D2KPafUypv2gxwJP8h/OaJmC82QQGGDQcHvXX43xF2VDACcJVmZ0EuSxkpO9Kc4MlrA3q0+FG58AQ==}
 
-  citty@0.2.0:
-    resolution: {integrity: sha512-8csy5IBFI2ex2hTVpaHN2j+LNE199AgiI7y4dMintrr8i0lQiFn+0AWMZrWdHKIgMOer65f8IThysYhoReqjWA==}
+  citty@0.2.1:
+    resolution: {integrity: sha512-kEV95lFBhQgtogAPlQfJJ0WGVSokvLr/UEoFPiKKOXF7pl98HfUVUD0ejsuTCld/9xH9vogSywZ5KqHzXrZpqg==}
 
   confbox@0.2.2:
     resolution: {integrity: sha512-1NB+BKqhtNipMsov4xI/NnhCKp9XG9NamYp5PVm9klAT0fsrNPjaFICsCFhNhwZJKNh7zB/3q8qXz0E9oaMNtQ==}
@@ -2408,17 +2336,20 @@ snapshots:
       human-id: 4.1.3
       prettier: 2.8.8
 
-  '@drizzle-team/brocli@0.10.2': {}
+  '@drizzle-team/brocli@0.10.2':
+    optional: true
 
   '@esbuild-kit/core-utils@3.3.2':
     dependencies:
       esbuild: 0.18.20
       source-map-support: 0.5.21
+    optional: true
 
   '@esbuild-kit/esm-loader@2.6.5':
     dependencies:
       '@esbuild-kit/core-utils': 3.3.2
       get-tsconfig: 4.13.0
+    optional: true
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
@@ -2651,37 +2582,6 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
-  '@lithia-js/better-auth@file:packages/better-auth(@lithia-js/core@file:packages/core)(better-auth@1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0)))':
-    dependencies:
-      '@lithia-js/core': file:packages/core
-      better-auth: 1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0))
-
-  '@lithia-js/cli@file:packages/cli':
-    dependencies:
-      '@lithia-js/core': link:packages/core
-      '@lithia-js/utils': link:packages/utils
-      chokidar: 5.0.0
-      citty: 0.2.0
-
-  '@lithia-js/core@file:packages/core':
-    dependencies:
-      '@lithia-js/utils': link:packages/utils
-      '@swc/core': 1.15.11
-      busboy: 1.6.0
-      c12: 3.3.3
-      cookie: 1.1.1
-      fast-glob: 3.3.3
-      klona: 2.0.6
-      socket.io: 4.8.3
-      source-map-support: 0.5.21
-      zod: 4.3.6
-    transitivePeerDependencies:
-      - '@swc/helpers'
-      - bufferutil
-      - magicast
-      - supports-color
-      - utf-8-validate
-
   '@manypkg/find-root@1.1.0':
     dependencies:
       '@babel/runtime': 7.28.6
@@ -2883,6 +2783,7 @@ snapshots:
       '@types/node': 25.1.0
       pg-protocol: 1.11.0
       pg-types: 2.2.0
+    optional: true
 
   '@types/prompts@2.4.9':
     dependencies:
@@ -3057,7 +2958,7 @@ snapshots:
     dependencies:
       consola: 3.4.2
 
-  citty@0.2.0: {}
+  citty@0.2.1: {}
 
   confbox@0.2.2: {}
 
@@ -3113,6 +3014,7 @@ snapshots:
       esbuild-register: 3.6.0(esbuild@0.25.12)
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2):
     optionalDependencies:
@@ -3122,6 +3024,7 @@ snapshots:
       gel: 2.2.0
       kysely: 0.28.10
       pg: 8.17.2
+    optional: true
 
   end-of-stream@1.4.5:
     dependencies:
@@ -3162,6 +3065,7 @@ snapshots:
       esbuild: 0.25.12
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   esbuild@0.18.20:
     optionalDependencies:
@@ -3187,6 +3091,7 @@ snapshots:
       '@esbuild/win32-arm64': 0.18.20
       '@esbuild/win32-ia32': 0.18.20
       '@esbuild/win32-x64': 0.18.20
+    optional: true
 
   esbuild@0.25.12:
     optionalDependencies:
@@ -3216,6 +3121,7 @@ snapshots:
       '@esbuild/win32-arm64': 0.25.12
       '@esbuild/win32-ia32': 0.25.12
       '@esbuild/win32-x64': 0.25.12
+    optional: true
 
   esbuild@0.27.2:
     optionalDependencies:
@@ -3463,7 +3369,7 @@ snapshots:
 
   nypm@0.6.4:
     dependencies:
-      citty: 0.2.0
+      citty: 0.2.1
       pathe: 2.0.3
       tinyexec: 1.0.2
 
@@ -3513,15 +3419,19 @@ snapshots:
   pg-cloudflare@1.3.0:
     optional: true
 
-  pg-connection-string@2.10.1: {}
+  pg-connection-string@2.10.1:
+    optional: true
 
-  pg-int8@1.0.1: {}
+  pg-int8@1.0.1:
+    optional: true
 
   pg-pool@3.11.0(pg@8.17.2):
     dependencies:
       pg: 8.17.2
+    optional: true
 
-  pg-protocol@1.11.0: {}
+  pg-protocol@1.11.0:
+    optional: true
 
   pg-types@2.2.0:
     dependencies:
@@ -3530,6 +3440,7 @@ snapshots:
       postgres-bytea: 1.0.1
       postgres-date: 1.0.7
       postgres-interval: 1.2.0
+    optional: true
 
   pg@8.17.2:
     dependencies:
@@ -3540,10 +3451,12 @@ snapshots:
       pgpass: 1.0.5
     optionalDependencies:
       pg-cloudflare: 1.3.0
+    optional: true
 
   pgpass@1.0.5:
     dependencies:
       split2: 4.2.0
+    optional: true
 
   picocolors@1.1.1: {}
 
@@ -3565,15 +3478,19 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postgres-array@2.0.0: {}
+  postgres-array@2.0.0:
+    optional: true
 
-  postgres-bytea@1.0.1: {}
+  postgres-bytea@1.0.1:
+    optional: true
 
-  postgres-date@1.0.7: {}
+  postgres-date@1.0.7:
+    optional: true
 
   postgres-interval@1.2.0:
     dependencies:
       xtend: 4.0.2
+    optional: true
 
   prebuild-install@7.1.3:
     dependencies:
@@ -3760,7 +3677,8 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
-  split2@4.2.0: {}
+  split2@4.2.0:
+    optional: true
 
   sprintf-js@1.0.3: {}
 
@@ -3940,6 +3858,7 @@ snapshots:
 
   ws@8.18.3: {}
 
-  xtend@4.0.2: {}
+  xtend@4.0.2:
+    optional: true
 
   zod@4.3.6: {}
