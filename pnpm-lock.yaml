@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@biomejs/biome':
-        specifier: 2.3.13
-        version: 2.3.13
+        specifier: 2.4.1
+        version: 2.4.1
       '@changesets/cli':
         specifier: ^2.29.8
         version: 2.29.8(@types/node@25.1.0)
@@ -120,62 +120,6 @@ importers:
 
   packages/utils: {}
 
-  templates/starter:
-    dependencies:
-      '@lithia-js/core':
-        specifier: file:../../packages/core
-        version: file:packages/core
-    devDependencies:
-      '@biomejs/biome':
-        specifier: ^2.3.13
-        version: 2.3.13
-      '@lithia-js/cli':
-        specifier: file:../../packages/cli
-        version: file:packages/cli
-      '@types/node':
-        specifier: ^25.1.0
-        version: 25.1.0
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
-  templates/with-better-auth:
-    dependencies:
-      '@lithia-js/better-auth':
-        specifier: file:../../packages/better-auth
-        version: file:packages/better-auth(@lithia-js/core@file:packages/core)(better-auth@1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0)))
-      '@lithia-js/core':
-        specifier: file:../../packages/core
-        version: file:packages/core
-      better-auth:
-        specifier: ^1.4.17
-        version: 1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0))
-      drizzle-orm:
-        specifier: ^0.45.1
-        version: 0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2)
-      pg:
-        specifier: ^8.13.1
-        version: 8.17.2
-    devDependencies:
-      '@biomejs/biome':
-        specifier: ^2.3.13
-        version: 2.3.13
-      '@lithia-js/cli':
-        specifier: file:../../packages/cli
-        version: file:packages/cli
-      '@types/node':
-        specifier: ^25.1.0
-        version: 25.1.0
-      '@types/pg':
-        specifier: ^8.11.10
-        version: 8.16.0
-      drizzle-kit:
-        specifier: ^0.31.8
-        version: 0.31.8
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
 packages:
 
   '@babel/runtime@7.28.6':
@@ -203,55 +147,55 @@ packages:
   '@better-fetch/fetch@1.1.21':
     resolution: {integrity: sha512-/ImESw0sskqlVR94jB+5+Pxjf+xBwDZF/N5+y2/q4EqD7IARUTSpPfIo8uf39SYpCxyOCtbyYpUrZ3F/k0zT4A==}
 
-  '@biomejs/biome@2.3.13':
-    resolution: {integrity: sha512-Fw7UsV0UAtWIBIm0M7g5CRerpu1eKyKAXIazzxhbXYUyMkwNrkX/KLkGI7b+uVDQ5cLUMfOC9vR60q9IDYDstA==}
+  '@biomejs/biome@2.4.1':
+    resolution: {integrity: sha512-8c5DZQl1hfpLRlTZ21W5Ef2R314E4UJUEtkMbo303ElTVe6fYtapwldv7tZlgwm+9YP0Mhk7dUSTkOY8nQ2/2w==}
     engines: {node: '>=14.21.3'}
     hasBin: true
 
-  '@biomejs/cli-darwin-arm64@2.3.13':
-    resolution: {integrity: sha512-0OCwP0/BoKzyJHnFdaTk/i7hIP9JHH9oJJq6hrSCPmJPo8JWcJhprK4gQlhFzrwdTBAW4Bjt/RmCf3ZZe59gwQ==}
+  '@biomejs/cli-darwin-arm64@2.4.1':
+    resolution: {integrity: sha512-wKiX2znbgFRaivRplSbu53hiREp1ohlGRuWqOL90IPetLi5E32tkiMYu8uSLXVzDgbIVM58WsesPaczIVtJkOQ==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [darwin]
 
-  '@biomejs/cli-darwin-x64@2.3.13':
-    resolution: {integrity: sha512-AGr8OoemT/ejynbIu56qeil2+F2WLkIjn2d8jGK1JkchxnMUhYOfnqc9sVzcRxpG9Ycvw4weQ5sprRvtb7Yhcw==}
+  '@biomejs/cli-darwin-x64@2.4.1':
+    resolution: {integrity: sha512-rxLYVg3skeXh9K0om7JdkKcCdvtqrF9ECZ7dsmLuYObboK7DZ1J0z6xc2NGKSXw+cEQo3ie6NQgWBcdGJ16yQg==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [darwin]
 
-  '@biomejs/cli-linux-arm64-musl@2.3.13':
-    resolution: {integrity: sha512-TUdDCSY+Eo/EHjhJz7P2GnWwfqet+lFxBZzGHldrvULr59AgahamLs/N85SC4+bdF86EhqDuuw9rYLvLFWWlXA==}
+  '@biomejs/cli-linux-arm64-musl@2.4.1':
+    resolution: {integrity: sha512-Brwh/QL3wfX5UyZcyEamS1Q+EF8Q7ud+MS5mq/9BWX2ArfxQlgsqlukwK92xrGpXWcspXkSG9U0CoxvCZZkTKQ==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
 
-  '@biomejs/cli-linux-arm64@2.3.13':
-    resolution: {integrity: sha512-xvOiFkrDNu607MPMBUQ6huHmBG1PZLOrqhtK6pXJW3GjfVqJg0Z/qpTdhXfcqWdSZHcT+Nct2fOgewZvytESkw==}
+  '@biomejs/cli-linux-arm64@2.4.1':
+    resolution: {integrity: sha512-nlGO5KzoEKhGj2i3QXyyNCeFk8SVwyes0wo0/X9w943darnlAHfi8MYYunPf8lsz5C0JaH6pJYB6D9HnDwUPQA==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
 
-  '@biomejs/cli-linux-x64-musl@2.3.13':
-    resolution: {integrity: sha512-0bdwFVSbbM//Sds6OjtnmQGp4eUjOTt6kHvR/1P0ieR9GcTUAlPNvPC3DiavTqq302W34Ae2T6u5VVNGuQtGlQ==}
+  '@biomejs/cli-linux-x64-musl@2.4.1':
+    resolution: {integrity: sha512-kz1QpA+PXouNyWw2VzeoMlzMn99hlyOC/El2uSy+DS8gcb6tOsKEeZ5e2onnFIfZKe9AeKMFbTowDNLXwjwGjw==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
 
-  '@biomejs/cli-linux-x64@2.3.13':
-    resolution: {integrity: sha512-s+YsZlgiXNq8XkgHs6xdvKDFOj/bwTEevqEY6rC2I3cBHbxXYU1LOZstH3Ffw9hE5tE1sqT7U23C00MzkXztMw==}
+  '@biomejs/cli-linux-x64@2.4.1':
+    resolution: {integrity: sha512-Rmhm/mQ/3pejy1WtWLKurV1fN6zvCrqKz/ART2ZzgqY4ozL07uys5R9jA0A+yLjA79JTkcpIe85ygXv0FnSPRg==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
 
-  '@biomejs/cli-win32-arm64@2.3.13':
-    resolution: {integrity: sha512-QweDxY89fq0VvrxME+wS/BXKmqMrOTZlN9SqQ79kQSIc3FrEwvW/PvUegQF6XIVaekncDykB5dzPqjbwSKs9DA==}
+  '@biomejs/cli-win32-arm64@2.4.1':
+    resolution: {integrity: sha512-e+PrlbQ/tez7W9EAzzCGUH1ovq31kR5r8sfCDzasrmoADLnDafet8pA8LdXnt0GwkeOem5Hz6WHCVZPRmaXiXw==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [win32]
 
-  '@biomejs/cli-win32-x64@2.3.13':
-    resolution: {integrity: sha512-trDw2ogdM2lyav9WFQsdsfdVy1dvZALymRpgmWsvSez0BJzBjulhOT/t+wyKeh3pZWvwP3VMs1SoOKwO3wecMQ==}
+  '@biomejs/cli-win32-x64@2.4.1':
+    resolution: {integrity: sha512-kfjOCzvaHC7olg8pmEuSsYzHntxdipkAGzr5nFiaEU2EPDWRE/myqUBaFDl9pHqEc8yEtQFiXF945PlTSkuOTw==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
@@ -777,22 +721,6 @@ packages:
 
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
-
-  '@lithia-js/better-auth@file:packages/better-auth':
-    resolution: {directory: packages/better-auth, type: directory}
-    engines: {node: '>=20'}
-    peerDependencies:
-      '@lithia-js/core': workspace:*
-      better-auth: ^1.4.17
-
-  '@lithia-js/cli@file:packages/cli':
-    resolution: {directory: packages/cli, type: directory}
-    engines: {node: '>=20'}
-    hasBin: true
-
-  '@lithia-js/core@file:packages/core':
-    resolution: {directory: packages/core, type: directory}
-    engines: {node: '>=20'}
 
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
@@ -2229,39 +2157,39 @@ snapshots:
 
   '@better-fetch/fetch@1.1.21': {}
 
-  '@biomejs/biome@2.3.13':
+  '@biomejs/biome@2.4.1':
     optionalDependencies:
-      '@biomejs/cli-darwin-arm64': 2.3.13
-      '@biomejs/cli-darwin-x64': 2.3.13
-      '@biomejs/cli-linux-arm64': 2.3.13
-      '@biomejs/cli-linux-arm64-musl': 2.3.13
-      '@biomejs/cli-linux-x64': 2.3.13
-      '@biomejs/cli-linux-x64-musl': 2.3.13
-      '@biomejs/cli-win32-arm64': 2.3.13
-      '@biomejs/cli-win32-x64': 2.3.13
+      '@biomejs/cli-darwin-arm64': 2.4.1
+      '@biomejs/cli-darwin-x64': 2.4.1
+      '@biomejs/cli-linux-arm64': 2.4.1
+      '@biomejs/cli-linux-arm64-musl': 2.4.1
+      '@biomejs/cli-linux-x64': 2.4.1
+      '@biomejs/cli-linux-x64-musl': 2.4.1
+      '@biomejs/cli-win32-arm64': 2.4.1
+      '@biomejs/cli-win32-x64': 2.4.1
 
-  '@biomejs/cli-darwin-arm64@2.3.13':
+  '@biomejs/cli-darwin-arm64@2.4.1':
     optional: true
 
-  '@biomejs/cli-darwin-x64@2.3.13':
+  '@biomejs/cli-darwin-x64@2.4.1':
     optional: true
 
-  '@biomejs/cli-linux-arm64-musl@2.3.13':
+  '@biomejs/cli-linux-arm64-musl@2.4.1':
     optional: true
 
-  '@biomejs/cli-linux-arm64@2.3.13':
+  '@biomejs/cli-linux-arm64@2.4.1':
     optional: true
 
-  '@biomejs/cli-linux-x64-musl@2.3.13':
+  '@biomejs/cli-linux-x64-musl@2.4.1':
     optional: true
 
-  '@biomejs/cli-linux-x64@2.3.13':
+  '@biomejs/cli-linux-x64@2.4.1':
     optional: true
 
-  '@biomejs/cli-win32-arm64@2.3.13':
+  '@biomejs/cli-win32-arm64@2.4.1':
     optional: true
 
-  '@biomejs/cli-win32-x64@2.3.13':
+  '@biomejs/cli-win32-x64@2.4.1':
     optional: true
 
   '@changesets/apply-release-plan@7.0.14':
@@ -2408,17 +2336,20 @@ snapshots:
       human-id: 4.1.3
       prettier: 2.8.8
 
-  '@drizzle-team/brocli@0.10.2': {}
+  '@drizzle-team/brocli@0.10.2':
+    optional: true
 
   '@esbuild-kit/core-utils@3.3.2':
     dependencies:
       esbuild: 0.18.20
       source-map-support: 0.5.21
+    optional: true
 
   '@esbuild-kit/esm-loader@2.6.5':
     dependencies:
       '@esbuild-kit/core-utils': 3.3.2
       get-tsconfig: 4.13.0
+    optional: true
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
@@ -2651,37 +2582,6 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
-  '@lithia-js/better-auth@file:packages/better-auth(@lithia-js/core@file:packages/core)(better-auth@1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0)))':
-    dependencies:
-      '@lithia-js/core': file:packages/core
-      better-auth: 1.4.17(@prisma/client@5.22.0)(better-sqlite3@12.6.2)(drizzle-kit@0.31.8)(drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2))(pg@8.17.2)(vitest@4.0.18(@types/node@25.1.0)(jiti@2.6.1)(tsx@4.21.0))
-
-  '@lithia-js/cli@file:packages/cli':
-    dependencies:
-      '@lithia-js/core': link:packages/core
-      '@lithia-js/utils': link:packages/utils
-      chokidar: 5.0.0
-      citty: 0.2.0
-
-  '@lithia-js/core@file:packages/core':
-    dependencies:
-      '@lithia-js/utils': link:packages/utils
-      '@swc/core': 1.15.11
-      busboy: 1.6.0
-      c12: 3.3.3
-      cookie: 1.1.1
-      fast-glob: 3.3.3
-      klona: 2.0.6
-      socket.io: 4.8.3
-      source-map-support: 0.5.21
-      zod: 4.3.6
-    transitivePeerDependencies:
-      - '@swc/helpers'
-      - bufferutil
-      - magicast
-      - supports-color
-      - utf-8-validate
-
   '@manypkg/find-root@1.1.0':
     dependencies:
       '@babel/runtime': 7.28.6
@@ -2883,6 +2783,7 @@ snapshots:
       '@types/node': 25.1.0
       pg-protocol: 1.11.0
       pg-types: 2.2.0
+    optional: true
 
   '@types/prompts@2.4.9':
     dependencies:
@@ -3113,6 +3014,7 @@ snapshots:
       esbuild-register: 3.6.0(esbuild@0.25.12)
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   drizzle-orm@0.45.1(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(gel@2.2.0)(kysely@0.28.10)(pg@8.17.2):
     optionalDependencies:
@@ -3122,6 +3024,7 @@ snapshots:
       gel: 2.2.0
       kysely: 0.28.10
       pg: 8.17.2
+    optional: true
 
   end-of-stream@1.4.5:
     dependencies:
@@ -3162,6 +3065,7 @@ snapshots:
       esbuild: 0.25.12
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   esbuild@0.18.20:
     optionalDependencies:
@@ -3187,6 +3091,7 @@ snapshots:
       '@esbuild/win32-arm64': 0.18.20
       '@esbuild/win32-ia32': 0.18.20
       '@esbuild/win32-x64': 0.18.20
+    optional: true
 
   esbuild@0.25.12:
     optionalDependencies:
@@ -3216,6 +3121,7 @@ snapshots:
       '@esbuild/win32-arm64': 0.25.12
       '@esbuild/win32-ia32': 0.25.12
       '@esbuild/win32-x64': 0.25.12
+    optional: true
 
   esbuild@0.27.2:
     optionalDependencies:
@@ -3513,15 +3419,19 @@ snapshots:
   pg-cloudflare@1.3.0:
     optional: true
 
-  pg-connection-string@2.10.1: {}
+  pg-connection-string@2.10.1:
+    optional: true
 
-  pg-int8@1.0.1: {}
+  pg-int8@1.0.1:
+    optional: true
 
   pg-pool@3.11.0(pg@8.17.2):
     dependencies:
       pg: 8.17.2
+    optional: true
 
-  pg-protocol@1.11.0: {}
+  pg-protocol@1.11.0:
+    optional: true
 
   pg-types@2.2.0:
     dependencies:
@@ -3530,6 +3440,7 @@ snapshots:
       postgres-bytea: 1.0.1
       postgres-date: 1.0.7
       postgres-interval: 1.2.0
+    optional: true
 
   pg@8.17.2:
     dependencies:
@@ -3540,10 +3451,12 @@ snapshots:
       pgpass: 1.0.5
     optionalDependencies:
       pg-cloudflare: 1.3.0
+    optional: true
 
   pgpass@1.0.5:
     dependencies:
       split2: 4.2.0
+    optional: true
 
   picocolors@1.1.1: {}
 
@@ -3565,15 +3478,19 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postgres-array@2.0.0: {}
+  postgres-array@2.0.0:
+    optional: true
 
-  postgres-bytea@1.0.1: {}
+  postgres-bytea@1.0.1:
+    optional: true
 
-  postgres-date@1.0.7: {}
+  postgres-date@1.0.7:
+    optional: true
 
   postgres-interval@1.2.0:
     dependencies:
       xtend: 4.0.2
+    optional: true
 
   prebuild-install@7.1.3:
     dependencies:
@@ -3760,7 +3677,8 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
-  split2@4.2.0: {}
+  split2@4.2.0:
+    optional: true
 
   sprintf-js@1.0.3: {}
 
@@ -3940,6 +3858,7 @@ snapshots:
 
   ws@8.18.3: {}
 
-  xtend@4.0.2: {}
+  xtend@4.0.2:
+    optional: true
 
   zod@4.3.6: {}
