@@ -50,7 +50,7 @@
 	},
 	"dependencies": {
 		"@lithia-js/utils": "workspace:*",
-		"@swc/core": "^1.15.11",
+		"@swc/core": "^1.15.13",
 		"busboy": "^1.6.0",
 		"c12": "^3.3.3",
 		"cookie": "^1.1.1",
