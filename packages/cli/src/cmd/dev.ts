@@ -9,30 +9,7 @@ import { HostSupervisor } from "@lithia-js/core/_";
 import { logger } from "@lithia-js/utils";
 import chokidar from "chokidar";
 import { defineCommand } from "citty";
-
-/**
- * Creates a debounced version of an asynchronous function.
- * * @template T - A function returning void or a Promise of void.
- * @param {T} fn - The function to debounce.
- * @param {number} [delay=180] - Delay in milliseconds.
- * @returns {() => void} A debounced wrapper function.
- */
-const debounce = <T extends () => Promise<void> | void>(
-	fn: T,
-	delay: number = 180,
-): (() => void) => {
-	let timer: NodeJS.Timeout | null = null;
-	return () => {
-		if (timer) clearTimeout(timer);
-		timer = setTimeout(() => {
-			timer = null;
-			const result = fn();
-			if (result instanceof Promise) {
-				result.catch(logger.error);
-			}
-		}, delay);
-	};
-};
+import { type DevChangeBatch, DevLifecycleScheduler } from "./dev-scheduler";
 
 const dev = defineCommand({
 	meta: {
@@ -46,31 +23,33 @@ const dev = defineCommand({
 
 		// 1. Initial Host Setup
 		await lithia.setup();
-		await lithia.build();
+		const initialBuildSucceeded = await lithia.build();
+		const lifecycleState = {
+			hasReloadableArtifacts: initialBuildSucceeded,
+		};
 
-		try {
-			await lithia.start();
-		} catch {
-			logger.error("Failed to start the development server.");
+		if (initialBuildSucceeded) {
+			try {
+				await lithia.start();
+			} catch {
+				logger.error("Failed to start the development server.");
+			}
+		} else {
+			logger.warn(
+				"Initial build failed. Waiting for file changes while continuing to serve nothing.",
+			);
 		}
 
-		// 2. Define Hot-Reload Actions
-		const performRebuild = debounce(async () => {
-			await lithia.build();
-			await lithia.reload();
-		});
-
-		const performConfigReload = debounce(async () => {
-			logger.info("Configuration updated. Refreshing host...");
-			await lithia.loadConfig();
-			await lithia.reload();
-		});
-
-		const performEnvReload = debounce(async () => {
-			logger.info("Environment variables updated. Refreshing host...");
-			await lithia.loadEnv();
-			await lithia.reload();
-		});
+		// 2. Define the serialized dev lifecycle
+		const scheduler = new DevLifecycleScheduler(
+			async (batch) => {
+				await processDevBatch(lithia, batch, lifecycleState);
+			},
+			180,
+			(error) => {
+				logger.error("Dev lifecycle failed:", error);
+			},
+		);
 
 		// 3. Source Code Watcher
 		const srcWatcher = chokidar.watch(join(cwd, "src"), {
@@ -81,7 +60,7 @@ const dev = defineCommand({
 
 		srcWatcher.on("all", (event) => {
 			if (["add", "change", "unlink"].includes(event)) {
-				performRebuild();
+				scheduler.enqueue("source");
 			}
 		});
 
@@ -100,9 +79,9 @@ const dev = defineCommand({
 		configWatcher.on("all", (event, filePath) => {
 			if (["change", "add"].includes(event)) {
 				if (filePath.includes("lithia.config")) {
-					performConfigReload();
+					scheduler.enqueue("config");
 				} else {
-					performEnvReload();
+					scheduler.enqueue("env");
 				}
 			}
 		});
@@ -125,3 +104,73 @@ const dev = defineCommand({
 });
 
 export default dev;
+
+async function processDevBatch(
+	lithia: HostSupervisor,
+	batch: DevChangeBatch,
+	state: { hasReloadableArtifacts: boolean },
+): Promise<void> {
+	if (batch.config) {
+		logger.info("Configuration updated. Rebuilding and reloading host...");
+
+		const previousConfig = structuredClone(lithia.config);
+		const previousEnv = lithia.getEnvSnapshot();
+
+		try {
+			await lithia.loadConfig();
+			await lithia.loadEnv();
+
+			const buildSucceeded = await lithia.build();
+			if (!buildSucceeded) {
+				state.hasReloadableArtifacts = false;
+				lithia.replaceConfig(previousConfig);
+				lithia.replaceEnv(previousEnv);
+				logger.warn(
+					"Reload skipped due to build failure. Continuing to serve previous app.",
+				);
+				return;
+			}
+
+			await lithia.reload();
+			state.hasReloadableArtifacts = true;
+			logger.success("Reload complete.");
+			return;
+		} catch (error) {
+			lithia.replaceConfig(previousConfig);
+			lithia.replaceEnv(previousEnv);
+			throw error;
+		}
+	}
+
+	if (batch.source) {
+		logger.info("Source updated. Building host...");
+		const buildSucceeded = await lithia.build();
+
+		if (!buildSucceeded) {
+			state.hasReloadableArtifacts = false;
+			logger.warn(
+				"Reload skipped due to build failure. Continuing to serve previous app.",
+			);
+			return;
+		}
+
+		state.hasReloadableArtifacts = true;
+	}
+
+	if (batch.env) {
+		if (!state.hasReloadableArtifacts) {
+			logger.warn(
+				"Reload skipped because the latest build artifacts are unavailable. Fix the build and save again.",
+			);
+			return;
+		}
+		logger.info("Environment updated. Reloading host...");
+		await lithia.loadEnv();
+	}
+
+	if (batch.source || batch.env) {
+		await lithia.reload();
+		state.hasReloadableArtifacts = true;
+		logger.success("Reload complete.");
+	}
+}

@@ -110,20 +110,24 @@ export class HostSupervisor {
 		this._lastPortUsed = this._config.http.port;
 	}
 
-	public async loadEnv(): Promise<void> {
+	public async loadEnv(): Promise<Record<string, string>> {
 		this.ensureConfigLoaded();
 		const cwd = process.cwd();
 		const envFiles = await this.getAvailableEnvFiles();
+		const nextEnv: Record<string, string> = {};
 
 		for (const file of envFiles) {
 			try {
 				const raw = await readFile(path.join(cwd, file), "utf-8");
 				const parsed = parseEnv(raw);
-				Object.assign(this._env, parsed);
+				Object.assign(nextEnv, parsed);
 			} catch {
 				logger.warn(`Failed to parse env file: ${file}`);
 			}
 		}
+
+		this._env = nextEnv;
+		return { ...this._env };
 	}
 
 	public async loadRoutes(): Promise<void> {
@@ -138,7 +142,19 @@ export class HostSupervisor {
 		await this._manifestStore.loadFunctions();
 	}
 
-	public async build(): Promise<void> {
+	public getEnvSnapshot(): Record<string, string> {
+		return { ...this._env };
+	}
+
+	public replaceConfig(config: LithiaOptions): void {
+		this._config = config;
+	}
+
+	public replaceEnv(env: Record<string, string>): void {
+		this._env = { ...env };
+	}
+
+	public async build(): Promise<boolean> {
 		this.ensureConfigLoaded();
 
 		const startTime = performance.now();
@@ -152,9 +168,11 @@ export class HostSupervisor {
 
 			const duration = performance.now() - startTime;
 			logger.success(`Compiled successfully in ${duration.toFixed(2)}ms.`);
+			return true;
 		} catch (error) {
 			logger.error(`Build failed: ${(error as Error).message}`);
 			if (this.environment === "build") throw error;
+			return false;
 		}
 	}
 

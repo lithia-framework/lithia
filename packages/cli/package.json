@@ -35,7 +35,8 @@
 		"node": ">=20"
 	},
 	"scripts": {
-		"build": "tsup --config tsup.config.ts"
+		"build": "tsup --config tsup.config.ts",
+		"test": "vitest --run"
 	},
 	"dependencies": {
 		"@lithia-js/core": "workspace:*",

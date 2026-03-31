@@ -32,54 +32,105 @@ export class AppSupervisor {
 	}
 
 	public async start(): Promise<void> {
-		this.spawnWorker();
+		await this.spawnWorker();
 	}
 
 	public async swap(): Promise<void> {
 		if (this._worker && this._isRunning) {
 			await this.dispose();
 		}
-		this.spawnWorker();
+		await this.spawnWorker();
 	}
 
 	public async dispose(): Promise<void> {
 		if (!this._worker) return;
-		await this._worker.terminate();
+		const worker = this._worker;
 		this._worker = null;
 		this._isRunning = false;
 		this._isReady = false;
+		await worker.terminate();
 	}
 
-	private spawnWorker(): void {
+	private async spawnWorker(): Promise<void> {
 		logger.debug("Spawning background worker...");
 		const options = this.createOptions();
 
-		this._worker = new Worker(
+		const worker = new Worker(
 			path.join(this.workerBaseDir, "workers", "app-worker.mjs"),
 			{
 				workerData: options.workerData,
 				env: options.env,
 			},
 		);
+		this._worker = worker;
+		this._isReady = false;
+		this._isRunning = false;
 
-		this._worker.on("message", async (message: AppToHostEvent) => {
-			if (message.type === "ready") {
-				this._isReady = true;
-				this._isRunning = true;
-				return;
-			}
+		await new Promise<void>((resolve, reject) => {
+			let isSettled = false;
 
-			if (message.type === "error") {
-				logger.error("Lithia app worker reported an error:", message.error);
-				return;
-			}
+			const resolveIfPending = () => {
+				if (isSettled) return;
+				isSettled = true;
+				resolve();
+			};
 
-			await this.onInvoke(message);
-		});
+			const rejectIfPending = (error: Error) => {
+				if (isSettled) return;
+				isSettled = true;
+				reject(error);
+			};
 
-		this._worker.on("error", (error) => {
-			logger.error("Worker Thread crashed:", error);
-			this._isRunning = false;
+			worker.on("message", async (message: AppToHostEvent) => {
+				if (message.type === "ready") {
+					this._isReady = true;
+					this._isRunning = true;
+					resolveIfPending();
+					return;
+				}
+
+				if (message.type === "error") {
+					logger.error("Lithia app worker reported an error:", message.error);
+					const messageText =
+						typeof message.error === "object" &&
+						message.error !== null &&
+						"message" in message.error
+							? String(message.error.message)
+							: "Lithia app worker reported an unknown startup error.";
+					rejectIfPending(new Error(messageText));
+					return;
+				}
+
+				await this.onInvoke(message);
+			});
+
+			worker.on("error", (error) => {
+				logger.error("Worker Thread crashed:", error);
+				this._isRunning = false;
+				this._isReady = false;
+				if (this._worker === worker) {
+					this._worker = null;
+				}
+				rejectIfPending(
+					error instanceof Error ? error : new Error(String(error)),
+				);
+			});
+
+			worker.on("exit", (code) => {
+				this._isRunning = false;
+				this._isReady = false;
+				if (this._worker === worker) {
+					this._worker = null;
+				}
+
+				if (code !== 0) {
+					logger.debug(`App worker exited with code ${code}`);
+				}
+
+				rejectIfPending(
+					new Error(`App worker exited before becoming ready (code ${code}).`),
+				);
+			});
 		});
 	}
 }
