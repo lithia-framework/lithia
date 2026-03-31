@@ -1,8 +1,9 @@
 # Examples
 
-These apps are workspace-native mirrors of the public `templates/`.
+These examples are purpose-built demo apps for local development inside the
+workspace.
 
-Use them for local development, smoke testing, and validating the developer
-experience of the framework inside this monorepo.
-
-The `templates/` directory remains the source used by `create-lithia`.
+- `1-hello`: the smallest possible Lithia app with a single route
+- `2-openapi`: route metadata + Scalar/OpenAPI generation
+- `3-async-tasks`: on-demand async task dispatch from an HTTP route
+- `4-async-tasks-cron`: CRON-triggered async task execution

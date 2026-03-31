@@ -48,16 +48,16 @@ vi.mock("./manifest-store", () => ({
 	ManifestStore: class {
 		public routes = [];
 		public events = [];
-		public functions = [];
+		public tasks = [];
 		public loadRoutes = vi.fn();
 		public loadEvents = vi.fn();
-		public loadFunctions = vi.fn();
+		public loadTasks = vi.fn();
 		public loadAll = vi.fn();
 	},
 }));
 
-vi.mock("./function-runner", () => ({
-	ManagedFunctionRunner: class {
+vi.mock("./task-runner", () => ({
+	AsyncTaskRunner: class {
 		public handleInvocation = vi.fn();
 	},
 }));
@@ -84,7 +84,7 @@ describe("HostSupervisor", () => {
 			requests: true,
 			events: true,
 		},
-		managedFunctions: {
+		asyncTasks: {
 			timeoutMs: 30000,
 			concurrencyLimit: 10,
 		},

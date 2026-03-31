@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "strict": true,
+    "types": ["node"],
+    "outDir": "./dist",
+    "rootDir": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "#lithia/*": ["./.lithia/*"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    ".lithia/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

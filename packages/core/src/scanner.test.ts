@@ -17,7 +17,7 @@ describe("FileScanner", () => {
 		const mockRoot = path.resolve(process.cwd(), "src");
 		const mockFiles = [
 			path.join(mockRoot, "routes/user/route.ts"),
-			path.join(mockRoot, "functions/cleanup.ts"),
+			path.join(mockRoot, "tasks/cleanup.ts"),
 		];
 
 		mockedFg.mockResolvedValue(mockFiles);
@@ -25,9 +25,9 @@ describe("FileScanner", () => {
 		const result = await scanner.scanDir(["src"]);
 
 		expect(result).toHaveLength(2);
-		expect(result[0].path).toBe("functions/cleanup.ts");
-		expect(result[1].path).toBe("routes/user/route.ts");
-		expect(result[1].fullPath).toBe(mockFiles[0]);
+		expect(result[0].path).toBe("routes/user/route.ts");
+		expect(result[0].fullPath).toBe(mockFiles[0]);
+		expect(result[1].path).toBe("tasks/cleanup.ts");
 	});
 
 	it("should use default patterns if none are provided", async () => {

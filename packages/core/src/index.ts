@@ -25,11 +25,10 @@ export {
 	useEvent,
 	useSocket,
 } from "./hooks/event-hooks";
-export type { LithiaFunctions } from "./hooks/lithia-hooks";
 export {
-	invoke,
-	invokeAsync,
 	provide,
+	runTask,
+	runTaskAsync,
 	useDependency,
 	useOptionalDependency,
 } from "./hooks/lithia-hooks";

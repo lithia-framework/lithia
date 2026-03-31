@@ -5,7 +5,7 @@ export default createTsupConfig({
 		index: "src/index.ts",
 		_index: "src/_index.ts",
 		"workers/app-worker": "src/runtime/workers/app-worker.ts",
-		"workers/function-worker": "src/runtime/workers/function-worker.ts",
+		"workers/task-worker": "src/runtime/workers/task-worker.ts",
 	},
 	dts: true,
 });

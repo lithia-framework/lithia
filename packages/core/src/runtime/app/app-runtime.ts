@@ -7,12 +7,15 @@ import {
 } from "../../context/lithia-context";
 import type { Event } from "../../discovery/events";
 import type { Route } from "../../discovery/routes";
+import type { TaskCore } from "../../discovery/tasks";
+import { runTaskAsync } from "../../hooks/lithia-hooks";
 import type { RouteMiddleware } from "../../transport/http/request-pipeline";
 import { LithiaServer } from "../../transport/server";
 import type { EventMiddleware } from "../../transport/socket/event-pipeline";
 import type { Environment } from "../../types";
 import { DependencyContainer } from "./dependency-container";
 import { MiddlewareRegistry } from "./middleware-registry";
+import { TaskScheduler } from "./task-scheduler";
 
 export type InjectionKey<T> = symbol | string | { new (...args: any[]): T };
 
@@ -21,6 +24,7 @@ export class LithiaApp {
 	private readonly _config: LithiaOptions;
 	private readonly _routes: Route[];
 	private readonly _events: Event[];
+	private readonly _tasks: TaskCore[];
 	private readonly _isFirstApp: boolean;
 
 	private readonly dependencies = new DependencyContainer();
@@ -29,6 +33,7 @@ export class LithiaApp {
 		EventMiddleware
 	>();
 	private readonly _server: LithiaServer;
+	private readonly taskScheduler: TaskScheduler;
 
 	constructor() {
 		this.validateExecutionContext();
@@ -36,10 +41,12 @@ export class LithiaApp {
 		this._config = workerData.config;
 		this._routes = workerData.routes;
 		this._events = workerData.events;
+		this._tasks = workerData.tasks;
 		this._environment = workerData.environment;
 		this._isFirstApp = workerData.isFirstApp;
 
 		this._server = new LithiaServer(this);
+		this.taskScheduler = new TaskScheduler(this._tasks);
 	}
 
 	public get config(): LithiaOptions {
@@ -56,6 +63,10 @@ export class LithiaApp {
 
 	public get events(): Event[] {
 		return this._events;
+	}
+
+	public get tasks(): TaskCore[] {
+		return this._tasks;
 	}
 
 	public get globalRouteMiddlewares(): RouteMiddleware[] {
@@ -95,6 +106,9 @@ export class LithiaApp {
 
 		try {
 			await this._server.listen();
+			this.taskScheduler.start((task) => {
+				runTaskAsync(task.id);
+			});
 			this.executeOnce(() =>
 				logger.ready(`Lithia is ready on port ${this.config.http.port}`),
 			);
@@ -105,6 +119,7 @@ export class LithiaApp {
 	}
 
 	public async stop(): Promise<void> {
+		this.taskScheduler.stop();
 		await this._server.close();
 	}
 

@@ -127,7 +127,7 @@ export interface LithiaOptions {
 		events: boolean;
 	};
 
-	managedFunctions: {
+	asyncTasks: {
 		timeoutMs: number;
 		concurrencyLimit: number;
 	};
@@ -163,7 +163,7 @@ export const DEFAULT_CONFIG: LithiaConfig = {
 		events: true,
 	},
 
-	managedFunctions: {
+	asyncTasks: {
 		concurrencyLimit: 10,
 		timeoutMs: 30000,
 	},

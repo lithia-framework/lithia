@@ -8,7 +8,7 @@ export interface TypeDefinition {
 }
 
 export interface GeneratorRegistry {
-	functions?: TypeDefinition[];
+	tasks?: TypeDefinition[];
 	plugins?: TypeDefinition[];
 }
 

@@ -4,12 +4,12 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { OpenAPIConfig } from "../config";
 import { EventManifestGenerator } from "../discovery/events";
-import {
-	type FunctionCore,
-	FunctionManifestGenerator,
-} from "../discovery/functions";
 import { type Route, RouteManifestGenerator } from "../discovery/routes";
 import { FileScanner } from "../discovery/scanner";
+import {
+	type TaskCore,
+	TaskManifestGenerator,
+} from "../discovery/tasks";
 import { toOutputFilePath } from "../shared/filesystem";
 import { compileSourceFiles } from "./compiler";
 import { type GeneratorRegistry, generateLithiaTypes } from "./typegen";
@@ -24,7 +24,7 @@ export class BuildOrchestrator {
 	public readonly scanner = new FileScanner();
 	public readonly routeGenerator = new RouteManifestGenerator();
 	public readonly eventGenerator = new EventManifestGenerator();
-	public readonly functionGenerator = new FunctionManifestGenerator();
+	public readonly taskGenerator = new TaskManifestGenerator();
 
 	public async build(config: BuildConfig): Promise<void> {
 		await rm(config.outRoot, { recursive: true, force: true });
@@ -48,15 +48,15 @@ export class BuildOrchestrator {
 			),
 		}));
 
-		const [routesManifest, , functions] = await Promise.all([
+		const [routesManifest, , tasks] = await Promise.all([
 			this.routeGenerator.generateManifest(config.outRoot, distFiles),
 			this.eventGenerator.generateManifest(config.outRoot, distFiles),
-			this.functionGenerator.generateManifest(config.outRoot, distFiles),
+			this.taskGenerator.generateManifest(config.outRoot, distFiles),
 		]);
 
 		await this.generateOpenAPIArtifactsIfEnabled(config, routesManifest.routes);
 
-		const registry = this.createRegistry(allFiles, functions?.functions || []);
+		const registry = this.createRegistry(allFiles, tasks?.tasks || []);
 		if (Object.keys(registry).length > 0) {
 			await generateLithiaTypes(process.cwd(), registry);
 		}
@@ -64,18 +64,41 @@ export class BuildOrchestrator {
 
 	private createRegistry(
 		allFiles: { path: string; fullPath: string }[],
-		functions: FunctionCore[],
+		tasks: TaskCore[],
 	): GeneratorRegistry {
-		if (functions.length === 0) return {};
+		if (tasks.length === 0) return {};
+
+		const sourceTaskFiles = allFiles.filter((file) => {
+			const normalized = file.path.split(path.sep).join("/");
+			return normalized.includes("tasks/") || normalized.includes("app/tasks/");
+		});
+
+		const sourceTaskPathById = new Map(
+			sourceTaskFiles.map((file) => [
+				this.resolveTaskIdentifier(file.path),
+				file.fullPath,
+			]),
+		);
 
 		return {
-			functions: functions.map((fn) => ({
-				identifier: fn.id,
-				filePath:
-					allFiles.find((file) => file.fullPath.includes(fn.id))?.fullPath ||
-					fn.filePath,
+			tasks: tasks.map((task) => ({
+				identifier: task.id,
+				filePath: sourceTaskPathById.get(task.id) || task.filePath,
 			})),
 		};
+	}
+
+	private resolveTaskIdentifier(filePath: string): string {
+		const normalized = filePath
+			.replace(/\\/g, "/")
+			.replace(/^(app\/)?tasks\//, "")
+			.replace(/^(.*?)(?:\.(cron))?\.(mts|mjs|ts|js)$/i, "$1")
+			.replace(/\(([^([/]+)\)\//g, "");
+
+		return normalized
+			.split("/")
+			.filter((part) => part.length > 0)
+			.join(":");
 	}
 
 	private async generateOpenAPIArtifactsIfEnabled(

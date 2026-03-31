@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import * as swc from "@swc/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BuildOrchestrator } from "./build/build-orchestrator";
+import { generateLithiaTypes } from "./build/typegen";
 import { type FileInfo, FileScanner } from "./discovery/scanner";
 
 // Mocks
@@ -9,7 +10,7 @@ vi.mock("node:fs/promises");
 vi.mock("@swc/core");
 vi.mock("./discovery/scanner");
 vi.mock("./discovery/events");
-vi.mock("./discovery/functions");
+vi.mock("./discovery/tasks");
 vi.mock("./discovery/routes");
 vi.mock("./build/typegen");
 
@@ -27,9 +28,9 @@ describe("BuildOrchestrator", () => {
 			version: "test",
 			events: [],
 		} as any);
-		vi.mocked(builder.functionGenerator.generateManifest).mockResolvedValue({
+		vi.mocked(builder.taskGenerator.generateManifest).mockResolvedValue({
 			version: "test",
-			functions: [],
+			tasks: [],
 		});
 
 		vi.mocked(fs.readFile).mockResolvedValue(
@@ -81,6 +82,7 @@ describe("BuildOrchestrator", () => {
 		);
 
 		expect(builder.routeGenerator.generateManifest).toHaveBeenCalled();
+		expect(builder.taskGenerator.generateManifest).toHaveBeenCalled();
 	});
 
 	it("should throw error if no files are found", async () => {
@@ -110,6 +112,40 @@ describe("BuildOrchestrator", () => {
 				jsc: expect.objectContaining({
 					paths: { "@/*": ["*"] },
 				}),
+			}),
+		);
+	});
+
+	it("should generate task typings from source files instead of dist files", async () => {
+		vi.spyOn(FileScanner.prototype, "scanDir").mockResolvedValue([
+			{
+				path: "app/tasks/notifications/welcome-email.ts",
+				fullPath: "/abs/src/app/tasks/notifications/welcome-email.ts",
+			},
+		]);
+
+		vi.mocked(builder.taskGenerator.generateManifest).mockResolvedValue({
+			version: "test",
+			tasks: [
+				{
+					id: "notifications:welcome-email",
+					trigger: "ON_DEMAND",
+					filePath: "/abs/dist/app/tasks/notifications/welcome-email.js",
+				},
+			],
+		});
+
+		await builder.build({ sourceDir: "src", outRoot: "dist" });
+
+		expect(generateLithiaTypes).toHaveBeenCalledWith(
+			process.cwd(),
+			expect.objectContaining({
+				tasks: [
+					expect.objectContaining({
+						identifier: "notifications:welcome-email",
+						filePath: "/abs/src/app/tasks/notifications/welcome-email.ts",
+					}),
+				],
 			}),
 		);
 	});

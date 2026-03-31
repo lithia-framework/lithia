@@ -3,9 +3,9 @@ import path from "node:path";
 import type { LithiaOptions } from "../../config";
 import type { Event, EventsManifest } from "../../discovery/events";
 import type {
-	FunctionCore,
-	FunctionsManifest,
-} from "../../discovery/functions";
+	TaskCore,
+	TasksManifest,
+} from "../../discovery/tasks";
 import type { Route, RoutesManifest } from "../../discovery/routes";
 import { ManifestVersionMismatchError } from "../../errors/internal/index";
 import { version as currentSchema } from "../../meta";
@@ -16,7 +16,7 @@ type VersionedManifest = { version: string };
 export class ManifestStore {
 	private _routes: Route[] = [];
 	private _events: Event[] = [];
-	private _functions: FunctionCore[] = [];
+	private _tasks: TaskCore[] = [];
 
 	constructor(private readonly getConfig: () => LithiaOptions) {}
 
@@ -28,8 +28,8 @@ export class ManifestStore {
 		return this._events;
 	}
 
-	public get functions(): FunctionCore[] {
-		return this._functions;
+	public get tasks(): TaskCore[] {
+		return this._tasks;
 	}
 
 	public async loadRoutes(): Promise<void> {
@@ -42,17 +42,16 @@ export class ManifestStore {
 		if (manifest) this._events = manifest.events;
 	}
 
-	public async loadFunctions(): Promise<void> {
-		const manifest =
-			await this.loadManifest<FunctionsManifest>("functions.json");
-		if (manifest) this._functions = manifest.functions;
+	public async loadTasks(): Promise<void> {
+		const manifest = await this.loadManifest<TasksManifest>("tasks.json");
+		if (manifest) this._tasks = manifest.tasks;
 	}
 
 	public async loadAll(): Promise<void> {
 		await Promise.all([
 			this.loadRoutes(),
 			this.loadEvents(),
-			this.loadFunctions(),
+			this.loadTasks(),
 		]);
 	}
 

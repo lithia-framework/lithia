@@ -12,9 +12,9 @@ import { version } from "../../meta";
 import { fileExists } from "../../shared/filesystem";
 import type { Environment } from "../../types";
 import { AppSupervisor } from "./app-supervisor";
-import { ManagedFunctionRunner } from "./function-runner";
 import { ManifestStore } from "./manifest-store";
 import { type AppToHostEvent, CFG_GLOBAL_KEY } from "./protocol";
+import { AsyncTaskRunner } from "./task-runner";
 
 sms.install({
 	environment: "node",
@@ -36,7 +36,7 @@ export class HostSupervisor {
 	private readonly _builder: BuildOrchestrator;
 	private readonly _manifestStore: ManifestStore;
 	private readonly _appSupervisor: AppSupervisor;
-	private readonly _functionRunner: ManagedFunctionRunner;
+	private readonly _taskRunner: AsyncTaskRunner;
 
 	private _appCount = 0;
 	private _lastPortUsed = 0;
@@ -58,7 +58,7 @@ export class HostSupervisor {
 					config: this.config,
 					routes: this.routes,
 					events: this.events,
-					functions: this.functions,
+					tasks: this.tasks,
 					isFirstApp:
 						++this._appCount === 1 ||
 						this._lastPortUsed !== this.config.http.port,
@@ -68,10 +68,10 @@ export class HostSupervisor {
 			(event) => this.handleAppMessage(event),
 			import.meta.dirname,
 		);
-		this._functionRunner = new ManagedFunctionRunner({
+		this._taskRunner = new AsyncTaskRunner({
 			getConfig: () => this.config,
 			getEnvironment: () => this.environment,
-			getFunctions: () => this.functions,
+			getTasks: () => this.tasks,
 			getAppWorker: () => this._appSupervisor.worker,
 			getEnv: () => this._env,
 			workerBaseDir: import.meta.dirname,
@@ -100,8 +100,8 @@ export class HostSupervisor {
 		return this._manifestStore.events;
 	}
 
-	public get functions() {
-		return this._manifestStore.functions;
+	public get tasks() {
+		return this._manifestStore.tasks;
 	}
 
 	public async loadConfig(): Promise<void> {
@@ -138,8 +138,8 @@ export class HostSupervisor {
 		await this._manifestStore.loadEvents();
 	}
 
-	public async loadFunctions(): Promise<void> {
-		await this._manifestStore.loadFunctions();
+	public async loadTasks(): Promise<void> {
+		await this._manifestStore.loadTasks();
 	}
 
 	public getEnvSnapshot(): Record<string, string> {
@@ -228,18 +228,18 @@ export class HostSupervisor {
 		);
 	}
 
-	public printFunctionTree(): void {
+	public printTaskTree(): void {
 		this.printTree(
-			"Functions",
-			this.functions,
-			(fn) => fn.id,
-			(fn) => (fn.trigger === "CRON" ? "⧖" : "⚙"),
+			"Async Tasks",
+			this.tasks,
+			(task) => task.id,
+			(task) => (task.trigger === "CRON" ? "⧖" : "⚙"),
 		);
 	}
 
 	private async handleAppMessage(event: AppToHostEvent): Promise<void> {
 		if (event.type !== "invoke") return;
-		await this._functionRunner.handleInvocation(event);
+		await this._taskRunner.handleInvocation(event);
 	}
 
 	private printTree<T>(

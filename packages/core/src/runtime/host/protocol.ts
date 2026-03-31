@@ -14,7 +14,7 @@ export type AppErrorEvent = {
 
 export type AppInvokeSyncEvent = {
 	type: "invoke";
-	functionId: string;
+	taskId: string;
 	async: false;
 	requestId: string;
 	args?: any[];
@@ -22,7 +22,7 @@ export type AppInvokeSyncEvent = {
 
 export type AppInvokeAsyncEvent = {
 	type: "invoke";
-	functionId: string;
+	taskId: string;
 	async: true;
 	args?: any[];
 };
@@ -36,13 +36,13 @@ export type AppToHostEvent =
 export type HostToAppEvent =
 	| {
 			type: "invoke_success";
-			functionId: string;
+			taskId: string;
 			result: any;
 			requestId: string;
 	  }
 	| {
 			type: "invoke_error";
-			functionId: string;
+			taskId: string;
 			error: string;
 			requestId: string;
 	  };

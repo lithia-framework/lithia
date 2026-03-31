@@ -5,7 +5,11 @@ import { getLithiaContext } from "../context/lithia-context";
 import { DependencyNotInitializedError } from "../errors/internal/index";
 import type { InjectionKey } from "../runtime/app/app-runtime";
 
-export type LithiaFunctions = {};
+declare module "../hooks/lithia-hooks" {
+	export interface LithiaTasks {}
+}
+
+type TaskInvocationKey = keyof LithiaTasks | (string & {});
 
 export function provide<T>(key: InjectionKey<T>, value: T): void {
 	const { container } = getLithiaContext();
@@ -28,29 +32,34 @@ export function useOptionalDependency<T>(key: InjectionKey<T>): T | undefined {
 	return container.get(key) as T | undefined;
 }
 
-type FunctionPayload<K extends keyof LithiaFunctions> =
-	LithiaFunctions[K] extends (...args: infer P) => any ? P : never;
-
-type FunctionReturn<K extends keyof LithiaFunctions> =
-	LithiaFunctions[K] extends (...args: any[]) => Promise<infer R>
+type KnownTaskPayload<T> = T extends (...args: infer P) => any ? P : never;
+type KnownTaskReturn<T> = T extends (...args: any[]) => Promise<infer R>
+	? R
+	: T extends (...args: any[]) => infer R
 		? R
-		: LithiaFunctions[K] extends (...args: any[]) => infer R
-			? R
-			: any;
+		: any;
 
-export async function invoke<K extends keyof LithiaFunctions>(
-	functionId: K,
-	...args: FunctionPayload<K>
-): Promise<Awaited<FunctionReturn<K>>> {
+type TaskPayload<K extends TaskInvocationKey> = K extends keyof LithiaTasks
+	? KnownTaskPayload<LithiaTasks[K]>
+	: any[];
+
+type TaskReturn<K extends TaskInvocationKey> = K extends keyof LithiaTasks
+	? KnownTaskReturn<LithiaTasks[K]>
+	: unknown;
+
+export async function runTask<K extends TaskInvocationKey>(
+	taskId: K,
+	...args: TaskPayload<K>
+): Promise<Awaited<TaskReturn<K>>> {
 	if (!parentPort) {
 		throw new Error(
-			"Managed functions invocations can only be used within a Lithia managed instance.",
+			"Async task invocations can only be used within a Lithia managed instance.",
 		);
 	}
 
 	const requestId = randomUUID();
 
-	return new Promise<Awaited<FunctionReturn<K>>>((resolve, reject) => {
+	return new Promise<Awaited<TaskReturn<K>>>((resolve, reject) => {
 		const handler = (msg: any) => {
 			if (msg.requestId === requestId) {
 				cleanup();
@@ -66,7 +75,7 @@ export async function invoke<K extends keyof LithiaFunctions>(
 			cleanup();
 			reject(
 				new Error(
-					`[fn:${String(functionId)}] Worker thread closed before function invocation could complete.`,
+					`[task:${String(taskId)}] Worker thread closed before task execution could complete.`,
 				),
 			);
 		};
@@ -82,26 +91,26 @@ export async function invoke<K extends keyof LithiaFunctions>(
 		parentPort?.postMessage({
 			type: "invoke",
 			requestId,
-			functionId,
+			taskId,
 			async: false,
 			args,
 		});
 	});
 }
 
-export function invokeAsync<K extends keyof LithiaFunctions>(
-	functionId: K,
-	...args: FunctionPayload<K>
+export function runTaskAsync<K extends TaskInvocationKey>(
+	taskId: K,
+	...args: TaskPayload<K>
 ): void {
 	if (!parentPort) {
 		throw new Error(
-			"Managed functions invocations can only be used within a Lithia managed instance.",
+			"Async task invocations can only be used within a Lithia managed instance.",
 		);
 	}
 
 	parentPort?.postMessage({
 		type: "invoke",
-		functionId,
+		taskId,
 		async: true,
 		args,
 	});

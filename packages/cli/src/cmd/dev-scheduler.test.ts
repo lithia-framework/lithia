@@ -35,7 +35,7 @@ describe("DevLifecycleScheduler", () => {
 	it("queues a follow-up batch when changes arrive during execution", async () => {
 		const batches: Array<{ source: boolean; config: boolean; env: boolean }> =
 			[];
-		let releaseCurrentBatch: (() => void) | null = null;
+		let releaseCurrentBatch: () => void = () => {};
 
 		const scheduler = new DevLifecycleScheduler(async (batch) => {
 			batches.push(batch);
@@ -58,7 +58,7 @@ describe("DevLifecycleScheduler", () => {
 			},
 		]);
 
-		releaseCurrentBatch?.();
+		releaseCurrentBatch();
 		await Promise.resolve();
 		await Promise.resolve();
 

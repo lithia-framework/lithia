@@ -12,12 +12,12 @@ describe("TypesGenerator", () => {
 		vi.clearAllMocks();
 	});
 
-	it("should generate a valid d.ts file with function augmentations", async () => {
+	it("should generate a valid d.ts file with task augmentations", async () => {
 		const registry: GeneratorRegistry = {
-			functions: [
+			tasks: [
 				{
 					identifier: "user:create",
-					filePath: "/home/user/project/src/functions/user/create.ts",
+					filePath: "/home/user/project/src/tasks/user/create.ts",
 				},
 			],
 		};
@@ -35,14 +35,12 @@ describe("TypesGenerator", () => {
 		expect(writtenPath).toBe(expectedPath);
 
 		expect(content).toContain(
-			'import { default as functions_UserCreate } from "../src/functions/user/create";',
+			'import { default as tasks_UserCreate } from "../src/tasks/user/create";',
 		);
 
 		expect(content).toContain('declare module "@lithia-js/core" {');
-		expect(content).toContain("interface LithiaFunctions {");
-		expect(content).toContain(
-			'    "user:create": typeof functions_UserCreate;',
-		);
+		expect(content).toContain("interface LithiaTasks {");
+		expect(content).toContain('    "user:create": typeof tasks_UserCreate;');
 	});
 
 	it("should handle named exports correctly", async () => {
@@ -68,27 +66,27 @@ describe("TypesGenerator", () => {
 
 	it("should handle multiple categories and definitions", async () => {
 		const registry: GeneratorRegistry = {
-			functions: [{ identifier: "ping", filePath: "/p/ping.ts" }],
+			tasks: [{ identifier: "ping", filePath: "/p/ping.ts" }],
 			plugins: [{ identifier: "auth", filePath: "/p/auth.ts" }],
 		};
 
 		await generateLithiaTypes(projectRoot, registry);
 		const content = vi.mocked(fs.writeFile).mock.calls[0][1] as string;
 
-		expect(content).toContain("interface LithiaFunctions");
+		expect(content).toContain("interface LithiaTasks");
 		expect(content).toContain("interface LithiaPlugins");
 	});
 
 	it("should skip categories with empty definitions", async () => {
 		const registry: GeneratorRegistry = {
-			functions: [],
+			tasks: [],
 			plugins: undefined,
 		};
 
 		await generateLithiaTypes(projectRoot, registry);
 		const content = vi.mocked(fs.writeFile).mock.calls[0][1] as string;
 
-		expect(content).not.toContain("interface LithiaFunctions");
+		expect(content).not.toContain("interface LithiaTasks");
 		expect(content).not.toContain("interface LithiaPlugins");
 	});
 });
