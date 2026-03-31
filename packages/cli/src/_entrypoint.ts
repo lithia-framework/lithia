@@ -13,7 +13,7 @@
  */
 
 import type { LithiaConfig } from "@lithia-js/core";
-import { CFG_GLOBAL_KEY, LithiaHost } from "@lithia-js/core/_";
+import { CFG_GLOBAL_KEY, HostSupervisor } from "@lithia-js/core/_";
 
 declare global {
 	var __lithia_host_config_v1: LithiaConfig;
@@ -32,7 +32,7 @@ async function bootstrap(): Promise<void> {
 	// Initialize the global configuration context
 	globalThis[CFG_GLOBAL_KEY] = __CONFIG__;
 
-	const lithia = new LithiaHost({ environment: "production" });
+	const lithia = new HostSupervisor({ environment: "production" });
 
 	await lithia.setup();
 

@@ -4,10 +4,10 @@
  */
 
 import {
-  BadRequestError,
-  type Params,
-  type Query,
-  type RouteMiddleware,
+	BadRequestError,
+	type Params,
+	type Query,
+	type RouteMiddleware,
 } from "@lithia-js/core";
 import { ZodError, type ZodType } from "zod";
 

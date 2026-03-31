@@ -1,48 +1,48 @@
 {
-  "name": "@lithia-js/utils",
-  "version": "1.0.0-canary.18",
-  "description": "Common internal utilities and helper functions for the Lithia.js ecosystem.",
-  "keywords": [
-    "lithia",
-    "lithia-js",
-    "utils",
-    "helpers",
-    "shared"
-  ],
-  "author": "Lucas Arch <luketsx@icloud.com>",
-  "license": "MIT",
-  "homepage": "https://lithiajs.com",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/lithia-framework/lithia.git",
-    "directory": "packages/utils"
-  },
-  "bugs": {
-    "url": "https://github.com/lithia-framework/lithia/issues"
-  },
-  "type": "module",
-  "main": "./dist/index.mjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "default": "./dist/index.mjs"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "engines": {
-    "node": ">=20"
-  },
-  "scripts": {
-    "build": "tsup --config tsup.config.ts"
-  },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "access": "public",
-    "provenance": true
-  }
+	"name": "@lithia-js/utils",
+	"version": "1.0.0-canary.18",
+	"description": "Common internal utilities and helper functions for the Lithia.js ecosystem.",
+	"keywords": [
+		"lithia",
+		"lithia-js",
+		"utils",
+		"helpers",
+		"shared"
+	],
+	"author": "Lucas Arch <luketsx@icloud.com>",
+	"license": "MIT",
+	"homepage": "https://lithiajs.com",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/lithia-framework/lithia.git",
+		"directory": "packages/utils"
+	},
+	"bugs": {
+		"url": "https://github.com/lithia-framework/lithia/issues"
+	},
+	"type": "module",
+	"main": "./dist/index.mjs",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.mjs",
+			"default": "./dist/index.mjs"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"engines": {
+		"node": ">=20"
+	},
+	"scripts": {
+		"build": "tsup --config tsup.config.ts"
+	},
+	"publishConfig": {
+		"registry": "https://registry.npmjs.org/",
+		"access": "public",
+		"provenance": true
+	}
 }

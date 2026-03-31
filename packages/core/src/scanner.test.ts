@@ -1,6 +1,6 @@
 import path from "node:path";
 import fg from "fast-glob";
-import { FileScanner } from "./scanner";
+import { FileScanner } from "./discovery/scanner";
 
 vi.mock("fast-glob");
 

@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { LithiaOptions } from "../config";
 import { NotInLithiaContextError } from "../errors/internal/index";
 import {
-  getLithiaContext,
-  lithiaContextStore,
-  runInLithiaContext,
+	getLithiaContext,
+	lithiaContextStore,
+	runInLithiaContext,
 } from "./lithia-context";
 
 describe("Base Lithia Context", () => {

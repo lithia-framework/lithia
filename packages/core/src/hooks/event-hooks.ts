@@ -1,6 +1,6 @@
 import type { Socket } from "socket.io";
 import { getEventContext } from "../context/event-context";
-import type { Event } from "../strategy/events/index";
+import type { Event } from "../discovery/events";
 
 export function useData<T = any>(): T {
 	return getEventContext().data as T;

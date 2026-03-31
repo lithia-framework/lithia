@@ -1,6 +1,5 @@
 import type { DeepPartial } from "@lithia-js/utils";
-import { type C12InputConfig, loadConfig as loadConfigC12 } from "c12";
-import { klona } from "klona";
+import type { C12InputConfig } from "c12";
 
 export interface LithiaOptions {
 	/**
@@ -161,19 +160,4 @@ export const DEFAULT_CONFIG: LithiaConfig = {
 
 export function defineConfig(config: LithiaConfig): LithiaConfig {
 	return config;
-}
-
-export async function loadConfig(): Promise<LithiaOptions> {
-	const configOptions = {
-		name: "lithia",
-		configFile: "lithia.config",
-		cwd: process.cwd(),
-		dotenv: true,
-		defaults: DEFAULT_CONFIG,
-	};
-
-	const { config } = await loadConfigC12<LithiaConfig>(configOptions);
-	const options = klona(config) as LithiaOptions;
-
-	return options;
 }

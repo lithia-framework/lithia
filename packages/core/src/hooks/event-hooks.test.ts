@@ -1,7 +1,7 @@
 import type { Socket } from "socket.io";
 import { describe, expect, it } from "vitest";
 import { runInEventContext } from "../context/event-context";
-import type { Event } from "../strategy/events/index";
+import type { Event } from "../discovery/events";
 import { useData, useEvent, useSocket, useSocketId } from "./event-hooks";
 
 describe("Event Hooks", () => {

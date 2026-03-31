@@ -1,3 +1,3 @@
-import config from '../../vitest.config';
+import config from "../../vitest.config";
 
 export default config;

@@ -1,8 +1,8 @@
 import type { Server as SocketServer } from "socket.io";
 import { describe, expect, it } from "vitest";
 import { NotInRequestContextError } from "../errors/internal/index";
-import type { LithiaRequest } from "../server/request";
-import type { LithiaResponse } from "../server/response";
+import type { LithiaRequest } from "../transport/http/request";
+import type { LithiaResponse } from "../transport/http/response";
 import {
 	getRouteContext,
 	type RouteContext,

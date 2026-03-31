@@ -2,5 +2,5 @@
  * @file non-function.ts
  */
 export default {
-  message: "I am an object, not a function"
+	message: "I am an object, not a function",
 };

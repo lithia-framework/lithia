@@ -1,10 +1,10 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  NoAsyncDefaultExportError,
-  NoDefaultExportError,
+	NoAsyncDefaultExportError,
+	NoDefaultExportError,
 } from "./errors/internal/loader";
-import { loadModule } from "./module-loader";
+import { loadModule } from "./shared/module-loader";
 
 const FIXTURES_DIR = path.resolve(
 	import.meta.dirname,

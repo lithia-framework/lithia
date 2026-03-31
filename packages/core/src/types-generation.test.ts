@@ -1,9 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-	type GeneratorRegistry,
-	generateLithiaTypes,
-} from "./types-generation";
+import { type GeneratorRegistry, generateLithiaTypes } from "./build/typegen";
 
 vi.mock("node:fs/promises");
 

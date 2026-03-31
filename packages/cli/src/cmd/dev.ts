@@ -5,7 +5,7 @@
  */
 
 import { join } from "node:path";
-import { LithiaHost } from "@lithia-js/core/_";
+import { HostSupervisor } from "@lithia-js/core/_";
 import { logger } from "@lithia-js/utils";
 import chokidar from "chokidar";
 import { defineCommand } from "citty";
@@ -42,7 +42,7 @@ const dev = defineCommand({
 
 	async run() {
 		const cwd = process.cwd();
-		const lithia = new LithiaHost({ environment: "development" });
+		const lithia = new HostSupervisor({ environment: "development" });
 
 		// 1. Initial Host Setup
 		await lithia.setup();

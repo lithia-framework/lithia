@@ -5,7 +5,7 @@
 
 import { chmod, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { LithiaHost } from "@lithia-js/core/_";
+import { HostSupervisor } from "@lithia-js/core/_";
 import { logger } from "@lithia-js/utils";
 import { defineCommand } from "citty";
 
@@ -25,7 +25,7 @@ const build = defineCommand({
 	 * @throws {Error} If build processes or file operations fail.
 	 */
 	async run() {
-		const lithia = new LithiaHost({ environment: "build" });
+		const lithia = new HostSupervisor({ environment: "build" });
 
 		// Initialize the host environment
 		await lithia.setup();
@@ -59,7 +59,7 @@ const build = defineCommand({
 			// Post-write operations: Loading metadata and setting permissions
 			await lithia.loadRoutes();
 			await lithia.loadEvents();
-      await lithia.loadFunctions();
+			await lithia.loadFunctions();
 
 			// Ensure the entry point is executable (0o755: rwxr-xr-x)
 			await chmod(entryPath, 0o755);
@@ -74,7 +74,7 @@ const build = defineCommand({
 		// Output visual representation of the application structure
 		lithia.printRouteTree();
 		lithia.printEventTree();
-    lithia.printFunctionTree();
+		lithia.printFunctionTree();
 	},
 });
 

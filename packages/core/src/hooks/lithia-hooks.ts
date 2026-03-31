@@ -3,9 +3,9 @@ import { parentPort } from "node:worker_threads";
 import type { LithiaOptions } from "../config";
 import { getLithiaContext } from "../context/lithia-context";
 import { DependencyNotInitializedError } from "../errors/internal/index";
-import type { InjectionKey } from "../lithia-app";
+import type { InjectionKey } from "../runtime/app/app-runtime";
 
-export interface LithiaFunctions {}
+export type LithiaFunctions = {};
 
 export function provide<T>(key: InjectionKey<T>, value: T): void {
 	const { container } = getLithiaContext();

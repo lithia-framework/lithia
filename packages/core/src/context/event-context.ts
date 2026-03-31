@@ -6,8 +6,8 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { Socket } from "socket.io";
+import type { Event } from "../discovery/events";
 import { NotInEventContextError } from "../errors/internal/index";
-import type { Event } from "../strategy/events/index";
 
 export interface EventContext {
 	data: any;

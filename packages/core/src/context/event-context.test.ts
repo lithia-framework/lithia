@@ -1,10 +1,10 @@
 import type { Socket } from "socket.io";
+import type { Event } from "../discovery/events";
 import { NotInEventContextError } from "../errors/internal/index";
-import type { Event } from "../strategy/events/index";
 import {
-  eventContextStore,
-  getEventContext,
-  runInEventContext,
+	eventContextStore,
+	getEventContext,
+	runInEventContext,
 } from "./event-context";
 
 describe("EventContext Management", () => {

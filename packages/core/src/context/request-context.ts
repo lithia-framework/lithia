@@ -6,10 +6,10 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { Server as SocketServer } from "socket.io";
+import type { Route } from "../discovery/routes";
 import { NotInRequestContextError } from "../errors/internal/index";
-import type { LithiaRequest } from "../server/request";
-import type { LithiaResponse } from "../server/response";
-import type { Route } from "../strategy/routes/index";
+import type { LithiaRequest } from "../transport/http/request";
+import type { LithiaResponse } from "../transport/http/response";
 
 export interface RouteContext {
 	req: LithiaRequest;

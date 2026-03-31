@@ -7,9 +7,9 @@
 import type { IncomingHttpHeaders } from "node:http";
 import type { Server as SocketServer } from "socket.io";
 import { getRouteContext } from "../context/request-context";
-import type { LithiaRequest, Params, Query } from "../server/request";
-import type { LithiaResponse } from "../server/response";
-import type { Route } from "../strategy/routes/index";
+import type { Route } from "../discovery/routes";
+import type { LithiaRequest, Params, Query } from "../transport/http/request";
+import type { LithiaResponse } from "../transport/http/response";
 
 /**
  * Retrieves the Lithia-wrapped request object.

@@ -1,24 +1,24 @@
 import fs from "node:fs/promises";
 import * as swc from "@swc/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Builder } from "./builder";
-import { type FileInfo, FileScanner } from "./scanner";
+import { BuildOrchestrator } from "./build/build-orchestrator";
+import { type FileInfo, FileScanner } from "./discovery/scanner";
 
 // Mocks
 vi.mock("node:fs/promises");
 vi.mock("@swc/core");
-vi.mock("./scanner");
-vi.mock("./strategy/events/manifest");
-vi.mock("./strategy/functions/manifest");
-vi.mock("./strategy/routes/manifest");
-vi.mock("./types-generation");
+vi.mock("./discovery/scanner");
+vi.mock("./discovery/events");
+vi.mock("./discovery/functions");
+vi.mock("./discovery/routes");
+vi.mock("./build/typegen");
 
-describe("Builder", () => {
-	let builder: Builder;
+describe("BuildOrchestrator", () => {
+	let builder: BuildOrchestrator;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		builder = new Builder();
+		builder = new BuildOrchestrator();
 
 		vi.mocked(fs.readFile).mockResolvedValue(
 			JSON.stringify({
