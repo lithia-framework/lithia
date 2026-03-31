@@ -1,8 +1,7 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { writeFile } from "node:fs/promises";
 import { generateOpenAPIArtifacts } from "./index";
 
 const tempDirs: string[] = [];
@@ -63,7 +62,7 @@ export default async function handler() {}
 
 		const spec = JSON.parse(
 			await readFile(path.join(outDir, "_lithia", "openapi.json"), "utf-8"),
-			);
+		);
 		const html = await readFile(
 			path.join(outDir, "_lithia", "scalar.html"),
 			"utf-8",
@@ -72,14 +71,18 @@ export default async function handler() {}
 		expect(spec.info.title).toBe("Example API");
 		expect(spec.paths["/hello"].get.summary).toBe("Hello route");
 		expect(spec.paths["/hello"].get.parameters).toHaveLength(1);
-		expect(spec.paths["/hello"].get.responses["200"].description).toBe("Success");
+		expect(spec.paths["/hello"].get.responses["200"].description).toBe(
+			"Success",
+		);
 		expect(html).toContain('data-url="/openapi.json"');
 		expect(html).toContain("cdn.jsdelivr.net/npm/@scalar/api-reference");
 		expect(html).toContain('<link rel="icon" href="data:," />');
 	});
 
 	it("refreshes the generated spec when a compiled route changes", async () => {
-		const root = await mkdtemp(path.join(os.tmpdir(), "lithia-openapi-refresh-"));
+		const root = await mkdtemp(
+			path.join(os.tmpdir(), "lithia-openapi-refresh-"),
+		);
 		tempDirs.push(root);
 
 		const routeFile = path.join(root, "hello.route.mjs");

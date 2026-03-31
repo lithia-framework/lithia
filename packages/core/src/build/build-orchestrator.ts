@@ -1,5 +1,5 @@
-import { createRequire } from "node:module";
 import { rm } from "node:fs/promises";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { OpenAPIConfig } from "../config";
@@ -54,10 +54,7 @@ export class BuildOrchestrator {
 			this.functionGenerator.generateManifest(config.outRoot, distFiles),
 		]);
 
-		await this.generateOpenAPIArtifactsIfEnabled(
-			config,
-			routesManifest.routes,
-		);
+		await this.generateOpenAPIArtifactsIfEnabled(config, routesManifest.routes);
 
 		const registry = this.createRegistry(allFiles, functions?.functions || []);
 		if (Object.keys(registry).length > 0) {

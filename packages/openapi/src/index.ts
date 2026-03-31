@@ -42,7 +42,7 @@ export interface OpenAPIConfigOptions {
 
 export interface GenerateOpenAPIArtifactsOptions {
 	outDir: string;
-	routes: OpenAPIRouteEntry[];
+	routes: readonly OpenAPIRouteEntry[];
 	config: OpenAPIConfigOptions;
 }
 
@@ -78,7 +78,10 @@ export async function generateOpenAPIArtifacts(
 	);
 	await writeFile(
 		path.join(docsDir, DOCS_HTML_FILE),
-		createScalarHtml(options.config.specPath || "/openapi.json", options.config),
+		createScalarHtml(
+			options.config.specPath || "/openapi.json",
+			options.config,
+		),
 		"utf-8",
 	);
 }

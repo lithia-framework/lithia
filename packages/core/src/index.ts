@@ -50,12 +50,6 @@ export {
 	UploadedFile,
 } from "./transport/http/request";
 export type {
-	OpenAPIRouteMetadata,
-	OpenAPIResponseMetadata,
-	OpenAPISecurityRequirement,
-	RouteMetadata,
-} from "./transport/http/route-metadata";
-export type {
 	NextRoute,
 	RouteHandler,
 	RouteMiddleware,
@@ -64,6 +58,12 @@ export {
 	CookieOptions,
 	LithiaResponse,
 } from "./transport/http/response";
+export type {
+	OpenAPIResponseMetadata,
+	OpenAPIRouteMetadata,
+	OpenAPISecurityRequirement,
+	RouteMetadata,
+} from "./transport/http/route-metadata";
 export type {
 	EventHandler,
 	EventMiddleware,
