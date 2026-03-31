@@ -25,15 +25,15 @@
 	"type": "module",
 	"main": "./dist/index.mjs",
 	"module": "./dist/index.mjs",
-	"types": "./dist/index.d.mts",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
-			"types": "./dist/index.d.mts",
+			"types": "./dist/index.d.ts",
 			"import": "./dist/index.mjs",
 			"default": "./dist/index.mjs"
 		},
 		"./_": {
-			"types": "./dist/_index.d.mts",
+			"types": "./dist/_index.d.ts",
 			"import": "./dist/_index.mjs",
 			"default": "./dist/_index.mjs"
 		}
@@ -45,7 +45,7 @@
 		"node": ">=20"
 	},
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
+		"build": "tsup --config tsup.config.ts",
 		"test": "vitest --run"
 	},
 	"dependencies": {

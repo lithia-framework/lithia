@@ -7,11 +7,11 @@
 import { access, constants } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { isAsyncFunction } from "node:util/types";
-import { LithiaError } from "./errors/base.mjs";
+import { LithiaError } from "./errors/base";
 import {
   NoAsyncDefaultExportError,
   NoDefaultExportError,
-} from "./errors/internal/index.mjs";
+} from "./errors/internal/index";
 
 export type LithiaModule = {
 	default: (...args: any[]) => Promise<any>;

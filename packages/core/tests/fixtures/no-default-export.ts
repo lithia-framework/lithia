@@ -1,5 +1,5 @@
 /**
- * @file no-default.mts
+ * @file no-default.ts
  */
 export const namedExport = async () => {};
 // Sem export default aqui
