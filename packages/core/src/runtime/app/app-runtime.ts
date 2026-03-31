@@ -95,7 +95,9 @@ export class LithiaApp {
 
 		try {
 			await this._server.listen();
-			this.executeOnce(() => logger.ready("Lithia is ready!"));
+			this.executeOnce(() =>
+				logger.ready(`Lithia is ready on port ${this.config.http.port}`),
+			);
 		} catch (error) {
 			this.executeOnce(() => logger.error("Failed to start Lithia server."));
 			throw error;
