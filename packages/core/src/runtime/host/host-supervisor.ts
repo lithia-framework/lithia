@@ -147,6 +147,7 @@ export class HostSupervisor {
 			await this._builder.build({
 				sourceDir: this.config.sourceDir,
 				outRoot: this.config.outDir,
+				openapi: this.config.openapi,
 			});
 
 			const duration = performance.now() - startTime;

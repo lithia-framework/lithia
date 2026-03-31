@@ -1,6 +1,15 @@
 import type { DeepPartial } from "@lithia-js/utils";
 import type { C12InputConfig } from "c12";
 
+export interface OpenAPIConfig {
+	enabled: boolean;
+	docsPath: string;
+	specPath: string;
+	title: string;
+	version: string;
+	description?: string;
+}
+
 export interface LithiaOptions {
 	/**
 	 * Directory containing source files
@@ -122,6 +131,8 @@ export interface LithiaOptions {
 		timeoutMs: number;
 		concurrencyLimit: number;
 	};
+
+	openapi?: OpenAPIConfig;
 }
 
 export interface LithiaConfig
@@ -155,6 +166,14 @@ export const DEFAULT_CONFIG: LithiaConfig = {
 	managedFunctions: {
 		concurrencyLimit: 10,
 		timeoutMs: 30000,
+	},
+
+	openapi: {
+		enabled: false,
+		docsPath: "/docs",
+		specPath: "/openapi.json",
+		title: "Lithia API",
+		version: "1.0.0",
 	},
 };
 

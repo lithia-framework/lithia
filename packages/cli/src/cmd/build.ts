@@ -44,7 +44,7 @@ const build = defineCommand({
 
 		// Path resolution for entry point generation
 		const entryPath = join(workingDirectory, config.outDir, "server.js");
-		const templatePath = resolve(import.meta.dirname, "..", "_entrypoint.mjs");
+		const templatePath = resolve(import.meta.dirname, "_entrypoint.mjs");
 
 		// Generate production entry point by injecting runtime configuration
 		try {
@@ -65,8 +65,9 @@ const build = defineCommand({
 			await chmod(entryPath, 0o755);
 
 			logger.success("Production build completed successfully.");
-		} catch {
+		} catch (error) {
 			logger.error("Failed to finalize the build entry point.");
+			logger.debug(error);
 			// Silent catch maintained as per original implementation,
 			// but logged for visibility.
 		}

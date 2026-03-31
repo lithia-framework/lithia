@@ -4,10 +4,12 @@ import type { LithiaApp } from "../../runtime/app/app-runtime";
 import { loadModule } from "../../shared/module-loader";
 import { executePipeline } from "../../shared/pipeline";
 import { applyCorsPolicy } from "./cors-policy";
+import { serveOpenAPIAsset } from "./openapi-assets";
 import type { LithiaRequest } from "./request";
 import { handleRequestError } from "./request-error-handler";
 import type { LithiaResponse } from "./response";
 import { RouteMatcher } from "./route-matcher";
+import type { RouteMetadata } from "./route-metadata";
 import { serveStaticAsset } from "./static-assets";
 
 export type NextRoute = () => Promise<void> | void;
@@ -33,6 +35,7 @@ export type RouteHandler = (
 export type RouteModule = {
 	default: RouteHandler;
 	middlewares?: RouteMiddleware[];
+	metadata?: RouteMetadata;
 };
 
 export class LithiaRequestProcessor {
@@ -47,6 +50,7 @@ export class LithiaRequestProcessor {
 			this.setInitialHeaders(res);
 
 			if (applyCorsPolicy(this.app.config, req, res)) return;
+			if (await serveOpenAPIAsset(this.app.config, req, res)) return;
 			if (await serveStaticAsset(this.app.config, req, res)) return;
 
 			const route = this.matcher.findRoute(req, this.app.routes);

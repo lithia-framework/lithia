@@ -50,6 +50,12 @@ export {
 	UploadedFile,
 } from "./transport/http/request";
 export type {
+	OpenAPIRouteMetadata,
+	OpenAPIResponseMetadata,
+	OpenAPISecurityRequirement,
+	RouteMetadata,
+} from "./transport/http/route-metadata";
+export type {
 	NextRoute,
 	RouteHandler,
 	RouteMiddleware,

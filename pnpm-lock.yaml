@@ -38,6 +38,15 @@ importers:
       '@lithia-js/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@lithia-js/middlewares':
+        specifier: workspace:*
+        version: link:../../packages/middlewares
+      '@lithia-js/openapi':
+        specifier: workspace:*
+        version: link:../../packages/openapi
+      zod:
+        specifier: ^4.2.1
+        version: 4.3.6
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.3.13
@@ -226,6 +235,12 @@ importers:
       '@lithia-js/core':
         specifier: workspace:*
         version: link:../core
+
+  packages/openapi:
+    dependencies:
+      zod:
+        specifier: ^4.2.1
+        version: 4.3.6
 
   packages/utils: {}
 

@@ -19,6 +19,18 @@ describe("BuildOrchestrator", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		builder = new BuildOrchestrator();
+		vi.mocked(builder.routeGenerator.generateManifest).mockResolvedValue({
+			version: "test",
+			routes: [],
+		});
+		vi.mocked(builder.eventGenerator.generateManifest).mockResolvedValue({
+			version: "test",
+			events: [],
+		} as any);
+		vi.mocked(builder.functionGenerator.generateManifest).mockResolvedValue({
+			version: "test",
+			functions: [],
+		});
 
 		vi.mocked(fs.readFile).mockResolvedValue(
 			JSON.stringify({
