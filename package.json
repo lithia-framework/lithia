@@ -1,6 +1,6 @@
 {
   "name": "lithia-framework",
-  "version": "1.0.0-canary.23",
+  "version": "1.0.0-canary.24",
   "private": true,
   "description": "File-based Node.js backend framework with worker-powered runtime isolation and native ESM.",
   "packageManager": "pnpm@10.0.0",
