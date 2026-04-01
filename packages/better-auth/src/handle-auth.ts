@@ -21,7 +21,7 @@ import type { Auth } from "better-auth/types";
  * @returns {RouteHandler} Lithia route handler that bridges the auth endpoint
  * into Better Auth.
  */
-export function BetterAuth(auth: Auth): RouteHandler {
+export function BetterAuth(auth: Auth<any>): RouteHandler {
 	return async (req, res) => {
 		if (!["POST", "GET"].includes(req.method)) {
 			res.status(405).send("Method Not Allowed");
