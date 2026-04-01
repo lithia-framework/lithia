@@ -89,4 +89,34 @@ export default async function task() {}
 			await rm(root, { recursive: true, force: true });
 		}
 	});
+
+	it("ignores empty task modules while they are still being created", async () => {
+		const root = await mkdtemp(path.join(os.tmpdir(), "lithia-task-manifest-"));
+
+		try {
+			const outRoot = path.join(root, "dist");
+			const cronTaskFile = path.join(root, "app/tasks/revalidate.cron.mjs");
+			const onDemandTaskFile = path.join(root, "app/tasks/mail/send.mjs");
+			await mkdir(path.dirname(onDemandTaskFile), { recursive: true });
+
+			await writeFile(cronTaskFile, "   \n", "utf-8");
+			await writeFile(onDemandTaskFile, "// still writing\n", "utf-8");
+
+			const generator = new TaskManifestGenerator();
+			const manifest = await generator.generateManifest(outRoot, [
+				{
+					path: "app/tasks/revalidate.cron.mjs",
+					fullPath: cronTaskFile,
+				},
+				{
+					path: "app/tasks/mail/send.mjs",
+					fullPath: onDemandTaskFile,
+				},
+			]);
+
+			expect(manifest?.tasks).toEqual([]);
+		} finally {
+			await rm(root, { recursive: true, force: true });
+		}
+	});
 });

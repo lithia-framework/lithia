@@ -1,5 +1,8 @@
 import path from "node:path";
-import { fileExists } from "../../shared/filesystem";
+import {
+	fileExists,
+	fileHasMeaningfulModuleContent,
+} from "../../shared/filesystem";
 import { loadModule } from "../../shared/module-loader";
 
 /**
@@ -29,7 +32,10 @@ export async function resolveServerBootstrapPath(
 	];
 
 	for (const candidate of candidates) {
-		if (await fileExists(candidate)) {
+		if (
+			(await fileExists(candidate)) &&
+			(await fileHasMeaningfulModuleContent(candidate))
+		) {
 			return candidate;
 		}
 	}

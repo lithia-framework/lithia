@@ -40,6 +40,21 @@ describe("server bootstrap", () => {
 		expect(filePath).toBe(path.join(dir, outDir, "app", "server.js"));
 	});
 
+	it("ignores an empty compiled app/server module", async () => {
+		const dir = await mkdtemp(path.join(os.tmpdir(), "lithia-server-"));
+		tempDirs.push(dir);
+		const outDir = "dist";
+
+		await import("node:fs/promises").then(({ mkdir }) =>
+			mkdir(path.join(dir, outDir, "app"), { recursive: true }),
+		);
+		await writeFile(path.join(dir, outDir, "app", "server.js"), "   \n");
+
+		const filePath = await resolveServerBootstrapPath(outDir, dir);
+
+		expect(filePath).toBeNull();
+	});
+
 	it("loads an async default export bootstrap module", async () => {
 		const dir = await mkdtemp(path.join(os.tmpdir(), "lithia-server-"));
 		tempDirs.push(dir);

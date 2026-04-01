@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import cron from "node-cron";
 import { version } from "../meta";
+import { fileHasMeaningfulModuleContent } from "../shared/filesystem";
 import type { FileInfo } from "./scanner";
 
 export type TaskTrigger = "CRON" | "ON_DEMAND";
@@ -129,8 +130,12 @@ export class TaskManifestGenerator {
 	}
 
 	private async attachCronSchedules(tasks: TaskCore[]): Promise<TaskCore[]> {
-		return await Promise.all(
+		const resolvedTasks = await Promise.all(
 			tasks.map(async (task) => {
+				if (!(await fileHasMeaningfulModuleContent(task.filePath))) {
+					return null;
+				}
+
 				if (task.trigger !== "CRON") return task;
 
 				const { schedule, retries } = await this.readCronConfig(task.filePath);
@@ -147,6 +152,8 @@ export class TaskManifestGenerator {
 				};
 			}),
 		);
+
+		return resolvedTasks.filter((task): task is TaskCore => task !== null);
 	}
 
 	private async readCronConfig(
