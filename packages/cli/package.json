@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/cli",
-	"version": "1.0.0-canary.18",
+	"version": "1.0.0-canary.19",
 	"description": "Command-line interface for developing and building Lithia.js applications.",
 	"keywords": [
 		"lithia",
@@ -40,8 +40,8 @@
 		"test": "vitest --run"
 	},
 	"dependencies": {
-		"@lithia-js/core": "workspace:1.0.0-canary.18",
-		"@lithia-js/utils": "workspace:1.0.0-canary.18",
+		"@lithia-js/core": "workspace:1.0.0-canary.19",
+		"@lithia-js/utils": "workspace:1.0.0-canary.19",
 		"citty": "^0.2.0",
 		"chokidar": "^5.0.0"
 	},
