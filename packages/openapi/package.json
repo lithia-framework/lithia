@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/openapi",
-	"version": "1.0.0-canary.20",
+	"version": "1.0.0-canary.21",
 	"description": "OpenAPI and Scalar integration for Lithia.js.",
 	"keywords": [
 		"lithia",
