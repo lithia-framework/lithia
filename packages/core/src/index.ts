@@ -26,6 +26,8 @@ export {
 	useSocket,
 } from "./hooks/event-hooks";
 export {
+	dispatchTask,
+	executeTask,
 	provide,
 	runTask,
 	runTaskAsync,

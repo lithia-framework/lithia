@@ -3,11 +3,11 @@ import { parentPort } from "node:worker_threads";
 import type { LithiaOptions } from "../config";
 import { getLithiaContext } from "../context/lithia-context";
 import { DependencyNotInitializedError } from "../errors/internal/index";
+import type { InjectionKey } from "../runtime/app/app-runtime";
 import type {
 	TaskErrorPayload,
 	TaskInvocationSource,
 } from "../runtime/host/protocol";
-import type { InjectionKey } from "../runtime/app/app-runtime";
 
 declare module "../hooks/lithia-hooks" {
 	export interface LithiaTasks {}
@@ -106,7 +106,7 @@ function postTaskInvocation<K extends TaskInvocationKey>(
 	};
 }
 
-export async function runTask<K extends TaskInvocationKey>(
+export async function executeTask<K extends TaskInvocationKey>(
 	taskId: K,
 	...args: TaskPayload<K>
 ): Promise<Awaited<TaskReturn<K>>> {
@@ -157,7 +157,7 @@ export async function runTask<K extends TaskInvocationKey>(
 	});
 }
 
-export function runTaskAsync<K extends TaskInvocationKey>(
+export function dispatchTask<K extends TaskInvocationKey>(
 	taskId: K,
 	...args: TaskPayload<K>
 ): TaskExecutionHandle<Extract<K, string>> {
@@ -172,6 +172,20 @@ export function runTaskAsync<K extends TaskInvocationKey>(
 		executionId: randomUUID(),
 		source: "ON_DEMAND",
 	});
+}
+
+export async function runTask<K extends TaskInvocationKey>(
+	taskId: K,
+	...args: TaskPayload<K>
+): Promise<Awaited<TaskReturn<K>>> {
+	return executeTask(taskId, ...args);
+}
+
+export function runTaskAsync<K extends TaskInvocationKey>(
+	taskId: K,
+	...args: TaskPayload<K>
+): TaskExecutionHandle<Extract<K, string>> {
+	return dispatchTask(taskId, ...args);
 }
 
 export function useLithiaConfig(): LithiaOptions {
