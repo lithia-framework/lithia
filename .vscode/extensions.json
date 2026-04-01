@@ -4,5 +4,6 @@
 		"biomejs.biome",
 		"EditorConfig.EditorConfig",
     "vitest.explorer",
+    "bradlc.vscode-tailwindcss"
 	]
 }

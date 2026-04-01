@@ -14,4 +14,8 @@
 		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"git.ignoreLimitWarning": true,
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "tailwindCSS.lint.suggestCanonicalClasses": "ignore"
 }
