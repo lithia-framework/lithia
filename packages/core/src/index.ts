@@ -1,3 +1,7 @@
+export type {
+	OpenAPISourceConfig,
+	OpenAPITagConfig,
+} from "./config";
 export {
 	defineConfig,
 	LithiaConfig,

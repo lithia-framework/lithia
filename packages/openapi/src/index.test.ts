@@ -197,6 +197,63 @@ export default async function handler() {}
 		expect(spec.paths["/plain"].get.summary).toBeUndefined();
 	});
 
+	it("includes configured tag descriptions in the generated OpenAPI document", async () => {
+		const root = await mkdtemp(path.join(os.tmpdir(), "lithia-openapi-tags-"));
+		tempDirs.push(root);
+
+		const routeFile = path.join(root, "hello.route.mjs");
+		await writeFile(
+			routeFile,
+			`export const metadata = {
+  openapi: {
+    tags: ["Users"],
+    responses: {
+      200: {
+        description: "Success"
+      }
+    }
+  }
+};
+export default async function handler() {}
+`,
+			"utf-8",
+		);
+
+		const outDir = path.join(root, "dist");
+		await generateOpenAPIArtifacts({
+			outDir,
+			routes: [
+				{
+					path: "/users",
+					method: "GET",
+					filePath: routeFile,
+				},
+			],
+			config: {
+				title: "Example API",
+				version: "1.0.0",
+				tags: [
+					{
+						name: "Users",
+						description: "Operations related to user management.",
+					},
+				],
+			},
+		});
+
+		const spec = JSON.parse(
+			await readFile(path.join(outDir, "_lithia", "openapi.json"), "utf-8"),
+		);
+
+		expect(spec.tags).toEqual([
+			{
+				name: "Users",
+				description: "Operations related to user management.",
+			},
+		]);
+		expect(spec.paths["/users"].get.tags).toEqual(["Users"]);
+	});
+
 	it("includes additional Scalar sources from config next to the generated spec", async () => {
 		const root = await mkdtemp(
 			path.join(os.tmpdir(), "lithia-openapi-sources-"),

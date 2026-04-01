@@ -25,6 +25,21 @@ export interface OpenAPISourceConfig {
 }
 
 /**
+ * Descriptive metadata for an OpenAPI tag rendered by Scalar.
+ */
+export interface OpenAPITagConfig {
+	/**
+	 * Stable tag name that should match route-level `metadata.openapi.tags`
+	 * values.
+	 */
+	name: string;
+	/**
+	 * Optional markdown-capable description rendered in tag overviews.
+	 */
+	description?: string;
+}
+
+/**
  * Enables automatic OpenAPI generation and the Scalar docs UI for a Lithia app.
  */
 export interface OpenAPIConfig {
@@ -59,6 +74,13 @@ export interface OpenAPIConfig {
 	 * Lithia spec.
 	 */
 	sources?: OpenAPISourceConfig[];
+	/**
+	 * Optional tag descriptions injected into the generated OpenAPI document.
+	 *
+	 * Scalar reads these entries from the spec itself, so tag descriptions must
+	 * be declared here rather than in the Scalar runtime configuration object.
+	 */
+	tags?: OpenAPITagConfig[];
 }
 
 /**

@@ -89,15 +89,16 @@ describe("AsyncTaskRunner", () => {
 		const { AsyncTaskRunner } = await import("./task-runner");
 
 		const runner = new AsyncTaskRunner({
-			getConfig: () => ({
-				asyncTasks: {
-					concurrencyLimit: 4,
-					timeoutMs: 1000,
-				},
-				logging: {
-					tasks: true,
-				},
-			} as any),
+			getConfig: () =>
+				({
+					asyncTasks: {
+						concurrencyLimit: 4,
+						timeoutMs: 1000,
+					},
+					logging: {
+						tasks: true,
+					},
+				}) as any,
 			getEnvironment: () => "development",
 			getTasks: () => [
 				{

@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type {
 	OpenAPIRouteMetadata,
+	OpenAPITagConfig,
 	RouteMetadata,
 } from "@lithia-js/core";
 import { toJSONSchema, type ZodType } from "zod";
@@ -11,6 +12,7 @@ export type {
 	OpenAPIResponseMetadata,
 	OpenAPIRouteMetadata,
 	OpenAPISecurityRequirement,
+	OpenAPITagConfig,
 	RouteMetadata,
 } from "@lithia-js/core";
 
@@ -39,6 +41,7 @@ export interface OpenAPIConfigOptions {
 	docsPath?: string;
 	specPath?: string;
 	sources?: OpenAPISourceConfig[];
+	tags?: OpenAPITagConfig[];
 }
 
 /**
@@ -74,6 +77,7 @@ type OpenAPIDocument = {
 		version: string;
 		description?: string;
 	};
+	tags?: OpenAPITagConfig[];
 	paths: Record<string, Record<string, Record<string, unknown>>>;
 };
 
@@ -154,6 +158,7 @@ export async function buildOpenAPIDocument(
 			version: options.config.version || "1.0.0",
 			description: options.config.description,
 		},
+		...(options.config.tags?.length ? { tags: options.config.tags } : {}),
 		paths: {},
 	};
 
@@ -232,25 +237,23 @@ function createResponsesObject(
 	}
 
 	return Object.fromEntries(
-		(
-			Object.entries(responses) as Array<
-				[string, OpenAPIResponseEntry]
-			>
-		).map(([status, response]) => [
-			status,
-			{
-				description: response.description,
-				...(response.schema
-					? {
-							content: {
-								[response.contentType || "application/json"]: {
-									schema: zodToOpenAPISchema(response.schema),
+		(Object.entries(responses) as Array<[string, OpenAPIResponseEntry]>).map(
+			([status, response]) => [
+				status,
+				{
+					description: response.description,
+					...(response.schema
+						? {
+								content: {
+									[response.contentType || "application/json"]: {
+										schema: zodToOpenAPISchema(response.schema),
+									},
 								},
-							},
-						}
-					: {}),
-			},
-		]),
+							}
+						: {}),
+				},
+			],
+		),
 	);
 }
 
