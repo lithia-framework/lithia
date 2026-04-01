@@ -1,0 +1,324 @@
+---
+title: Async Tasks
+description: Run isolated background work with Lithia Async Tasks.
+---
+
+# Async Tasks
+
+Async Tasks are Lithia's native isolated task runtime.
+
+They exist to move work out of the main route or event path and into an execution model designed for isolation. That makes them especially useful for CPU-heavy work, side effects, scheduled jobs, and background operations that should not block HTTP or realtime interaction unnecessarily.
+
+This page is the canonical reference for task semantics, boundaries, and usage in Lithia.
+
+## What tasks are
+
+Tasks are discovered from files under `src/app/tasks`.
+
+They are a good fit when:
+
+- a route should trigger work without doing it inline
+- an event should initiate isolated follow-up work
+- a piece of work is expensive enough that it should not stay in the main app path
+- your application needs scheduled work driven by cron expressions
+
+Lithia tasks are not just a folder of helper functions. Each task file is a real execution boundary in the framework.
+
+## What tasks are not
+
+Lithia Async Tasks are **not** a durable distributed queue.
+
+They are not trying to replace:
+
+- BullMQ
+- RabbitMQ
+- SQS
+- broker-backed distributed job systems in general
+
+What Lithia tasks do provide is:
+
+- isolated execution
+- worker-based task processing
+- a native API for on-demand and cron-triggered work
+- a good way to keep CPU-heavy or side-effect-heavy work out of the main server path
+
+What they do not promise is:
+
+- external broker durability
+- distributed orchestration
+- exactly-once delivery semantics
+- cross-service job queue guarantees
+
+That distinction is essential to understanding the task system correctly.
+
+## Where task files live
+
+Task files live under:
+
+```txt
+src/app/tasks
+```
+
+The file path becomes the task identifier.
+
+Examples:
+
+- `src/app/tasks/notifications/welcome-email.ts` -> `notifications:welcome-email`
+- `src/app/tasks/images/generate-thumbnail.ts` -> `images:generate-thumbnail`
+- `src/app/tasks/maintenance/cleanup.cron.ts` -> `maintenance:cleanup`
+
+## Trigger types
+
+Lithia currently supports two trigger types.
+
+### `ON_DEMAND`
+
+This is the default trigger type.
+
+If the task file is a normal `.ts` file under `src/app/tasks`, Lithia treats it as an on-demand task. These tasks are triggered from application code through the task APIs.
+
+### `CRON`
+
+If the file uses the `.cron.ts` naming convention, Lithia treats it as a cron-triggered task.
+
+That changes the trigger type from `ON_DEMAND` to `CRON` and requires the file to export a `schedule` string.
+
+## `executeTask()` vs `dispatchTask()`
+
+Lithia exposes two public task APIs because not every task should behave the same way.
+
+### `executeTask()`
+
+Use `executeTask()` when the current flow should wait for the task to finish.
+
+```ts
+import type { RouteHandler } from "@lithia-js/core";
+import { executeTask } from "@lithia-js/core";
+
+const route: RouteHandler = async (req, res) => {
+  const name = typeof req.query.name === "string" ? req.query.name : "Ada";
+
+  await executeTask("notifications:welcome-email", name);
+
+  return res.json({
+    message: "Task completed.",
+    taskId: "notifications:welcome-email",
+    payload: { name },
+  });
+};
+
+export default route;
+```
+
+This is the right choice when:
+
+- the current route or event depends on completion
+- failure should be surfaced immediately to the caller
+- the result of the task is part of the synchronous flow
+
+### `dispatchTask()`
+
+Use `dispatchTask()` when the task should be triggered without blocking the current flow.
+
+```ts
+import type { RouteHandler } from "@lithia-js/core";
+import { dispatchTask } from "@lithia-js/core";
+
+const route: RouteHandler = async (req, res) => {
+  const name = typeof req.query.name === "string" ? req.query.name : "Ada";
+
+  dispatchTask("notifications:welcome-email", name);
+
+  return res.json({
+    message: "Task dispatched.",
+    taskId: "notifications:welcome-email",
+    payload: { name },
+  });
+};
+
+export default route;
+```
+
+This is the right choice when:
+
+- the client does not need to wait
+- the route or event should stay fast
+- the task represents decoupled follow-up work
+
+## When to await and when to dispatch
+
+A good shorthand is:
+
+- `executeTask()` is for coordination
+- `dispatchTask()` is for decoupling
+
+Use `executeTask()` when completion matters to the current interaction.
+
+Use `dispatchTask()` when the work should continue independently of the current HTTP or socket boundary.
+
+### A practical rule
+
+Ask yourself:
+
+“If this task fails, should the current request or event fail too?”
+
+If the answer is yes, `executeTask()` is usually the right API.
+
+If the answer is no, `dispatchTask()` is usually the better fit.
+
+## A simple on-demand task
+
+This example mirrors Lithia's own task example:
+
+```ts
+const welcomeEmailTask = async (name: string) => {
+  console.log(`[async-task] Sending welcome email to ${name}.`);
+};
+
+export default welcomeEmailTask;
+```
+
+And a route can trigger it with either `executeTask()` or `dispatchTask()`.
+
+That is the most important user-facing pattern: task definition in `src/app/tasks`, task invocation from routes or events through the public APIs.
+
+## Cron tasks
+
+Cron tasks use the `.cron.ts` naming convention and export a `schedule`.
+
+Example:
+
+```ts
+import fs from "node:fs/promises";
+import path from "node:path";
+
+const heartbeatFilePath = path.join(process.cwd(), "tmp", "heartbeat.json");
+
+export const schedule = "*/10 * * * * *";
+export const retries = 2;
+
+export default async function heartbeat() {
+  await fs.mkdir(path.dirname(heartbeatFilePath), { recursive: true });
+  await fs.writeFile(
+    heartbeatFilePath,
+    JSON.stringify(
+      {
+        status: "ok",
+        lastRunAt: new Date().toISOString(),
+      },
+      null,
+      2,
+    ),
+    "utf-8",
+  );
+}
+```
+
+### `schedule`
+
+The `schedule` export must be a valid cron expression.
+
+Lithia validates it during the build flow, so invalid cron strings fail early instead of becoming silent runtime surprises.
+
+### `retries`
+
+Cron tasks can also export `retries` as a non-negative integer.
+
+This is useful for scheduled work where a failed run should be retried automatically a limited number of times.
+
+## Execution model
+
+From a developer's point of view, the most important thing to understand is:
+
+Tasks do not execute the same way as route handlers.
+
+They run through Lithia's task runtime instead of being treated as normal inline application code.
+
+That matters because the purpose of the task system is not just syntax convenience. It is runtime isolation.
+
+In practical terms, this helps with:
+
+- keeping HTTP routes responsive
+- keeping realtime event handlers focused
+- moving CPU-heavy or side-effect-heavy work out of the main app path
+- giving scheduled work a native home in the framework
+
+## Concurrency and capacity
+
+Tasks are isolated, but they still consume runtime capacity.
+
+That means you should think about:
+
+- how often a task runs
+- how expensive it is
+- whether the current interaction should wait for it
+- whether the work is really appropriate for Lithia's local task runtime
+
+This is especially important for cron tasks and for fire-and-forget patterns that can be triggered frequently.
+
+## Practical patterns
+
+### Good fits for tasks
+
+Tasks are usually a strong fit for:
+
+- file generation
+- image or asset processing
+- side-effect work such as emails or notifications
+- maintenance and cleanup jobs
+- CPU-heavy work that should not stay in the request path
+
+### Use domain-oriented task identifiers
+
+Identifiers like these are easier to reason about than vague generic names:
+
+- `notifications:welcome-email`
+- `images:generate-thumbnail`
+- `maintenance:cleanup`
+
+### Keep the task file as the execution boundary
+
+The task file should usually represent the runtime boundary and call into supporting modules when needed.
+
+That keeps the task system explicit without turning every internal helper into a task.
+
+### Use cron intentionally
+
+Cron tasks are useful, but scheduled work should still be treated as part of your application's operational behavior. Keep the schedules explicit and easy to reason about.
+
+## Common mistakes
+
+### Treating Lithia tasks as a distributed queue
+
+If the application needs broker-backed durability, that is a different class of tool than Lithia Async Tasks.
+
+### Awaiting work that should be decoupled
+
+If the current request does not need completion, prefer `dispatchTask()` over `executeTask()`.
+
+### Dispatching work that actually belongs in the current request
+
+Do not use tasks just because something is asynchronous. If the caller needs the result directly, the work may still belong in the current flow.
+
+### Putting arbitrary helper code into `src/app/tasks`
+
+Task files should represent real isolated execution units, not just any async function in the app.
+
+## How tasks fit with the rest of Lithia
+
+Tasks complement the other framework layers:
+
+- routes own HTTP boundaries
+- events own realtime boundaries
+- tasks own isolated execution
+- `server.ts` owns startup
+
+When those boundaries are respected, the application tends to stay much easier to understand.
+
+## Suggested next steps
+
+The most relevant follow-up pages after tasks are:
+
+- [Route Handlers](/docs/routes)
+- [Event Handlers](/docs/events)
+- [Deploying](/docs/deploying)

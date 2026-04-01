@@ -1,0 +1,221 @@
+---
+title: Getting Started
+description: Welcome to Lithia, understand the framework model, and learn how to navigate the documentation.
+---
+
+# Welcome
+
+Welcome to Lithia.
+
+Lithia is a backend framework for Node.js built around a convention-first application layout and a worker-powered runtime. Instead of starting from one giant server file and manually wiring every subsystem together, you organize your application by execution model:
+
+- HTTP work lives in route handlers
+- realtime work lives in event handlers
+- isolated background work lives in async tasks
+- startup logic lives in an optional `src/app/server.ts`
+
+That structure is more than a style preference. Lithia uses it to discover your application, build manifests, boot the runtime, and keep the main server path clean as the app grows.
+
+This page is the entry point to the docs. Its job is to give you the mental model for Lithia before you dive into the implementation details.
+
+## What is Lithia?
+
+Lithia is a file-based backend framework for developers who want a modern runtime without losing structure.
+
+At a high level, Lithia gives you:
+
+- file-based HTTP routing
+- file-based realtime event handling
+- a native async task runtime
+- optional OpenAPI generation and Scalar
+- startup hooks through `src/app/server.ts`
+- a worker-oriented runtime that keeps responsibilities separated
+
+What makes Lithia feel different is that these pieces are designed to work together as one application model instead of being added as unrelated plugins.
+
+### The basic idea
+
+Most backend frameworks start from an HTTP server and then let you build everything else around it.
+
+Lithia starts from the idea that backend applications usually contain several different kinds of work:
+
+- request-response APIs
+- socket or realtime interactions
+- background or isolated execution
+- startup and dependency initialization
+
+Those different workloads do not always belong in the same file, the same lifecycle, or even the same execution path. Lithia gives each of them a native home.
+
+### What Lithia is optimized for
+
+Lithia is designed to feel good when:
+
+- you want conventions without losing control
+- you want application structure to stay obvious as the codebase grows
+- you want to keep heavy or isolated work out of the HTTP path
+- you want documentation like OpenAPI to stay close to your route layer
+- you want a framework that feels modern without leaning on decorators everywhere
+
+### What Lithia is not trying to be
+
+Lithia is not trying to be:
+
+- a distributed job queue
+- a queue broker replacement for Redis, RabbitMQ, or SQS
+- a giant annotation-heavy application container
+- an unopinionated single-file HTTP microframework
+
+For example, Lithia Async Tasks are intentionally a native isolated task runtime for your app, not a durable distributed queue. That distinction matters when you decide where work belongs.
+
+## How to use the docs
+
+The docs are organized to move from orientation into implementation.
+
+The recommended path is:
+
+1. read this page to understand the framework model
+2. continue to [Installation](/docs/installation) if you want to create or run an app
+3. read [Project Structure](/docs/project-structure) before building too much
+4. use the feature pages as your main reference while building
+
+Each page has a primary responsibility:
+
+- [Project Structure](/docs/project-structure) is the canonical place for filesystem conventions
+- [Route Handlers](/docs/routes) is the canonical place for HTTP behavior
+- [Event Handlers](/docs/events) is the canonical place for realtime behavior
+- [Async Tasks](/docs/async-tasks) is the canonical place for isolated task semantics and limitations
+- [Exporting OpenAPI](/docs/openapi) is the canonical place for API documentation behavior
+- [Deploying](/docs/deploying) is the canonical place for production expectations
+
+That means the docs intentionally cross-link instead of re-explaining the full framework in every page.
+
+## The Lithia mental model
+
+If you remember only a few ideas at first, remember these.
+
+## Routes are for request-response APIs
+
+If a client makes an HTTP request and expects a response, the boundary belongs in `src/app/routes`.
+
+That includes things like:
+
+- REST endpoints
+- webhook handlers
+- authenticated API routes
+- public JSON endpoints
+
+The route layer is where you should think about:
+
+- request input
+- validation
+- status codes
+- HTTP headers
+- cookies
+- response shape
+
+## Events are for realtime communication
+
+If the interaction is socket-based, event-oriented, or lifecycle-driven, it belongs in `src/app/events`.
+
+That includes things like:
+
+- connection and disconnect flows
+- chat events
+- presence updates
+- realtime notifications
+
+Event handlers are not hidden HTTP routes. They are a different boundary with different expectations.
+
+## Async Tasks are for isolated work
+
+If work should happen outside the main request or event path, it probably belongs in `src/app/tasks`.
+
+That includes things like:
+
+- CPU-heavy transformations
+- notification dispatch
+- maintenance work
+- scheduled jobs
+
+Lithia gives you two task APIs because not every task should behave the same way:
+
+- `executeTask()` when you want to wait for completion
+- `dispatchTask()` when you want fire-and-forget behavior
+
+The full semantics live in [Async Tasks](/docs/async-tasks), but the important point here is that tasks are their own execution model, not just “another async function.”
+
+## `src/app/server.ts` is for startup
+
+If your application needs to initialize services before the app starts serving traffic, put that logic in `src/app/server.ts`.
+
+Typical examples include:
+
+- creating SDK clients
+- registering dependencies with `provide()`
+- preparing shared services needed by routes, events, or tasks
+
+This file is optional. A simple Lithia app does not need it.
+
+## OpenAPI is opt-in and route-driven
+
+Lithia can export OpenAPI and serve Scalar, but it does so from route metadata and explicit configuration. The framework does not try to infer every API detail magically from arbitrary handler code.
+
+That makes the documentation model more predictable and easier to maintain.
+
+## What building a Lithia app feels like
+
+A normal flow in Lithia often looks like this:
+
+1. create a project
+2. add one or two route handlers
+3. introduce route-level validation
+4. add event handlers if the app needs realtime behavior
+5. extract isolated work into async tasks
+6. enable OpenAPI when your route surface needs formal documentation
+7. add `src/app/server.ts` if startup dependencies become necessary
+
+The framework grows with that progression naturally because each kind of code has a clear home.
+
+## A tiny example of the application model
+
+Even a small Lithia app already shows the intended shape:
+
+```txt
+src/
+  app/
+    routes/
+      hello/
+        route.get.ts
+    events/
+      connection.ts
+    tasks/
+      notifications/
+        welcome-email.ts
+    server.ts
+```
+
+Not every application starts with all four areas, but this shows the core model:
+
+- routes answer HTTP
+- events answer sockets
+- tasks isolate work
+- `server.ts` prepares startup state
+
+## Next Steps
+
+Use the next page that matches where you are in the process:
+
+- [Installation](/docs/installation) if you want to scaffold and run a Lithia app
+- [Project Structure](/docs/project-structure) if you want to understand the conventions before adding more code
+- [Route Handlers](/docs/routes) if you are ready to build HTTP APIs
+- [Event Handlers](/docs/events) if your app needs realtime communication
+- [Async Tasks](/docs/async-tasks) if you want isolated background work or cron jobs
+- [Exporting OpenAPI](/docs/openapi) if you want to generate an API spec and serve Scalar
+- [Deploying](/docs/deploying) if you are thinking about production packaging and startup
+
+If you are starting from zero, the smoothest path is:
+
+1. [Installation](/docs/installation)
+2. [Project Structure](/docs/project-structure)
+3. [Route Handlers](/docs/routes)
+4. [Event Handlers](/docs/events) or [Async Tasks](/docs/async-tasks), depending on the application

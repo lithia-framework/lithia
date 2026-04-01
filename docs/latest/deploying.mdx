@@ -1,0 +1,243 @@
+---
+title: Deploying
+description: Deploy Lithia applications in production with generic Node.js and Docker workflows.
+---
+
+# Deploying
+
+This page explains how to think about Lithia in production.
+
+The goal of this first pass is to give you a reliable deployment mental model without locking the docs to one provider. The focus here is:
+
+- generic Node.js deployment from built output
+- Docker-based deployment
+
+Provider-specific deployment guides can come later. The important thing now is understanding what a Lithia app needs in order to boot and run correctly in production.
+
+## What a production Lithia app needs
+
+A production Lithia deployment needs:
+
+- a supported Node.js runtime
+- the built application output
+- the required environment variables
+- access to any services initialized during startup
+
+Lithia should be treated as a build-first application runtime. The production artifact is the built output, not the raw source tree.
+
+## The standard production flow
+
+The normal production flow looks like this:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+node ./dist/server.js
+```
+
+During the build step, Lithia:
+
+- compiles the application
+- discovers routes, events, and tasks
+- generates runtime manifests
+- prepares the production server entrypoint
+
+That means the app should be deployed with a mental model closer to “build an application artifact, then run it” than “run a development source tree directly.”
+
+## What happens at runtime startup
+
+At production startup, Lithia will:
+
+- load the resolved configuration
+- load environment values
+- load build artifacts and manifests
+- boot the app runtime
+- optionally run `src/app/server.ts`
+- start the HTTP and realtime runtime
+- register cron tasks if they exist
+
+That startup model matters because any startup dependency issue can prevent the app from becoming ready.
+
+## Environment variables in production
+
+Production environment variables usually include things like:
+
+- database connection URLs
+- external API credentials
+- secret keys
+- service endpoints
+- feature flags
+
+If your application relies on `src/app/server.ts` to initialize shared services, make sure every required environment value is present before the app starts. Missing configuration should be treated as a startup concern, not as a random later failure.
+
+## `src/app/server.ts` in production
+
+`src/app/server.ts` is optional, but when it exists it becomes part of the production startup lifecycle.
+
+That means:
+
+- startup failures there can block the app from becoming ready
+- initialization logic there should be intentional and production-safe
+- any cleanup returned from the bootstrap matters during controlled shutdown
+
+Good production uses for `server.ts` include:
+
+- creating shared service clients
+- registering app-wide dependencies with `provide()`
+- preparing services that routes, events, and tasks all depend on
+
+A small example:
+
+```ts
+import type { LithiaServerBootstrap } from "@lithia-js/core";
+import { provide } from "@lithia-js/core";
+
+const server: LithiaServerBootstrap = async () => {
+  const message = process.env.STARTUP_MESSAGE ?? "Hello from app/server.ts";
+
+  provide("startup.message", message);
+
+  return async () => {};
+};
+
+export default server;
+```
+
+## Generic Node.js deployment
+
+The simplest production deployment is a normal Node process running the built server:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+node ./dist/server.js
+```
+
+This is a good fit when:
+
+- you control the VM or process host
+- you are deploying to a generic Node environment
+- you want the smallest possible production story
+
+### Operational advice for Node deployments
+
+For generic Node environments:
+
+- build in CI or as part of the release pipeline
+- run the built server entrypoint
+- provide environment variables explicitly
+- make sure host and port expectations match the target environment
+
+The important thing is not the exact process runner. The important thing is that the app is built first and started from the built output.
+
+## Docker deployment
+
+Docker is a strong fit when you want a portable production artifact or a consistent deployment model across environments.
+
+A simple production-oriented Dockerfile looks like this:
+
+```dockerfile
+FROM node:22-alpine
+WORKDIR /app
+
+COPY . .
+
+RUN corepack enable
+RUN pnpm install --frozen-lockfile
+RUN pnpm build
+
+EXPOSE 3000
+
+CMD ["node", "./dist/server.js"]
+```
+
+This is intentionally simple. The key idea is the same as the Node deployment flow:
+
+1. install dependencies
+2. build the app
+3. run the built server
+
+You can refine the image strategy later with multi-stage builds, caching improvements, or production dependency trimming as needed.
+
+## How to think about ports and host binding
+
+Deployment environments often control networking differently than local development.
+
+### Port
+
+Some providers inject a specific port, while others expect you to choose one explicitly.
+
+Make sure the deployed app is configured to listen on the port your environment expects.
+
+### Host binding
+
+Development often runs on `localhost`, but production environments may require broader binding behavior depending on the platform. Make sure your deployment assumptions match the actual host environment.
+
+## How to think about workers in production
+
+Lithia uses a worker-oriented runtime.
+
+From a production perspective, the important thing is not every internal detail. The important thing is that:
+
+- routes
+- events
+- async tasks
+- cron tasks
+- startup initialization
+
+all belong to one coordinated runtime model.
+
+That means you should deploy Lithia as an application runtime with clear startup expectations, not as a loose collection of unrelated scripts.
+
+## Async Tasks in production
+
+Async Tasks remain part of the app runtime in production.
+
+That means:
+
+- on-demand tasks still belong to the same deployed application runtime
+- cron tasks still run as part of that application runtime
+- they are useful for isolated work, but they are not a substitute for a distributed durable queue
+
+If you need broker-backed queue guarantees, plan that separately. Lithia Async Tasks are for runtime isolation, not distributed queue semantics.
+
+## Common deployment mistakes
+
+### Running the source tree instead of the built output
+
+Production should run from `dist/server.js`, not from an ad hoc development source execution flow.
+
+### Forgetting startup dependencies
+
+If `server.ts` expects external services or environment variables and they are missing, the app can fail to become ready.
+
+### Assuming development behavior and production behavior are identical
+
+The dev server is meant for development ergonomics. Production should be treated as a build-and-run lifecycle with real startup dependencies and real operational requirements.
+
+### Treating Async Tasks like an external queue
+
+Tasks are useful in production, but they are still the Lithia task runtime, not a durable broker-backed job system.
+
+### Using Docker without understanding the runtime
+
+Docker helps package the app, but it does not remove the need to understand how Lithia builds, starts, and initializes.
+
+## A practical production checklist
+
+Before shipping a Lithia app, make sure you can answer these questions clearly:
+
+- Does `pnpm build` succeed in CI?
+- Are all required environment variables present in production?
+- If `src/app/server.ts` exists, are its startup dependencies reachable?
+- Is the app started from `dist/server.js`?
+- If cron tasks exist, are you comfortable with them running in this deployed runtime?
+- If the app uses OpenAPI docs, are the configured docs routes appropriate for production?
+
+## Suggested next steps
+
+Once deployment expectations are clear, the most useful supporting pages are:
+
+- [Project Structure](/docs/project-structure)
+- [Async Tasks](/docs/async-tasks)
+- [Exporting OpenAPI](/docs/openapi)

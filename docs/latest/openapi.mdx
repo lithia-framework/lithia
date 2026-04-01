@@ -1,0 +1,245 @@
+---
+title: Exporting OpenAPI
+description: Generate an OpenAPI document and serve Scalar from a Lithia application.
+---
+
+# Exporting OpenAPI
+
+Lithia can generate OpenAPI output from route metadata and serve Scalar directly from the application.
+
+This keeps API documentation close to the route layer that owns the contract. Instead of maintaining a completely separate documentation system, you document routes at the boundary where they are actually defined.
+
+This page is the canonical reference for OpenAPI behavior in Lithia.
+
+## What OpenAPI support does
+
+When OpenAPI is enabled, Lithia can:
+
+- generate an OpenAPI document for your route surface
+- expose that document through a public route such as `/openapi.json`
+- serve Scalar through a docs route such as `/docs`
+- use route metadata as the source of operation details
+
+This is especially useful when your app has a public or semi-public HTTP contract that other developers, clients, or tools need to consume.
+
+## How to enable OpenAPI
+
+OpenAPI is configured in `lithia.config.ts`.
+
+Example:
+
+```ts
+import { defineConfig } from "@lithia-js/core";
+
+export default defineConfig({
+  openapi: {
+    enabled: true,
+    title: "Lithia OpenAPI Example",
+    version: "1.0.0",
+    description: "A minimal app showing route metadata and Scalar.",
+  },
+});
+```
+
+The important fields are:
+
+- `enabled`
+- `title`
+- `version`
+- optional `description`
+- optional `docsPath`
+- optional `specPath`
+
+By default, Lithia serves:
+
+- `/docs` for Scalar
+- `/openapi.json` for the generated spec
+
+## What participates in OpenAPI generation
+
+OpenAPI generation in Lithia is route-driven.
+
+That means the main ingredients are:
+
+- enabled OpenAPI config
+- route files under `src/app/routes`
+- `metadata.openapi` exports on those route files
+
+Lithia does not treat arbitrary application code as documentation input. The route boundary is the canonical place for API documentation.
+
+## `metadata.openapi`
+
+The most important OpenAPI authoring surface in Lithia is `metadata.openapi` on route files.
+
+Example:
+
+```ts
+import type { RouteHandler, RouteMetadata } from "@lithia-js/core";
+import { validate } from "@lithia-js/middlewares";
+import { z } from "zod";
+
+const querySchema = z.object({
+  name: z.string().optional(),
+});
+
+const responseSchema = z.object({
+  message: z.string(),
+});
+
+export const middlewares = [validate({ query: querySchema })];
+
+export const metadata = {
+  openapi: {
+    summary: "Return a greeting",
+    description: "Demonstrates explicit OpenAPI metadata on a Lithia route.",
+    tags: ["Examples"],
+    query: querySchema,
+    responses: {
+      200: {
+        description: "Successful greeting response",
+        schema: responseSchema,
+      },
+    },
+  },
+} satisfies RouteMetadata;
+
+const helloRoute: RouteHandler = async (req, res) => {
+  const name = typeof req.query.name === "string" ? req.query.name : "World";
+
+  return res.json({
+    message: `Hello, ${name}!`,
+  });
+};
+
+export default helloRoute;
+```
+
+This gives the route a clear, explicit description of its public API contract.
+
+## What `metadata.openapi` can describe
+
+Depending on the route, metadata can describe:
+
+- summary
+- description
+- tags
+- params
+- query
+- request body
+- responses
+- security requirements
+
+The exact richness of the generated OpenAPI output depends on how explicit you are at the route layer.
+
+## Practical route workflow
+
+A common and healthy OpenAPI workflow in Lithia looks like this:
+
+1. define the route
+2. define validation schemas where needed
+3. export `metadata.openapi`
+4. run the app
+5. open the docs route
+6. use the generated spec for tooling or clients
+
+This keeps your route contract and your route documentation close together.
+
+## A complete small example
+
+Imagine a route under:
+
+```txt
+src/app/routes/hello/route.get.ts
+```
+
+with:
+
+- a query schema
+- response schema
+- route metadata
+
+When OpenAPI is enabled in config, Lithia can:
+
+- include that route in the generated spec
+- expose the spec at `/openapi.json`
+- expose interactive docs at `/docs`
+
+That creates a nice development loop:
+
+1. edit the route
+2. edit the metadata
+3. refresh the docs
+
+## Relation to `@lithia-js/openapi`
+
+OpenAPI support is powered by `@lithia-js/openapi`.
+
+In practical terms:
+
+- the framework understands the relevant config and reserved routes
+- the package handles OpenAPI generation and Scalar integration
+
+If you are enabling OpenAPI in a project, make sure the package is present and aligned with the Lithia version you are using.
+
+## Serving the generated spec and Scalar
+
+Once enabled, the normal public outputs are:
+
+- `GET /openapi.json`
+- `GET /docs`
+
+This means you can:
+
+- inspect the raw spec directly
+- connect tooling to the spec endpoint
+- use Scalar for human-friendly exploration of the API
+
+If you customize `docsPath` or `specPath`, the public routes will follow that configuration.
+
+## Good practices
+
+### Keep docs at the route boundary
+
+Do not treat OpenAPI as a completely separate documentation layer. In Lithia, the route that owns the HTTP contract should also own the important documentation metadata.
+
+### Reuse schemas where it makes sense
+
+If you are already validating request input with schemas, it is often a good idea to reuse or align those schemas in your OpenAPI metadata to reduce drift.
+
+### Document the important routes first
+
+If your app has many routes, start by documenting the endpoints that are part of the public contract or the most important internal integration surface.
+
+## Limitations and expectations
+
+OpenAPI in Lithia is intentionally explicit.
+
+That means:
+
+- the framework does not try to infer everything from handler code
+- routes without explicit metadata will have less expressive documentation
+- the best results come from documenting the route contract intentionally
+
+This is a feature, not a weakness. It keeps the generated API description predictable and under your control.
+
+## Common mistakes
+
+### Enabling OpenAPI without adding route metadata
+
+If you want rich docs, annotate the important routes explicitly.
+
+### Letting validation and documentation drift apart
+
+When possible, align validation schemas and documentation schemas so the route contract stays coherent.
+
+### Forgetting that docs routes are reserved
+
+When OpenAPI is enabled, the configured docs and spec paths belong to the OpenAPI integration.
+
+## Suggested next steps
+
+The most relevant pages to read after this one are:
+
+- [Route Handlers](/docs/routes)
+- [Project Structure](/docs/project-structure)
+- [Deploying](/docs/deploying)

@@ -1,0 +1,246 @@
+---
+title: Event Handlers
+description: Handle realtime communication with Lithia event handlers.
+---
+
+# Event Handlers
+
+Event handlers are Lithia's realtime execution layer.
+
+They are discovered from files under `src/app/events` and executed through the framework's socket-oriented runtime. This is where you handle connection lifecycle, custom events, event payloads, and socket-specific behavior.
+
+This page is the canonical reference for event execution semantics in Lithia.
+
+## What an event handler is
+
+An event handler is an async function that Lithia invokes when a matching socket event occurs.
+
+A minimal connection handler looks like this:
+
+```ts
+import type { EventHandler } from "@lithia-js/core";
+
+const connectionEvent: EventHandler = async (socket) => {
+  socket.emit("server:connected", {
+    socketId: socket.id,
+    message: "Connected to Lithia.",
+  });
+};
+
+export default connectionEvent;
+```
+
+This is not an HTTP endpoint. It belongs to a separate execution model built for realtime interactions.
+
+## Where event files live
+
+Event handlers live under:
+
+```txt
+src/app/events
+```
+
+Examples:
+
+- `src/app/events/connection.ts`
+- `src/app/events/disconnect.ts`
+- `src/app/events/chat/ping.ts`
+
+The filesystem naming convention is the source of truth for event names.
+
+## Event naming conventions
+
+Lithia derives event names from the file path under `src/app/events`.
+
+### Lifecycle event files
+
+Some names are special by convention:
+
+- `connection.ts` -> `connection`
+- `disconnect.ts` -> `disconnect`
+
+These are useful for the socket lifecycle itself.
+
+### Custom event files
+
+Nested event files become colon-delimited names.
+
+For example:
+
+```txt
+src/app/events/chat/ping.ts
+```
+
+becomes:
+
+```txt
+chat:ping
+```
+
+This is a good balance between human-readable event names and domain-oriented folder organization.
+
+## The handler signature
+
+Event handlers typically use the `EventHandler` type:
+
+```ts
+import type { EventHandler } from "@lithia-js/core";
+```
+
+Handlers receive:
+
+- the active socket as the first argument
+- the incoming payload as the second argument
+
+That means an event file owns the socket boundary in the same way a route file owns the HTTP boundary.
+
+## A practical example: ping and pong
+
+This is the same style used in Lithia's event example:
+
+```ts
+import type { EventHandler } from "@lithia-js/core";
+import { useEvent } from "@lithia-js/core";
+
+type PingPayload = {
+  message?: string;
+};
+
+const pingEvent: EventHandler = async (socket, data: PingPayload) => {
+  const event = useEvent();
+
+  socket.emit("chat:pong", {
+    socketId: socket.id,
+    event: event.name,
+    message: data?.message ?? "pong",
+    timestamp: new Date().toISOString(),
+  });
+};
+
+export default pingEvent;
+```
+
+This example demonstrates a few important ideas:
+
+- the event name comes from the filesystem
+- the payload is passed as the second argument
+- the socket boundary is explicit
+- the handler can still use event-aware hooks such as `useEvent()`
+
+## Event hooks and context
+
+Lithia provides event-specific hooks for the current realtime context:
+
+- `useSocket()`
+- `useSocketId()`
+- `useData()`
+- `useEvent()`
+
+These are useful when:
+
+- helper code needs access to the current socket
+- you want to read the current payload without passing it down repeatedly
+- event-aware helpers need to know which event is currently executing
+
+Like route hooks, they are boundary-aware helpers. They work best when used intentionally, not as a replacement for clear application structure.
+
+## Connection and disconnect handlers
+
+Connection and disconnect are useful lifecycle hooks for app-wide realtime behavior.
+
+Typical uses include:
+
+- greeting new clients
+- joining initial rooms
+- tracking presence
+- cleaning up ephemeral state on disconnect
+
+A basic connection handler may look like this:
+
+```ts
+import type { EventHandler } from "@lithia-js/core";
+
+const connectionEvent: EventHandler = async (socket) => {
+  socket.emit("server:connected", {
+    socketId: socket.id,
+    message: "Connected to the Lithia events example.",
+  });
+};
+
+export default connectionEvent;
+```
+
+Keep lifecycle handlers focused on lifecycle concerns. They should not become a dumping ground for unrelated feature logic just because every client touches them.
+
+## Middleware behavior for events
+
+Event handlers support middleware in the same general spirit as routes, but the context is event-oriented rather than HTTP-oriented.
+
+This is a good place for concerns such as:
+
+- payload validation
+- boundary preconditions
+- common realtime policies
+
+The exact middleware should still reflect the nature of event boundaries. Validation and event-specific policies fit well here; unrelated domain logic does not.
+
+## Error behavior
+
+Event handler failures are realtime execution failures, not HTTP failures.
+
+That distinction matters.
+
+With routes, the question is often “what response should this request receive?”
+
+With events, the question is usually “what should happen to this socket interaction when the handler fails?”
+
+That is why it helps to think of event handlers as their own execution model rather than “routes but over websockets.”
+
+## Practical patterns
+
+### Group events by capability
+
+Domain grouping usually scales well:
+
+- `chat/*`
+- `presence/*`
+- `notifications/*`
+
+### Keep event handlers thin
+
+The handler should own the realtime boundary:
+
+- read the incoming payload
+- validate if needed
+- call domain logic
+- emit or broadcast the right result
+
+### Use lifecycle handlers for lifecycle work
+
+If logic does not really belong to the socket lifecycle, do not force it into `connection` or `disconnect`.
+
+### Move isolated heavy work into tasks
+
+If an event triggers work that should run outside the event path, use an [Async Task](/docs/async-tasks) instead of keeping it inline.
+
+## Common mistakes
+
+### Treating events as hidden HTTP routes
+
+If the interaction is fundamentally request-response, use a route. Use an event handler when the boundary is genuinely realtime and event-oriented.
+
+### Overloading the handler with business logic
+
+As event behavior grows, move domain logic into modules below the event boundary and keep the event handler focused on socket concerns.
+
+### Using event files for scheduled or app-startup behavior
+
+Event handlers are for socket interactions. Scheduled work belongs in [Async Tasks](/docs/async-tasks), and startup initialization belongs in `src/app/server.ts`.
+
+## Suggested next steps
+
+The most common next topics after events are:
+
+- [Route Handlers](/docs/routes)
+- [Async Tasks](/docs/async-tasks)
+- [Project Structure](/docs/project-structure)

@@ -1,0 +1,330 @@
+---
+title: Project Structure
+description: Understand how Lithia discovers routes, events, tasks, startup logic, and generated runtime artifacts.
+---
+
+# Project Structure
+
+Lithia is convention-first.
+
+That means the structure of your project is part of how the framework works, not just how the code looks. Routes, events, tasks, and startup logic are discovered from specific locations, and Lithia builds its runtime around those entrypoints.
+
+This page is the canonical reference for folder conventions in a Lithia application.
+
+## The core idea
+
+The heart of a Lithia app is `src/app`.
+
+A typical application starts from this shape:
+
+```txt
+src/
+  app/
+    routes/
+    events/
+    tasks/
+    server.ts
+```
+
+Not every app needs every part immediately, but those are the framework-owned areas you should know from the beginning.
+
+## The framework-owned entrypoints
+
+### `src/app/routes`
+
+Use this for HTTP route handlers.
+
+This is the right home for:
+
+- JSON APIs
+- REST-style endpoints
+- webhooks
+- request validation at the HTTP boundary
+- route metadata used by OpenAPI
+
+If a client sends an HTTP request and expects an HTTP response, the logic starts here.
+
+### `src/app/events`
+
+Use this for realtime event handlers.
+
+This is the right home for:
+
+- socket connection lifecycle
+- custom socket events
+- realtime notifications
+- domain-specific event flows such as chat or presence
+
+If the boundary is socket-driven instead of request-response, it belongs here.
+
+### `src/app/tasks`
+
+Use this for Lithia Async Tasks.
+
+This is the right home for:
+
+- isolated background work
+- CPU-heavy or side-effect work you do not want inline in a route
+- scheduled cron-driven jobs
+
+Tasks are discovered from the filesystem the same way routes and events are, but they belong to a different execution model.
+
+### `src/app/server.ts`
+
+This file is optional.
+
+Use it when your app needs startup logic before traffic begins flowing.
+
+Typical uses include:
+
+- creating clients for external services
+- registering shared dependencies with `provide()`
+- preparing services that routes, events, and tasks all depend on
+
+If your app does not need custom startup, you do not need this file.
+
+## A minimal project layout
+
+The smallest useful Lithia app can be extremely small:
+
+```txt
+src/
+  app/
+    routes/
+      hello/
+        route.get.ts
+```
+
+That is enough for a functional HTTP app.
+
+You do not need to add `events`, `tasks`, or `server.ts` until the application actually needs them.
+
+## A realistic growing application
+
+As an app gets bigger, the structure usually becomes more expressive:
+
+```txt
+src/
+  app/
+    routes/
+      health/
+        route.get.ts
+      users/
+        route.get.ts
+        route.post.ts
+        [id]/
+          route.get.ts
+          route.patch.ts
+    events/
+      connection.ts
+      disconnect.ts
+      chat/
+        ping.ts
+        join-room.ts
+    tasks/
+      notifications/
+        welcome-email.ts
+      maintenance/
+        cleanup.cron.ts
+    server.ts
+```
+
+What matters here is not just neat folders. Each area reflects a different runtime concern:
+
+- routes answer HTTP
+- events answer sockets
+- tasks run isolated work
+- `server.ts` prepares startup state
+
+## What Lithia discovers automatically
+
+Lithia automatically discovers:
+
+- route files under `src/app/routes`
+- event files under `src/app/events`
+- task files under `src/app/tasks`
+- optional startup logic in `src/app/server.ts`
+
+You do not need to manually register each route, event, or task in a central config file.
+
+That discovery model is one of the reasons Lithia feels straightforward early: adding a correctly named file is enough for the framework to recognize a new entrypoint.
+
+## What Lithia does not discover automatically
+
+Lithia does not impose a full architecture for the rest of your app.
+
+For example, it does not force a specific structure for:
+
+- domain services
+- repositories
+- shared utilities
+- data access modules
+- API clients
+- feature-specific helper modules
+
+Only the framework entrypoints are convention-owned.
+
+That means you can still organize the rest of the app in a way that fits the domain.
+
+## Route file conventions
+
+Route files live under `src/app/routes`, and their location and filename determine how they map to the HTTP layer.
+
+Examples:
+
+- `src/app/routes/hello/route.get.ts` -> `GET /hello`
+- `src/app/routes/users/route.post.ts` -> `POST /users`
+- `src/app/routes/users/[id]/route.get.ts` -> `GET /users/:id`
+
+### Dynamic segments
+
+Segments in brackets become route params:
+
+- `[id]`
+- `[slug]`
+
+### Catch-all segments
+
+Catch-all routes use syntax such as:
+
+- `[...slug]`
+
+### Grouping folders
+
+Folders wrapped in parentheses are ignored in the public URL:
+
+```txt
+src/app/routes/(dashboard)/users/route.get.ts
+```
+
+still maps to:
+
+```txt
+/users
+```
+
+That gives you internal organization without forcing it into the URL space.
+
+The full HTTP behavior lives in [Route Handlers](/docs/routes). This page is focused on the structural convention itself.
+
+## Event file conventions
+
+Event handlers live under `src/app/events`, and the file path becomes the event name.
+
+Examples:
+
+- `src/app/events/connection.ts` -> `connection`
+- `src/app/events/disconnect.ts` -> `disconnect`
+- `src/app/events/chat/ping.ts` -> `chat:ping`
+
+Nested folders become colon-delimited namespaces.
+
+This is a good fit for grouping events by capability without creating a single huge event directory.
+
+The full realtime semantics live in [Event Handlers](/docs/events).
+
+## Task file conventions
+
+Task files live under `src/app/tasks`, and their file path becomes the task identifier.
+
+Examples:
+
+- `src/app/tasks/notifications/welcome-email.ts` -> `notifications:welcome-email`
+- `src/app/tasks/images/generate-thumbnail.ts` -> `images:generate-thumbnail`
+- `src/app/tasks/maintenance/cleanup.cron.ts` -> `maintenance:cleanup`
+
+The `.cron` marker changes the trigger type from `ON_DEMAND` to `CRON`.
+
+That means file naming affects runtime behavior directly, not just organization.
+
+The full task semantics live in [Async Tasks](/docs/async-tasks).
+
+## `server.ts` as a startup boundary
+
+`src/app/server.ts` is optional, but when it exists it is special.
+
+It is executed during app startup before Lithia begins serving traffic.
+
+Use it for:
+
+- startup initialization
+- dependency registration
+- preparing shared clients or services
+
+Do not use it as a replacement for routes, events, or tasks. It is a startup boundary, not a general-purpose application bucket.
+
+## Generated artifacts
+
+When Lithia builds your app, it also generates runtime artifacts that support fast and predictable execution.
+
+You generally do not edit these directly, but it helps to know they exist:
+
+- route manifests
+- event manifests
+- task manifests
+- generated type support for tasks
+- generated OpenAPI artifacts when enabled
+
+One of the consequences of this design is that the runtime does not need to discover everything dynamically in the hot path. The build has already turned the app structure into explicit runtime knowledge.
+
+## Structuring a real app well
+
+### Keep framework entrypoints thin
+
+Routes, events, and tasks should usually coordinate the boundary they own, not contain every line of business logic themselves.
+
+That usually means:
+
+- parse input at the boundary
+- validate at the boundary
+- call domain modules
+- shape the boundary-specific output
+
+### Organize by domain inside each framework area
+
+As the app grows, domain-oriented grouping tends to scale better than dumping everything into a flat folder:
+
+- `routes/users/*`
+- `events/chat/*`
+- `tasks/notifications/*`
+
+### Avoid putting arbitrary helper code into entrypoint folders
+
+If a file is not actually a route, event, or task entrypoint, it usually does not belong inside the corresponding entrypoint folder.
+
+This keeps discovery clear and the intent of the directory obvious.
+
+### Do not overuse `server.ts`
+
+A common trap in convention-first frameworks is turning the startup file into a shadow application container.
+
+Use `server.ts` when you need startup logic. Otherwise, leave it out entirely.
+
+## Common mistakes
+
+### Treating the filesystem as cosmetic
+
+In Lithia, the route, event, and task filesystem conventions are part of the framework contract.
+
+### Mixing execution models casually
+
+If work is HTTP, put it in a route.
+
+If it is socket-driven, put it in an event handler.
+
+If it should run in isolation, put it in a task.
+
+If it initializes app-wide services, put it in `server.ts`.
+
+### Flattening everything into one folder
+
+Lithia can handle nested structure well. Use that to keep domains readable instead of collapsing everything into a single top-level list of files.
+
+## Suggested next steps
+
+Now that the structure is clear, move to the behavior of the specific layer you want to build next:
+
+- [Route Handlers](/docs/routes)
+- [Event Handlers](/docs/events)
+- [Async Tasks](/docs/async-tasks)
+- [Exporting OpenAPI](/docs/openapi)

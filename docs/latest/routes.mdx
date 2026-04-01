@@ -1,0 +1,406 @@
+---
+title: Route Handlers
+description: Build HTTP APIs with Lithia's file-based route handler system.
+---
+
+# Route Handlers
+
+Route handlers are the HTTP boundary of a Lithia application.
+
+They are discovered from files under `src/app/routes`, mapped to URLs automatically, and executed through Lithia's request pipeline. This is where you handle request input, response shaping, validation, route metadata, and HTTP-specific concerns.
+
+This page is the canonical reference for HTTP route behavior in Lithia.
+
+## What a route handler is
+
+A route handler is an async function that receives a request object and a response object.
+
+A minimal route looks like this:
+
+```ts
+import type { RouteHandler } from "@lithia-js/core";
+
+const helloRoute: RouteHandler = async (_req, res) => {
+  return res.json({
+    message: "Hello from Lithia.",
+  });
+};
+
+export default helloRoute;
+```
+
+If a file under `src/app/routes` exports a default handler using a valid route filename convention, Lithia treats it as part of the HTTP application.
+
+## Where route files live
+
+Route files live under:
+
+```txt
+src/app/routes
+```
+
+The folder structure below that directory becomes the URL structure for your application.
+
+Examples:
+
+- `src/app/routes/hello/route.get.ts` -> `GET /hello`
+- `src/app/routes/users/route.get.ts` -> `GET /users`
+- `src/app/routes/users/[id]/route.get.ts` -> `GET /users/:id`
+
+If you want the full filesystem rules, see [Project Structure](/docs/project-structure). This page focuses on how those files behave once they are recognized as HTTP entrypoints.
+
+## File naming and method conventions
+
+Lithia recognizes route files by the `route` filename convention.
+
+### Method-specific route files
+
+These are the most common route files:
+
+- `route.get.ts`
+- `route.post.ts`
+- `route.put.ts`
+- `route.patch.ts`
+- `route.delete.ts`
+- `route.options.ts`
+- `route.head.ts`
+
+Method-specific files are usually the clearest option because each file answers one HTTP method and one request-response shape.
+
+### Method-agnostic routes
+
+Lithia also supports:
+
+- `route.ts`
+
+This can be useful in more advanced or generic flows, but most applications are easier to maintain when each method has its own explicit file.
+
+## Filesystem-to-path mapping
+
+Lithia maps route files to public paths using a few simple rules.
+
+### Normal folders become path segments
+
+```txt
+src/app/routes/admin/users/route.get.ts
+```
+
+maps to:
+
+```txt
+/admin/users
+```
+
+### Bracket segments become params
+
+```txt
+src/app/routes/users/[id]/route.get.ts
+```
+
+maps to:
+
+```txt
+/users/:id
+```
+
+### Catch-all segments support flexible matching
+
+```txt
+src/app/routes/docs/[...slug]/route.get.ts
+```
+
+This is useful when the rest of the path should be captured dynamically.
+
+### Grouping folders are ignored in the public path
+
+```txt
+src/app/routes/(dashboard)/users/route.get.ts
+```
+
+still maps to:
+
+```txt
+/users
+```
+
+Grouping folders are useful when you want better internal organization without affecting URLs.
+
+## The handler signature
+
+Route handlers typically use the `RouteHandler` type:
+
+```ts
+import type { RouteHandler } from "@lithia-js/core";
+```
+
+The handler receives:
+
+- `req` as a `LithiaRequest`
+- `res` as a `LithiaResponse`
+
+That gives you a clean HTTP boundary without forcing you into a specific domain architecture.
+
+## Reading request data
+
+### Query string input
+
+```ts
+import type { RouteHandler } from "@lithia-js/core";
+
+const route: RouteHandler = async (req, res) => {
+  const name = typeof req.query.name === "string" ? req.query.name : "World";
+
+  return res.json({
+    message: `Hello, ${name}!`,
+  });
+};
+
+export default route;
+```
+
+### Route params
+
+```ts
+import type { RouteHandler } from "@lithia-js/core";
+
+const route: RouteHandler = async (req, res) => {
+  return res.json({
+    id: req.params.id,
+  });
+};
+
+export default route;
+```
+
+### Headers
+
+Use `req.headers` when you need explicit header access, or the route hooks listed below when helper code needs the same information deeper in the call path.
+
+## Route hooks
+
+Lithia provides route-oriented hooks for the current request context:
+
+- `useRequest()`
+- `useResponse()`
+- `useQuery()`
+- `useParams()`
+- `useHeaders()`
+- `usePathname()`
+- `useRoute()`
+
+These are useful when:
+
+- helper functions need boundary state
+- you want to avoid threading `req` through many internal layers
+- the current route context is part of the local execution flow
+
+They are most useful inside route code and route-adjacent helpers, not as a substitute for good module boundaries everywhere in the app.
+
+## Returning responses
+
+Most applications will return JSON most of the time:
+
+```ts
+return res.json({
+  ok: true,
+});
+```
+
+But route handlers are where you should make all HTTP-facing decisions, including:
+
+- status code selection
+- response headers
+- cookies
+- response body shape
+
+Keep the route focused on the HTTP contract:
+
+1. read request input
+2. validate it
+3. call application logic
+4. shape the HTTP response
+
+## A simple real example
+
+This example mirrors the style used in Lithia's own examples:
+
+```ts
+import type { RouteHandler } from "@lithia-js/core";
+
+const helloRoute: RouteHandler = async (req, res) => {
+  const name = typeof req.query.name === "string" ? req.query.name : "World";
+
+  return res.json({
+    message: `Hello, ${name}!`,
+  });
+};
+
+export default helloRoute;
+```
+
+This is a good baseline because it keeps the route focused on the request boundary and avoids mixing in unrelated infrastructure.
+
+## Route-level middleware
+
+Route handlers can export route-level middleware alongside the default handler.
+
+This is usually the right place for per-route concerns such as validation.
+
+Example using `@lithia-js/middlewares`:
+
+```ts
+import type { RouteHandler } from "@lithia-js/core";
+import { validate } from "@lithia-js/middlewares";
+import { z } from "zod";
+
+const querySchema = z.object({
+  name: z.string().optional(),
+});
+
+export const middlewares = [validate({ query: querySchema })];
+
+const route: RouteHandler = async (req, res) => {
+  const name = typeof req.query.name === "string" ? req.query.name : "World";
+
+  return res.json({
+    message: `Hello, ${name}!`,
+  });
+};
+
+export default route;
+```
+
+This pattern is usually better than manually scattering validation logic throughout the handler body, because it keeps boundary concerns explicit.
+
+## Route metadata
+
+Routes can also export `metadata`.
+
+This is where documentation-oriented information such as OpenAPI metadata belongs.
+
+Example:
+
+```ts
+import type { RouteHandler, RouteMetadata } from "@lithia-js/core";
+import { validate } from "@lithia-js/middlewares";
+import { z } from "zod";
+
+const querySchema = z.object({
+  name: z.string().optional(),
+});
+
+const responseSchema = z.object({
+  message: z.string(),
+});
+
+export const middlewares = [validate({ query: querySchema })];
+
+export const metadata = {
+  openapi: {
+    summary: "Return a greeting",
+    description: "Demonstrates explicit OpenAPI metadata on a Lithia route.",
+    tags: ["Examples"],
+    query: querySchema,
+    responses: {
+      200: {
+        description: "Successful greeting response",
+        schema: responseSchema,
+      },
+    },
+  },
+} satisfies RouteMetadata;
+
+const helloRoute: RouteHandler = async (req, res) => {
+  const name = typeof req.query.name === "string" ? req.query.name : "World";
+
+  return res.json({
+    message: `Hello, ${name}!`,
+  });
+};
+
+export default helloRoute;
+```
+
+This keeps API documentation close to the route that owns the contract.
+
+The full OpenAPI behavior is covered in [Exporting OpenAPI](/docs/openapi).
+
+## A more structured route pattern
+
+As route complexity grows, a good pattern is:
+
+1. keep validation at the route boundary
+2. keep metadata at the route boundary
+3. call a domain function from the handler
+4. keep the handler in charge of HTTP concerns only
+
+For example:
+
+```ts
+import type { RouteHandler } from "@lithia-js/core";
+import { createUser } from "@/domains/users/create-user";
+
+const route: RouteHandler = async (req, res) => {
+  const result = await createUser({
+    email: req.body.email,
+    name: req.body.name,
+  });
+
+  return res.json(result, { status: 201 });
+};
+
+export default route;
+```
+
+The route should not become a dumping ground for every layer of the application.
+
+## Best practices
+
+### Prefer method-specific files
+
+Most APIs are easier to reason about when each method has its own file.
+
+### Keep the route responsible for the HTTP contract
+
+A route should normally own:
+
+- request input
+- validation
+- status codes
+- response shape
+
+The route should not have to own every detail of domain logic.
+
+### Use route metadata deliberately
+
+Metadata should document the contract, not become a second hidden implementation layer.
+
+### Keep route-level middleware focused
+
+Use route middleware for boundary-level concerns. If the logic is a business rule, it may belong deeper in the application instead.
+
+## Common failure cases
+
+### Doing too much work inline in the route
+
+If a route is becoming CPU-heavy or side-effect heavy, it may be time to move part of that work into an [Async Task](/docs/async-tasks).
+
+### Mixing validation, domain rules, and response shaping into one large block
+
+The cleanest route flow is usually:
+
+1. validate input
+2. call domain logic
+3. shape the HTTP response
+
+### Treating route hooks as a substitute for structure
+
+Route hooks are useful, but they should support the route layer rather than turn every helper into an implicit request-bound function.
+
+## Suggested next steps
+
+Once routes are clear, the next most common topics are:
+
+- [Event Handlers](/docs/events)
+- [Async Tasks](/docs/async-tasks)
+- [Exporting OpenAPI](/docs/openapi)

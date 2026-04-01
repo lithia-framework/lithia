@@ -1,0 +1,202 @@
+---
+title: Installation
+description: Install Lithia, choose the right template, and start your first application locally.
+---
+
+# Installation
+
+This page covers the first-run flow for Lithia:
+
+- what you need before you start
+- how to scaffold a project
+- how to choose a template
+- what gets generated
+- how to run the app locally
+- what common setup mistakes look like
+
+If you want the framework model first, start with [Getting Started](/docs/getting-started). If you already know you want to try Lithia locally, this is the right page.
+
+## Prerequisites
+
+Before creating a Lithia application, make sure you have:
+
+- Node.js 20 or later
+- a package manager such as `pnpm`
+- Git installed locally
+
+Lithia is ESM-first and built for modern Node runtimes, so being on a recent Node version matters.
+
+## Create a new project
+
+The recommended way to start a Lithia app is:
+
+```bash
+pnpm create lithia
+```
+
+You can also pass the destination directory directly:
+
+```bash
+pnpm create lithia my-app
+```
+
+The scaffolding flow is designed to create a runnable app, not just an empty skeleton. You will be guided through:
+
+- project name
+- template selection
+- dependency installation
+- optional Git initialization
+
+## Choosing the right template
+
+Lithia templates are intentionally small in number. The goal is to give you useful starting points without flooding the project with near-duplicate setups.
+
+### `starter`
+
+Use this when you want the cleanest baseline.
+
+This is the best choice when:
+
+- you are learning Lithia
+- you want to grow the app gradually
+- you do not yet know which integrations you need
+
+If you are unsure, choose `starter`.
+
+### `with-docker`
+
+Use this when you already know Docker is part of your workflow.
+
+This is a good fit when:
+
+- you want a container-oriented project from day one
+- your deployment process is already Docker-based
+- you want the app packaged with production deployment in mind
+
+### `with-drizzle`
+
+Use this when you know the app needs a SQL-backed data layer immediately.
+
+This is a good fit when:
+
+- persistence is part of the app from the beginning
+- you want Drizzle schemas and migrations wired in early
+- you would rather start from a project that already acknowledges database concerns
+
+### `with-better-auth`
+
+Use this when authentication is central to the project from the start.
+
+This is a good fit when:
+
+- user auth is a first-class feature
+- you want Better Auth already integrated
+- you want to avoid redoing auth setup manually
+
+## What gets generated
+
+A Lithia app already has framework-native structure after scaffolding.
+
+Depending on the template, you will typically see:
+
+- `src/app/routes` for HTTP route handlers
+- `src/app/events` for realtime handlers when the app needs them
+- `src/app/tasks` for isolated task handlers when the app needs them
+- `lithia.config.ts` for app configuration
+- normal project files like `package.json` and `tsconfig.json`
+
+The generated project is supposed to be runnable immediately.
+
+## Install dependencies
+
+If you did not let the CLI install dependencies for you, run:
+
+```bash
+cd my-app
+pnpm install
+```
+
+## Start the development server
+
+Once dependencies are installed, start the application with:
+
+```bash
+pnpm dev
+```
+
+The development runtime will:
+
+- load `lithia.config.ts`
+- read the current environment
+- build the application
+- discover routes, events, and tasks
+- start the development server
+- rebuild and reload when supported files change
+
+That means your first successful `pnpm dev` is already exercising the real Lithia lifecycle, not a fake lightweight dev shell.
+
+## What to expect after the first run
+
+After the app starts successfully, the next most useful step is not usually “add more random files.” It is understanding where different types of code belong.
+
+That is why the next page in the recommended path is [Project Structure](/docs/project-structure).
+
+If you skip that step and treat Lithia like a one-file server, the framework will feel more confusing than it needs to.
+
+## A realistic first workflow
+
+For most developers, the first productive Lithia workflow looks like this:
+
+1. scaffold a project with `pnpm create lithia`
+2. install dependencies if needed
+3. run `pnpm dev`
+4. inspect `src/app/routes`
+5. add or modify a route handler
+6. reload the app automatically through the dev server
+
+You do not need to set up routes in a central registry or manually wire every new file into the framework. Lithia discovers them from the filesystem.
+
+## Common setup mistakes
+
+### Using an old Node version
+
+If you see odd module, ESM, or runtime issues, check the Node version first.
+
+Lithia assumes a modern Node runtime.
+
+### Forgetting to install dependencies
+
+If the scaffold step did not install dependencies for you, `pnpm dev` will fail until you run `pnpm install`.
+
+### Choosing a heavy template too early
+
+If you are exploring the framework, the `starter` template is usually the right choice.
+
+It is easier to add auth, persistence, and Docker later than to mentally filter out integrations you do not understand yet.
+
+### Treating the generated project like an arbitrary Node app
+
+Lithia works best when you lean into its entrypoint conventions:
+
+- routes in `src/app/routes`
+- events in `src/app/events`
+- tasks in `src/app/tasks`
+- optional startup logic in `src/app/server.ts`
+
+The generated project is shaped that way on purpose.
+
+### Editing generated files without understanding what they are for
+
+Some templates include configuration or integration files that are there for a reason. If you are unsure what something does, prefer reading [Project Structure](/docs/project-structure) before deleting or flattening it.
+
+## When to move to the next page
+
+If you have already:
+
+- created the project
+- installed dependencies
+- started `pnpm dev`
+
+then the right next step is [Project Structure](/docs/project-structure).
+
+That is the page that explains how Lithia maps files to runtime behavior and how to keep the app organized as you add real features.

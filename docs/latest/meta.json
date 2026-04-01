@@ -1,0 +1,17 @@
+{
+  "root": true,
+  "title": "Latest Version",
+  "description": "v1.0.0-canary.20",
+  "icon": "Tag",
+  "pages": [
+    "---Introduction---",
+    "getting-started",
+    "installation",
+    "project-structure",
+    "routes",
+    "events",
+    "async-tasks",
+    "openapi",
+    "deploying"
+  ]
+}
