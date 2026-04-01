@@ -15,6 +15,12 @@ import type { EventMiddleware } from "../../transport/socket/event-pipeline";
 import type { Environment } from "../../types";
 import { DependencyContainer } from "./dependency-container";
 import { MiddlewareRegistry } from "./middleware-registry";
+import {
+	type LithiaServerCleanup,
+	loadServerBootstrap,
+	normalizeServerBootstrapCleanup,
+	resolveServerBootstrapPath,
+} from "./server-bootstrap";
 import { TaskScheduler } from "./task-scheduler";
 
 export type InjectionKey<T> = symbol | string | { new (...args: any[]): T };
@@ -32,6 +38,7 @@ export class LithiaApp {
 		RouteMiddleware,
 		EventMiddleware
 	>();
+	private serverBootstrapCleanup: (() => Promise<void>) | null = null;
 	private readonly _server: LithiaServer;
 	private readonly taskScheduler: TaskScheduler;
 
@@ -82,8 +89,19 @@ export class LithiaApp {
 	}
 
 	public runWithContext<T>(fn: () => Promise<T>): Promise<T> {
+		return this.runWithContainer(this.dependencies.snapshot(), fn);
+	}
+
+	public runWithMutableContext<T>(fn: () => Promise<T>): Promise<T> {
+		return this.runWithContainer(this.dependencies.mutable(), fn);
+	}
+
+	private runWithContainer<T>(
+		container: Map<any, any>,
+		fn: () => Promise<T>,
+	): Promise<T> {
 		const context: LithiaContext = {
-			container: this.dependencies.snapshot(),
+			container,
 			config: this.config,
 		};
 
@@ -105,6 +123,7 @@ export class LithiaApp {
 		this.executeOnce(() => logger.info("Starting Lithia server..."));
 
 		try {
+			await this.runServerBootstrapIfPresent();
 			await this._server.listen();
 			this.taskScheduler.start((task) => {
 				parentPort?.postMessage({
@@ -127,8 +146,32 @@ export class LithiaApp {
 	}
 
 	public async stop(): Promise<void> {
+		await this.runServerBootstrapCleanup();
 		this.taskScheduler.stop();
 		await this._server.close();
+	}
+
+	private async runServerBootstrapIfPresent(): Promise<void> {
+		const filePath = await resolveServerBootstrapPath(this.config.outDir);
+		if (!filePath) return;
+
+		const bootstrap = await loadServerBootstrap(filePath);
+		const cleanup = await this.runWithMutableContext(() => bootstrap());
+		this.serverBootstrapCleanup = normalizeServerBootstrapCleanup(
+			cleanup as LithiaServerCleanup,
+		);
+	}
+
+	private async runServerBootstrapCleanup(): Promise<void> {
+		if (!this.serverBootstrapCleanup) return;
+
+		try {
+			await this.serverBootstrapCleanup();
+		} catch (error) {
+			logger.error("Failed to clean up app/server.ts bootstrap.", error);
+		} finally {
+			this.serverBootstrapCleanup = null;
+		}
 	}
 
 	private executeOnce(fn: () => void): void {

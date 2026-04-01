@@ -115,6 +115,25 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  examples/5-custom-startup:
+    dependencies:
+      '@lithia-js/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^2.3.13
+        version: 2.3.13
+      '@lithia-js/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@types/node':
+        specifier: ^25.1.0
+        version: 25.1.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/better-auth:
     dependencies:
       better-auth:

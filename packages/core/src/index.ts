@@ -32,6 +32,10 @@ export {
 	useDependency,
 	useOptionalDependency,
 } from "./hooks/lithia-hooks";
+export type {
+	LithiaServerBootstrap,
+	LithiaServerCleanup,
+} from "./runtime/app/server-bootstrap";
 export {
 	useHeaders,
 	useParams,

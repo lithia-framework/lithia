@@ -1,0 +1,25 @@
+{
+  "name": "@examples/5-custom-startup",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "lithia dev",
+    "build": "lithia build",
+    "start": "node ./dist/server.js",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "dependencies": {
+    "@lithia-js/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.13",
+    "@lithia-js/cli": "workspace:*",
+    "@types/node": "^25.1.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -16,4 +16,8 @@ export class DependencyContainer {
 	public snapshot(): Map<any, any> {
 		return new Map(this.dependencies);
 	}
+
+	public mutable(): Map<any, any> {
+		return this.dependencies;
+	}
 }
