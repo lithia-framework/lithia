@@ -610,7 +610,6 @@ When adding features or making changes, update:
 - **README.md** - If feature is user-facing
 - **Type definitions** - Keep types accurate
 - **Examples** - Add examples for new features
-- **CHANGELOG.md** - Document changes (maintainers handle this)
 - **Migration guides** - For breaking changes
 
 ### Documentation Style

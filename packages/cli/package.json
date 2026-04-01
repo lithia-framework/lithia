@@ -40,8 +40,8 @@
 		"test": "vitest --run"
 	},
 	"dependencies": {
-		"@lithia-js/core": "workspace:*",
-		"@lithia-js/utils": "workspace:*",
+		"@lithia-js/core": "workspace:1.0.0-canary.18",
+		"@lithia-js/utils": "workspace:1.0.0-canary.18",
 		"citty": "^0.2.0",
 		"chokidar": "^5.0.0"
 	},

@@ -41,11 +41,11 @@
 		"build": "tsup --config tsup.config.ts"
 	},
 	"peerDependencies": {
-		"@lithia-js/core": "workspace:*",
+		"@lithia-js/core": "workspace:1.0.0-canary.18",
 		"zod": "^4.2.1"
 	},
 	"devDependencies": {
-		"@lithia-js/core": "workspace:*"
+		"@lithia-js/core": "workspace:1.0.0-canary.18"
 	},
 	"peerDependenciesMeta": {
 		"zod": {
