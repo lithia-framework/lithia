@@ -32,7 +32,7 @@ interface AuthMiddlewareOptions {
  * The context is created by `authenticated()` and later consumed by
  * `getAuthContext()` and `useSession()`.
  */
-export type AuthContext<T extends Auth = Auth> = {
+export type AuthContext<T extends Auth<any> = Auth<any>> = {
 	session: Awaited<ReturnType<T["api"]["getSession"]>>;
 };
 
@@ -67,7 +67,7 @@ const authContextStore = getGlobalAuthStore();
  * the remainder of the current request pipeline.
  */
 export function authenticated(
-	auth: Auth,
+	auth: Auth<any>,
 	options: AuthMiddlewareOptions = {
 		error: {
 			message: "No valid authentication session found",
@@ -107,7 +107,7 @@ class NotInAuthContext extends LithiaError {
  * @throws {NotInAuthContext} Thrown when no auth context has been established
  * for the current request.
  */
-export function getAuthContext<T extends Auth = Auth>(): AuthContext<T> {
+export function getAuthContext<T extends Auth<any> = Auth<any>>(): AuthContext<T> {
 	const context = authContextStore.getStore() as AuthContext<T> | undefined;
 	if (!context) {
 		throw new NotInAuthContext();
@@ -127,7 +127,7 @@ export function getAuthContext<T extends Auth = Auth>(): AuthContext<T> {
  * @throws {NotInAuthContext} Thrown when called outside an authenticated route
  * context.
  */
-export function useSession<T extends Auth = Auth>(): AuthContext<T>["session"] {
+export function useSession<T extends Auth<any> = Auth<any>>(): AuthContext<T>["session"] {
 	const context = getAuthContext<T>();
 	return context.session;
 }
