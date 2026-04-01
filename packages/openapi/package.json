@@ -12,7 +12,7 @@
 	],
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"license": "MIT",
-	"homepage": "https://lithiajs.com",
+	"homepage": "https://lithiajs.org",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/lithia-framework/lithia.git",

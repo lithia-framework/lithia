@@ -2,6 +2,7 @@
   "name": "@examples/3-async-tasks",
   "version": "0.1.0",
   "private": true,
+  "description": "Lithia example for on-demand async task execution.",
   "type": "module",
   "scripts": {
     "dev": "lithia dev",

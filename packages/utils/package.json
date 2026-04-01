@@ -1,17 +1,18 @@
 {
 	"name": "@lithia-js/utils",
 	"version": "1.0.0-canary.18",
-	"description": "Common internal utilities and helper functions for the Lithia.js ecosystem.",
+	"description": "Shared utility helpers used across Lithia.js packages.",
 	"keywords": [
 		"lithia",
 		"lithia-js",
 		"utils",
 		"helpers",
-		"shared"
+		"shared",
+		"internal"
 	],
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"license": "MIT",
-	"homepage": "https://lithiajs.com",
+	"homepage": "https://lithiajs.org",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/lithia-framework/lithia.git",

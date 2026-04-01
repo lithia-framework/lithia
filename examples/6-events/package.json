@@ -2,6 +2,7 @@
   "name": "@examples/6-events",
   "version": "0.1.0",
   "private": true,
+  "description": "Lithia example showcasing Socket.IO event handlers.",
   "type": "module",
   "scripts": {
     "dev": "lithia dev",

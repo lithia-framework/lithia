@@ -2,6 +2,7 @@
   "name": "@examples/1-hello",
   "version": "0.1.0",
   "private": true,
+  "description": "Minimal Lithia example with a single HTTP route.",
   "type": "module",
   "scripts": {
     "dev": "lithia dev",

@@ -50,7 +50,7 @@ export default Hello;
 
 ## 📖 Documentation
 
-Everything you need to know is at [lithiajs.com/docs](https://lithiajs.com/docs).
+Everything you need to know is at [lithiajs.org/docs](https://lithiajs.org/docs).
 
 ---
 
@@ -71,7 +71,7 @@ Lithia is [MIT licensed](https://github.com/lithia-framework/lithia/blob/main/LI
 <div align="center">
 <p>
 <a href="https://github.com/lithia-framework/lithia">GitHub</a> •
-<a href="https://lithiajs.com">Documentation</a> •
+<a href="https://lithiajs.org">Documentation</a> •
 <a href="https://opencollective.com/lithiajs">OpenCollective</a> •
 <a href="https://github.com/lithia-framework/lithia/discussions">Discussions</a>
 </p>

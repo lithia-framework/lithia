@@ -1,7 +1,7 @@
 {
 	"name": "create-lithia",
 	"version": "1.0.0-canary.18",
-	"description": "Scaffold a new Lithia.js project in seconds. The fastest way to start building native-powered backends.",
+	"description": "Scaffold a new Lithia.js project from the official templates.",
 	"keywords": [
 		"create",
 		"lithia",
@@ -9,11 +9,12 @@
 		"scaffold",
 		"template",
 		"generator",
-		"backend"
+		"backend",
+		"create-app"
 	],
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"license": "MIT",
-	"homepage": "https://lithiajs.com",
+	"homepage": "https://lithiajs.org",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/lithia-framework/lithia.git",

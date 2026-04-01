@@ -3,7 +3,6 @@
 		"ms-vscode.vscode-typescript-next",
 		"biomejs.biome",
 		"EditorConfig.EditorConfig",
-		"tamasfe.even-better-toml",
-    "fill-labs.dependi"
+    "vitest.explorer",
 	]
 }

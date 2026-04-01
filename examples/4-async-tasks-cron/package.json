@@ -2,6 +2,7 @@
   "name": "@examples/4-async-tasks-cron",
   "version": "0.1.0",
   "private": true,
+  "description": "Lithia example for CRON-triggered async tasks.",
   "type": "module",
   "scripts": {
     "dev": "lithia dev",

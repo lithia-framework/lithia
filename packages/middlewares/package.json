@@ -1,20 +1,17 @@
 {
 	"name": "@lithia-js/middlewares",
 	"version": "1.0.0-canary.18",
-	"description": "A collection of standard, high-performance middlewares for the Lithia.js framework.",
+	"description": "Reusable middleware utilities for Lithia.js applications.",
 	"keywords": [
 		"lithia",
 		"lithia-js",
 		"middlewares",
-		"cors",
-		"security",
-		"logging",
 		"validation",
 		"zod"
 	],
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"license": "MIT",
-	"homepage": "https://lithiajs.com",
+	"homepage": "https://lithiajs.org",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/lithia-framework/lithia.git",

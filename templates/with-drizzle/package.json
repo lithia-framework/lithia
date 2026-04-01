@@ -2,6 +2,7 @@
   "name": "my-lithia-app",
   "version": "0.1.0",
   "private": true,
+  "description": "Lithia template with Drizzle ORM and PostgreSQL setup.",
   "type": "module",
   "scripts": {
     "dev": "lithia dev",
@@ -15,6 +16,8 @@
   },
   "dependencies": {
     "@lithia-js/core": "file:../../packages/core",
+    "@lithia-js/middlewares": "file:../../packages/middlewares",
+    "@lithia-js/openapi": "file:../../packages/openapi",
     "drizzle-orm": "^0.45.1",
     "pg": "^8.13.1"
   },

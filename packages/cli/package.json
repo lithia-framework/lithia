@@ -1,19 +1,20 @@
 {
 	"name": "@lithia-js/cli",
 	"version": "1.0.0-canary.18",
-	"description": "Command line interface for the Lithia.js framework - The fast, native-powered backend engine.",
+	"description": "Command-line interface for developing and building Lithia.js applications.",
 	"keywords": [
 		"lithia",
 		"lithia-js",
 		"cli",
 		"framework",
 		"backend",
-		"generator",
-		"build-tool"
+		"create-app",
+		"build-tool",
+		"dev-server"
 	],
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"license": "MIT",
-	"homepage": "https://lithiajs.com",
+	"homepage": "https://lithiajs.org",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/lithia-framework/lithia.git",

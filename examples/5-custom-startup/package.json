@@ -2,6 +2,7 @@
   "name": "@examples/5-custom-startup",
   "version": "0.1.0",
   "private": true,
+  "description": "Lithia example using src/app/server.ts for custom startup.",
   "type": "module",
   "scripts": {
     "dev": "lithia dev",

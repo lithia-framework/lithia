@@ -17,7 +17,7 @@ First off, thank you for considering contributing to Lithia! We're building some
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by respect, professionalism, and inclusivity. By participating, you are expected to uphold these values. Please report unacceptable behavior to [support@lithia-js.com](mailto:support@lithiajs.com).
+This project and everyone participating in it is governed by respect, professionalism, and inclusivity. By participating, you are expected to uphold these values. Please report unacceptable behavior to [support@lithia-js.com](mailto:support@lithiajs.org).
 
 ## Branch Strategy
 

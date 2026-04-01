@@ -1,7 +1,7 @@
 {
 	"name": "@lithia-js/better-auth",
 	"version": "1.0.0-canary.18",
-	"description": "The official Better Auth adapter for the Lithia.js framework.",
+	"description": "Official Better Auth integration for Lithia.js.",
 	"keywords": [
 		"lithia",
 		"lithia-js",
@@ -10,11 +10,11 @@
 		"auth-adapter",
 		"backend",
 		"typescript",
-		"native-speed"
+		"route-middleware"
 	],
 	"author": "Lucas Arch <luketsx@icloud.com>",
 	"license": "MIT",
-	"homepage": "https://lithiajs.com",
+	"homepage": "https://lithiajs.org",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/lithia-framework/lithia.git",
