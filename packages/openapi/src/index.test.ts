@@ -74,9 +74,10 @@ export default async function handler() {}
 		expect(spec.paths["/hello"].get.responses["200"].description).toBe(
 			"Success",
 		);
-		expect(html).toContain('data-url="/openapi.json"');
+		expect(html).toContain('Scalar.createApiReference("#api-reference",');
+		expect(html).toContain('"sources":[{"url":"/openapi.json","title":"Example API","default":true}]');
 		expect(html).toContain("cdn.jsdelivr.net/npm/@scalar/api-reference");
-		expect(html).toContain('<link rel="icon" href="data:," />');
+		expect(html).toContain('<div id="api-reference"></div>');
 	});
 
 	it("refreshes the generated spec when a compiled route changes", async () => {
@@ -191,5 +192,99 @@ export default async function handler() {}
 			"Success",
 		);
 		expect(spec.paths["/plain"].get.summary).toBeUndefined();
+	});
+
+	it("includes additional Scalar sources from config next to the generated spec", async () => {
+		const root = await mkdtemp(
+			path.join(os.tmpdir(), "lithia-openapi-sources-"),
+		);
+		tempDirs.push(root);
+
+		const routeFile = path.join(root, "plain.route.mjs");
+		await writeFile(
+			routeFile,
+			`export default async function handler() {}
+`,
+			"utf-8",
+		);
+
+		const outDir = path.join(root, "dist");
+		await generateOpenAPIArtifacts({
+			outDir,
+			routes: [
+				{
+					path: "/plain",
+					method: "GET",
+					filePath: routeFile,
+				},
+			],
+			config: {
+				title: "Main API",
+				version: "1.0.0",
+				specPath: "/api/open-api",
+				sources: [
+					{
+						url: "/api/auth/open-api/generate-schema",
+						title: "Auth",
+					},
+				],
+			},
+		});
+
+		const html = await readFile(
+			path.join(outDir, "_lithia", "scalar.html"),
+			"utf-8",
+		);
+
+		expect(html).toContain(
+			'"sources":[{"url":"/api/open-api","title":"Main API","default":true},{"url":"/api/auth/open-api/generate-schema","title":"Auth"}]',
+		);
+	});
+
+	it("preserves an explicit default source from config", async () => {
+		const root = await mkdtemp(
+			path.join(os.tmpdir(), "lithia-openapi-custom-default-"),
+		);
+		tempDirs.push(root);
+
+		const routeFile = path.join(root, "plain.route.mjs");
+		await writeFile(
+			routeFile,
+			`export default async function handler() {}
+`,
+			"utf-8",
+		);
+
+		const outDir = path.join(root, "dist");
+		await generateOpenAPIArtifacts({
+			outDir,
+			routes: [
+				{
+					path: "/plain",
+					method: "GET",
+					filePath: routeFile,
+				},
+			],
+			config: {
+				title: "Main API",
+				version: "1.0.0",
+				sources: [
+					{
+						url: "/api/auth/open-api/generate-schema",
+						title: "Auth",
+						default: true,
+					},
+				],
+			},
+		});
+
+		const html = await readFile(
+			path.join(outDir, "_lithia", "scalar.html"),
+			"utf-8",
+		);
+
+		expect(html).toContain(
+			'"sources":[{"url":"/openapi.json","title":"Main API"},{"url":"/api/auth/open-api/generate-schema","title":"Auth","default":true}]',
+		);
 	});
 });

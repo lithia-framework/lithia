@@ -78,6 +78,7 @@ export interface OpenAPIConfigOptions {
 	description?: string;
 	docsPath?: string;
 	specPath?: string;
+	sources?: OpenAPISourceConfig[];
 }
 
 /**
@@ -105,6 +106,19 @@ type OpenAPIDocument = {
 type RouteModuleWithMetadata = {
 	metadata?: RouteMetadata;
 };
+
+/**
+ * Additional OpenAPI source rendered by Scalar.
+ *
+ * This mirrors the subset of Scalar source configuration supported by Lithia's
+ * generated docs bootstrap.
+ */
+export interface OpenAPISourceConfig {
+	url?: string;
+	content?: string;
+	title?: string;
+	default?: boolean;
+}
 
 const DOCS_DIR = "_lithia";
 const DOCS_HTML_FILE = "scalar.html";
@@ -140,10 +154,7 @@ export async function generateOpenAPIArtifacts(
 	);
 	await writeFile(
 		path.join(docsDir, DOCS_HTML_FILE),
-		createScalarHtml(
-			options.config.specPath || "/openapi.json",
-			options.config,
-		),
+		createScalarHtml(options.config),
 		"utf-8",
 	);
 }
@@ -350,17 +361,13 @@ async function importCompiledRoute(
 /**
  * Creates the Scalar HTML bootstrap document for the generated API docs UI.
  *
- * @param {string} specPath - Public URL used by Scalar to fetch the generated
- * OpenAPI spec.
  * @param {OpenAPIConfigOptions} config - OpenAPI config used to derive the
- * document title.
+ * document title and Scalar source configuration.
  * @returns {string} Complete HTML document served by the docs route.
  */
-function createScalarHtml(
-	specPath: string,
-	config: OpenAPIConfigOptions,
-): string {
+function createScalarHtml(config: OpenAPIConfigOptions): string {
 	const title = config.title || "Lithia API";
+	const scalarConfig = createScalarConfig(config);
 
 	return `<!doctype html>
 <html lang="en">
@@ -371,14 +378,56 @@ function createScalarHtml(
     <link rel="icon" href="data:," />
   </head>
   <body>
-    <script
-      id="api-reference"
-      data-url="${escapeHtml(specPath)}"
-      data-configuration='{"theme":"purple"}'
-    ></script>
+    <div id="api-reference"></div>
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script>
+      Scalar.createApiReference("#api-reference", ${safeJsonForScript(scalarConfig)})
+    </script>
   </body>
 </html>`;
+}
+
+/**
+ * Creates the Scalar configuration object embedded into the generated docs
+ * bootstrap.
+ *
+ * The generated Lithia spec is always included as a source so the docs UI
+ * continues to expose the current application's own OpenAPI document. Any
+ * additional configured sources are appended after it.
+ *
+ * @param {OpenAPIConfigOptions} config - OpenAPI and Scalar config values.
+ * @returns {Record<string, unknown>} Scalar configuration object.
+ */
+function createScalarConfig(config: OpenAPIConfigOptions): Record<string, unknown> {
+	const generatedSpecPath = config.specPath || "/openapi.json";
+	const configuredSources = config.sources || [];
+	const customDefaultConfigured = configuredSources.some(
+		(source) => source.default === true,
+	);
+
+	const sources = [
+		{
+			url: generatedSpecPath,
+			title: titleForGeneratedSpec(config.title),
+			...(customDefaultConfigured ? {} : { default: true }),
+		},
+		...configuredSources,
+	];
+
+	return {
+		theme: "purple",
+		sources,
+	};
+}
+
+/**
+ * Produces the default source label used for Lithia's generated OpenAPI spec.
+ *
+ * @param {string | undefined} title - Configured API title.
+ * @returns {string} Source title shown in Scalar.
+ */
+function titleForGeneratedSpec(title: string | undefined): string {
+	return title || "Lithia API";
 }
 
 /**
@@ -394,4 +443,14 @@ function escapeHtml(value: string): string {
 		.replaceAll(">", "&gt;")
 		.replaceAll('"', "&quot;")
 		.replaceAll("'", "&#39;");
+}
+
+/**
+ * Serializes a JSON value for safe inline use inside a `<script>` tag.
+ *
+ * @param {unknown} value - JSON-serializable value.
+ * @returns {string} Serialized string with closing-script escapes applied.
+ */
+function safeJsonForScript(value: unknown): string {
+	return JSON.stringify(value).replaceAll("</script>", "<\\/script>");
 }

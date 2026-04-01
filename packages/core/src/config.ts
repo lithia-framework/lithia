@@ -4,6 +4,29 @@ import type { C12InputConfig } from "c12";
 /**
  * Enables automatic OpenAPI generation and the Scalar docs UI for a Lithia app.
  */
+export interface OpenAPISourceConfig {
+	/**
+	 * Relative or absolute URL of an additional OpenAPI document rendered by
+	 * Scalar alongside the generated Lithia spec.
+	 */
+	url?: string;
+	/**
+	 * Optional inline OpenAPI content passed directly to Scalar.
+	 */
+	content?: string;
+	/**
+	 * Human-readable label shown in the Scalar source switcher.
+	 */
+	title?: string;
+	/**
+	 * Marks this source as the initially selected document in Scalar.
+	 */
+	default?: boolean;
+}
+
+/**
+ * Enables automatic OpenAPI generation and the Scalar docs UI for a Lithia app.
+ */
 export interface OpenAPIConfig {
 	/**
 	 * Enables OpenAPI artifact generation and reserved docs routes.
@@ -31,6 +54,11 @@ export interface OpenAPIConfig {
 	 * Optional API description shown by OpenAPI/Scalar consumers.
 	 */
 	description?: string;
+	/**
+	 * Additional OpenAPI documents rendered by Scalar next to the generated
+	 * Lithia spec.
+	 */
+	sources?: OpenAPISourceConfig[];
 }
 
 /**
