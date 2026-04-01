@@ -23,10 +23,14 @@ vi.mock("@lithia-js/utils", () => ({
 	},
 }));
 
-import { processDevBatch } from "./dev";
+async function loadProcessDevBatch() {
+	const module = await import("./dev");
+	return module.processDevBatch;
+}
 
 describe("processDevBatch", () => {
 	it("keeps existing reloadable artifacts when a source rebuild fails", async () => {
+		const processDevBatch = await loadProcessDevBatch();
 		const lithia = {
 			isAppReady: true,
 			build: vi.fn().mockResolvedValue(false),
@@ -52,6 +56,7 @@ describe("processDevBatch", () => {
 	});
 
 	it("rolls config/env back and preserves running app state when config rebuild fails", async () => {
+		const processDevBatch = await loadProcessDevBatch();
 		const previousConfig = { http: { port: 3000 } };
 		const previousEnv = { DATABASE_URL: "postgres://before" };
 		const lithia = {

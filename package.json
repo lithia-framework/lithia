@@ -31,7 +31,7 @@
   ],
   "scripts": {
     "build": "turbo build --filter='./packages/*'",
-    "test": "turbo test",
+    "test": "turbo test --filter='./packages/*'",
     "format": "biome format --write",
     "lint": "biome check",
     "changeset": "changeset",

@@ -8,11 +8,5 @@
     "test": {
       "cache": false
     },
-    "check": {
-      "cache": true
-    },
-    "machete": {
-      "cache": false
-    }
   }
 }
