@@ -38,6 +38,7 @@
     "release:check": "node ./scripts/check-release.mjs",
     "release:publish": "node ./scripts/publish-release.mjs",
     "release:github": "node ./scripts/github-release.mjs",
+    "postversion": "pnpm version:sync",
     "release": "pnpm release:check && pnpm build && pnpm test && pnpm release:publish && pnpm release:github"
   },
   "devDependencies": {
