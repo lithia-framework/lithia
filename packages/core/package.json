@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/core",
-	"version": "1.0.0-canary.19",
+	"version": "1.0.0-canary.18",
 	"description": "Core runtime for Lithia.js with routes, events, async tasks, and worker-powered isolation.",
 	"keywords": [
 		"lithia",
@@ -51,7 +51,7 @@
 		"test": "vitest --run"
 	},
 	"dependencies": {
-		"@lithia-js/utils": "workspace:1.0.0-canary.19",
+		"@lithia-js/utils": "workspace:1.0.0-canary.18",
 		"@swc/core": "^1.15.11",
 		"busboy": "^1.6.0",
 		"c12": "^3.3.3",

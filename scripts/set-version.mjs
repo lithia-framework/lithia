@@ -1,4 +1,8 @@
-import { syncAllPackageVersions, updateRootVersion } from "./release-lib.mjs";
+import {
+	runPnpm,
+	syncAllPackageVersions,
+	updateRootVersion,
+} from "./release-lib.mjs";
 
 const requestedVersion = process.argv[2];
 
@@ -10,12 +14,12 @@ if (!requestedVersion) {
 
 await updateRootVersion(requestedVersion);
 await syncAllPackageVersions(requestedVersion);
+runPnpm(["install"]);
 
 console.log(`Prepared release version ${requestedVersion}.`);
 console.log("");
 console.log("Next steps:");
-console.log("  1. Review the changed package manifests");
+console.log("  1. Review the changed package manifests and pnpm-lock.yaml");
 console.log(`  2. git add . && git commit -m "chore: release ${requestedVersion}"`);
 console.log("  3. pnpm release:tag");
 console.log("  4. git push origin <branch> --follow-tags");
-

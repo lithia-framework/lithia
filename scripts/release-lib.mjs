@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -21,6 +22,19 @@ export async function readJson(filePath) {
 
 export async function writeJson(filePath, value, indentation = "\t") {
 	await fs.writeFile(filePath, `${JSON.stringify(value, null, indentation)}\n`);
+}
+
+export function runPnpm(args, options = {}) {
+	const pnpmExecutable = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+	const result = spawnSync(pnpmExecutable, args, {
+		cwd: ROOT_DIR,
+		stdio: "inherit",
+		...options,
+	});
+
+	if (result.status !== 0) {
+		process.exit(result.status ?? 1);
+	}
 }
 
 export async function getRootManifest() {
