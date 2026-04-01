@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { logger } from "@lithia-js/utils";
 
 vi.mock("@lithia-js/core/_", () => ({
 	HostSupervisor: class {},
@@ -29,6 +30,32 @@ async function loadProcessDevBatch() {
 }
 
 describe("processDevBatch", () => {
+	it("stays quiet for successful source rebuilds", async () => {
+		const processDevBatch = await loadProcessDevBatch();
+		const lithia = {
+			isAppReady: true,
+			build: vi.fn().mockResolvedValue(true),
+			reload: vi.fn().mockResolvedValue(undefined),
+			loadConfig: vi.fn(),
+			loadEnv: vi.fn(),
+			replaceConfig: vi.fn(),
+			replaceEnv: vi.fn(),
+			getEnvSnapshot: vi.fn(),
+			config: {},
+		} as any;
+
+		const state = { hasReloadableArtifacts: true };
+
+		await processDevBatch(
+			lithia,
+			{ source: true, config: false, env: false },
+			state,
+		);
+
+		expect(logger.info).not.toHaveBeenCalled();
+		expect(logger.success).not.toHaveBeenCalled();
+	});
+
 	it("keeps existing reloadable artifacts when a source rebuild fails", async () => {
 		const processDevBatch = await loadProcessDevBatch();
 		const lithia = {
@@ -83,5 +110,31 @@ describe("processDevBatch", () => {
 		expect(lithia.replaceConfig).toHaveBeenCalledWith(previousConfig);
 		expect(lithia.replaceEnv).toHaveBeenCalledWith(previousEnv);
 		expect(lithia.reload).not.toHaveBeenCalled();
+	});
+
+	it("logs a concise success message for env-only reloads", async () => {
+		const processDevBatch = await loadProcessDevBatch();
+		const lithia = {
+			isAppReady: true,
+			build: vi.fn(),
+			reload: vi.fn().mockResolvedValue(undefined),
+			loadConfig: vi.fn(),
+			loadEnv: vi.fn().mockResolvedValue(undefined),
+			replaceConfig: vi.fn(),
+			replaceEnv: vi.fn(),
+			getEnvSnapshot: vi.fn(),
+			config: {},
+		} as any;
+
+		const state = { hasReloadableArtifacts: true };
+
+		await processDevBatch(
+			lithia,
+			{ source: false, config: false, env: true },
+			state,
+		);
+
+		expect(logger.success).toHaveBeenCalledWith("Applied environment changes.");
+		expect(logger.info).not.toHaveBeenCalled();
 	});
 });

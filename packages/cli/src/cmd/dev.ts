@@ -136,8 +136,6 @@ export async function processDevBatch(
 	state: { hasReloadableArtifacts: boolean },
 ): Promise<void> {
 	if (batch.config) {
-		logger.info("Configuration updated. Rebuilding and reloading host...");
-
 		const previousConfig = structuredClone(lithia.config);
 		const previousEnv = lithia.getEnvSnapshot();
 
@@ -159,7 +157,6 @@ export async function processDevBatch(
 
 			await lithia.reload();
 			state.hasReloadableArtifacts = true;
-			logger.success("Reload complete.");
 			return;
 		} catch (error) {
 			lithia.replaceConfig(previousConfig);
@@ -169,7 +166,6 @@ export async function processDevBatch(
 	}
 
 	if (batch.source) {
-		logger.info("Source updated. Building host...");
 		const buildSucceeded = await lithia.build();
 
 		if (!buildSucceeded) {
@@ -191,13 +187,15 @@ export async function processDevBatch(
 			);
 			return;
 		}
-		logger.info("Environment updated. Reloading host...");
 		await lithia.loadEnv();
 	}
 
 	if (batch.source || batch.env) {
 		await lithia.reload();
 		state.hasReloadableArtifacts = true;
-		logger.success("Reload complete.");
+
+		if (batch.env && !batch.source) {
+			logger.success("Applied environment changes.");
+		}
 	}
 }

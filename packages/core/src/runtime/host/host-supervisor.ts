@@ -278,7 +278,7 @@ export class HostSupervisor {
 			});
 
 			const duration = performance.now() - startTime;
-			logger.success(`Compiled successfully in ${duration.toFixed(2)}ms.`);
+			logger.success(`Built in ${duration.toFixed(2)}ms.`);
 			return true;
 		} catch (error) {
 			logger.error(`Build failed: ${(error as Error).message}`);
