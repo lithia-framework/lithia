@@ -9,4 +9,11 @@ export const baseOptions: BaseLayoutProps = {
 
 export const homeOptions: BaseLayoutProps = {
   ...baseOptions,
+  links: [
+    {
+      type: "main",
+      text: "Docs",
+      url: "/docs/latest",
+    },
+  ]
 };

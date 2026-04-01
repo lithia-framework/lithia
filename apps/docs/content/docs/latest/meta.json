@@ -5,7 +5,7 @@
   "icon": "Tag",
   "pages": [
     "---Introduction---",
-    "getting-started",
+    "index",
     "installation",
     "project-structure",
     "routes",
