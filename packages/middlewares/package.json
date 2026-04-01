@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/middlewares",
-	"version": "1.0.0-canary.22",
+	"version": "1.0.0-canary.23",
 	"description": "Reusable middleware utilities for Lithia.js applications.",
 	"keywords": [
 		"lithia",
@@ -41,11 +41,11 @@
 		"build": "tsup --config tsup.config.ts"
 	},
 	"peerDependencies": {
-		"@lithia-js/core": "workspace:1.0.0-canary.22",
+		"@lithia-js/core": "workspace:1.0.0-canary.23",
 		"zod": "^4.2.1"
 	},
 	"devDependencies": {
-		"@lithia-js/core": "workspace:1.0.0-canary.22"
+		"@lithia-js/core": "workspace:1.0.0-canary.23"
 	},
 	"peerDependenciesMeta": {
 		"zod": {
