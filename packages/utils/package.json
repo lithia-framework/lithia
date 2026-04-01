@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/utils",
-	"version": "1.0.0-canary.21",
+	"version": "1.0.0-canary.22",
 	"description": "Shared utility helpers used across Lithia.js packages.",
 	"keywords": [
 		"lithia",
