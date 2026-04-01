@@ -1,4 +1,4 @@
-import { mkdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { toJSONSchema, type ZodType } from "zod";
@@ -133,6 +133,7 @@ export interface OpenAPISourceConfig {
 const DOCS_DIR = "_lithia";
 const DOCS_HTML_FILE = "scalar.html";
 const DOCS_SPEC_FILE = "openapi.json";
+const FAVICON_FILE = "favicon.ico";
 
 /**
  * Generates the OpenAPI JSON document and Scalar HTML entrypoint for a compiled
@@ -155,6 +156,7 @@ export async function generateOpenAPIArtifacts(
 ): Promise<void> {
 	const document = await buildOpenAPIDocument(options);
 	const docsDir = path.join(options.outDir, DOCS_DIR);
+	const scalarHtml = await createScalarHtml(options.config);
 
 	await mkdir(docsDir, { recursive: true });
 	await writeFile(
@@ -164,7 +166,7 @@ export async function generateOpenAPIArtifacts(
 	);
 	await writeFile(
 		path.join(docsDir, DOCS_HTML_FILE),
-		createScalarHtml(options.config),
+		scalarHtml,
 		"utf-8",
 	);
 }
@@ -373,48 +375,26 @@ async function importCompiledRoute(
  *
  * @param {OpenAPIConfigOptions} config - OpenAPI config used to derive the
  * document title and Scalar source configuration.
- * @returns {string} Complete HTML document served by the docs route.
+ * @returns {Promise<string>} Complete HTML document served by the docs route.
  */
-function createScalarHtml(config: OpenAPIConfigOptions): string {
+async function createScalarHtml(config: OpenAPIConfigOptions): Promise<string> {
 	const title = config.title || "Lithia API";
-	const specPath = config.specPath || "/openapi.json";
 	const scalarConfig = createScalarConfig(config);
-	const hasMultipleSources = (scalarConfig.sources?.length || 0) > 1;
-
-	if (hasMultipleSources) {
-		return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escapeHtml(title)} Docs</title>
-    <link rel="icon" href="data:," />
-  </head>
-  <body>
-    <div id="api-reference"></div>
-    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
-    <script>
-      Scalar.createApiReference("#api-reference", ${safeJsonForScript(scalarConfig)})
-    </script>
-  </body>
-</html>`;
-	}
-
+	const faviconHref = await loadEmbeddedFaviconHref();
 	return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${escapeHtml(title)} Docs</title>
-    <link rel="icon" href="data:," />
+    <link rel="icon" href="${faviconHref}" />
   </head>
   <body>
-    <script
-      id="api-reference"
-      data-url="${escapeHtml(specPath)}"
-      data-configuration='${escapeHtml(JSON.stringify(scalarConfig))}'
-    ></script>
+    <div id="app"></div>
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script>
+      Scalar.createApiReference('#app', ${safeJsonForScript(scalarConfig)})
+    </script>
   </body>
 </html>`;
 }
@@ -485,4 +465,23 @@ function escapeHtml(value: string): string {
  */
 function safeJsonForScript(value: unknown): string {
 	return JSON.stringify(value).replaceAll("</script>", "<\\/script>");
+}
+
+/**
+ * Loads the packaged favicon asset and converts it into an embeddable data URL.
+ *
+ * When the asset cannot be read, the generator falls back to an empty data URL
+ * so docs generation does not fail only because the icon is unavailable.
+ *
+ * @returns {Promise<string>} Data URL used in the generated docs HTML.
+ */
+async function loadEmbeddedFaviconHref(): Promise<string> {
+	try {
+		const packageRoot = path.resolve(import.meta.dirname, "..");
+		const faviconPath = path.join(packageRoot, "assets", FAVICON_FILE);
+		const favicon = await readFile(faviconPath);
+		return `data:image/x-icon;base64,${favicon.toString("base64")}`;
+	} catch {
+		return "data:,";
+	}
 }
