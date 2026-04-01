@@ -1,6 +1,6 @@
 {
 	"name": "create-lithia",
-	"version": "1.0.0-canary.24",
+	"version": "1.0.0-canary.25",
 	"description": "Scaffold a new Lithia.js project from the official templates.",
 	"keywords": [
 		"create",

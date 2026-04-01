@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/better-auth",
-	"version": "1.0.0-canary.24",
+	"version": "1.0.0-canary.25",
 	"description": "Official Better Auth integration for Lithia.js.",
 	"keywords": [
 		"lithia",
@@ -46,11 +46,11 @@
 		"build": "tsup --config tsup.config.ts"
 	},
 	"peerDependencies": {
-		"@lithia-js/core": "workspace:1.0.0-canary.24",
+		"@lithia-js/core": "workspace:1.0.0-canary.25",
 		"better-auth": "^1.4.17"
 	},
 	"devDependencies": {
-		"@lithia-js/core": "workspace:1.0.0-canary.24"
+		"@lithia-js/core": "workspace:1.0.0-canary.25"
 	},
 	"publishConfig": {
 		"registry": "https://registry.npmjs.org/",
