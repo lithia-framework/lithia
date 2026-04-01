@@ -5,12 +5,12 @@
   "description": "Lithia template with Better Auth and Drizzle integration.",
   "type": "module",
   "scripts": {
-    "dev": "lithia dev",
+     "dev": "lithia dev",
     "build": "lithia build",
     "start": "node ./dist/server.js",
-    "lint": "biome check .",
-    "format": "biome format --write .",
-    "db:generate": "drizzle-kit generate",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "db:generate": "pnpm dlx auth@latest generate --output ./src/lib/schema/auth-schema.ts && drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
   },
