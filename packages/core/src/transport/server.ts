@@ -9,6 +9,7 @@ import {
 	type Server as HttpsServer,
 } from "node:https";
 import type { Socket as ActiveRequest } from "node:net";
+import { logger } from "@lithia-js/utils";
 import {
 	type RouteContext,
 	routeContextStore,
@@ -68,13 +69,34 @@ export class LithiaServer {
 				return resolve();
 			}
 
-			this._httpServer.listen(port, host, resolve);
-			this._httpServer.on("error", reject);
+			const handleError = (error: Error) => {
+				this._httpServer.off("listening", handleListening);
+				reject(error);
+			};
+
+			const handleListening = () => {
+				this._httpServer.off("error", handleError);
+				resolve();
+			};
+
+			this._httpServer.once("error", handleError);
+			this._httpServer.once("listening", handleListening);
+			this._httpServer.listen(port, host);
 		});
 	}
 
 	public async close(): Promise<void> {
-		await this.socketTransport.close();
+		await this.socketTransport.close().catch((error) => {
+			logger.error("Failed to close Socket.IO transport cleanly:", error);
+		});
+
+		if (!this._httpServer.listening) {
+			for (const socket of this._activeRequests) {
+				socket.destroy();
+			}
+			this._activeRequests.clear();
+			return;
+		}
 
 		await new Promise<void>((resolve, reject) => {
 			this._httpServer.close((error) => {
@@ -125,7 +147,24 @@ export class LithiaServer {
 						await this.requestProcessor.process(lithiaReq, lithiaRes);
 					});
 				});
-			} catch {}
+			} catch (error) {
+				logger.error("Failed to initialize request context:", error);
+				if (!res.headersSent) {
+					res.statusCode = 500;
+					res.setHeader("Content-Type", "application/json");
+				}
+				if (!res.writableEnded) {
+					res.end(
+						JSON.stringify({
+							error: {
+								statusCode: 500,
+								message: "Failed to initialize request handling.",
+								timestamp: new Date().toISOString(),
+							},
+						}),
+					);
+				}
+			}
 		};
 	}
 }

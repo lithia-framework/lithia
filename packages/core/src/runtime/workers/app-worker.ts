@@ -17,6 +17,15 @@ async function bootstrap(): Promise<void> {
 		await app.start();
 		parentPort?.postMessage({ type: "ready" });
 	} catch (error: any) {
+		try {
+			await app.stop();
+		} catch (stopError) {
+			logger.error(
+				"Failed to stop Lithia app cleanly after startup failure:",
+				stopError,
+			);
+		}
+
 		const errorPayload =
 			error instanceof LithiaError
 				? {

@@ -105,7 +105,7 @@ const dev = defineCommand({
 
 export default dev;
 
-async function processDevBatch(
+export async function processDevBatch(
 	lithia: HostSupervisor,
 	batch: DevChangeBatch,
 	state: { hasReloadableArtifacts: boolean },
@@ -122,11 +122,12 @@ async function processDevBatch(
 
 			const buildSucceeded = await lithia.build();
 			if (!buildSucceeded) {
-				state.hasReloadableArtifacts = false;
+				state.hasReloadableArtifacts =
+					state.hasReloadableArtifacts || lithia.isAppReady;
 				lithia.replaceConfig(previousConfig);
 				lithia.replaceEnv(previousEnv);
 				logger.warn(
-					"Reload skipped due to build failure. Continuing to serve previous app.",
+					"Reload skipped due to build failure. Rolled back config/env and kept serving the previous app.",
 				);
 				return;
 			}
@@ -147,7 +148,8 @@ async function processDevBatch(
 		const buildSucceeded = await lithia.build();
 
 		if (!buildSucceeded) {
-			state.hasReloadableArtifacts = false;
+			state.hasReloadableArtifacts =
+				state.hasReloadableArtifacts || lithia.isAppReady;
 			logger.warn(
 				"Reload skipped due to build failure. Continuing to serve previous app.",
 			);

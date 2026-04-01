@@ -66,8 +66,19 @@ export class ManifestStore {
 
 		if (!(await fileExists(manifestPath))) return null;
 
-		const raw = await readFile(manifestPath, "utf-8");
-		const manifest = JSON.parse(raw) as T;
+		const raw = await readFile(manifestPath, "utf-8").catch((error) => {
+			throw new Error(
+				`Failed to read manifest '${fileName}' from '${manifestPath}': ${(error as Error).message}`,
+			);
+		});
+		let manifest: T;
+		try {
+			manifest = JSON.parse(raw) as T;
+		} catch (error) {
+			throw new Error(
+				`Failed to parse manifest '${fileName}' from '${manifestPath}': ${(error as Error).message}`,
+			);
+		}
 
 		if (manifest.version !== currentSchema) {
 			throw new ManifestVersionMismatchError(currentSchema, manifest.version);
