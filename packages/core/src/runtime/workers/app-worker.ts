@@ -8,6 +8,16 @@ let isInitialized = false;
 /**
  * Boots the app worker exactly once and reports readiness or startup failure
  * back to the host.
+ *
+ * The worker creates a fresh `LithiaApp`, starts it, and posts either a
+ * `"ready"` message or a serialized startup failure to the parent thread.
+ * After successful startup it also installs process signal handlers so worker
+ * shutdown attempts to stop the app cleanly before exiting.
+ *
+ * @returns {Promise<void>} Resolves after startup succeeds or a Lithia startup
+ * failure has been reported to the host.
+ * @throws {unknown} Re-throws non-Lithia startup failures after notifying the
+ * host so the worker can crash loudly.
  */
 async function bootstrap(): Promise<void> {
 	if (isInitialized) return;
@@ -54,6 +64,9 @@ async function bootstrap(): Promise<void> {
 
 	/**
 	 * Handles process-level shutdown for the app worker.
+	 *
+	 * @returns {Promise<void>} Resolves only long enough to await `app.stop()`
+	 * before forcing process exit.
 	 */
 	const shutdown = async (): Promise<void> => {
 		try {

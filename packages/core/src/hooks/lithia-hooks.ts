@@ -21,6 +21,15 @@ type TaskInvocationKey = keyof LithiaTasks | (string & {});
  * Values registered with `provide()` can later be retrieved with
  * `useDependency()` or `useOptionalDependency()` from routes, events, tasks,
  * and `app/server.ts`.
+ *
+ * The value is written into the container bound to the current Lithia
+ * execution context. When called during mutable bootstrap, the registration
+ * becomes available to later route, event, and task executions.
+ *
+ * @param {InjectionKey<T>} key - Token used to register the dependency.
+ * @param {T} value - Dependency instance stored under `key`.
+ * @throws {NotInLithiaContextError} Throws when called outside a managed
+ * Lithia execution context.
  */
 export function provide<T>(key: InjectionKey<T>, value: T): void {
 	const { container } = getLithiaContext();
@@ -32,6 +41,13 @@ export function provide<T>(key: InjectionKey<T>, value: T): void {
  *
  * Throws when the dependency has not been registered for the current app
  * lifecycle.
+ *
+ * @param {InjectionKey<T>} key - Token used to resolve the dependency.
+ * @returns {T} Registered dependency instance for `key`.
+ * @throws {NotInLithiaContextError} Throws when called outside a managed
+ * Lithia execution context.
+ * @throws {DependencyNotInitializedError} Throws when `key` has not been
+ * registered in the current container.
  */
 export function useDependency<T>(key: InjectionKey<T>): T {
 	const { container } = getLithiaContext();
@@ -49,6 +65,12 @@ export function useDependency<T>(key: InjectionKey<T>): T {
  *
  * Returns `undefined` instead of throwing when the dependency has not been
  * registered.
+ *
+ * @param {InjectionKey<T>} key - Token used to resolve the dependency.
+ * @returns {T | undefined} Registered dependency instance, or `undefined` when
+ * the dependency is absent.
+ * @throws {NotInLithiaContextError} Throws when called outside a managed
+ * Lithia execution context.
  */
 export function useOptionalDependency<T>(key: InjectionKey<T>): T | undefined {
 	const { container } = getLithiaContext();
@@ -79,6 +101,15 @@ export type TaskExecutionHandle<K extends string = string> = {
 	source: TaskInvocationSource;
 };
 
+/**
+ * Verifies that task arguments can cross the worker boundary through
+ * structured cloning.
+ *
+ * @param {string} taskId - Task identifier used in error reporting.
+ * @param {unknown[]} args - Task arguments about to be posted to a worker.
+ * @throws {Error} Throws when one or more arguments cannot be cloned for
+ * worker dispatch.
+ */
 function ensureCloneableTaskArgs(taskId: string, args: unknown[]): void {
 	try {
 		structuredClone(args);
@@ -90,6 +121,14 @@ function ensureCloneableTaskArgs(taskId: string, args: unknown[]): void {
 	}
 }
 
+/**
+ * Reconstructs an `Error` instance from a serialized task failure payload.
+ *
+ * @param {TaskErrorPayload} payload - Serialized failure payload returned by a
+ * task worker.
+ * @returns {Error} Error object with restored name, message, cause, and stack
+ * when available.
+ */
 function createTaskError(payload: TaskErrorPayload): Error {
 	const error = new Error(payload.message, { cause: payload.cause });
 	error.name = payload.name;
@@ -99,6 +138,22 @@ function createTaskError(payload: TaskErrorPayload): Error {
 	return error;
 }
 
+/**
+ * Posts a task invocation request to the Lithia host runtime.
+ *
+ * This helper validates that the argument list is cloneable, emits the worker
+ * message expected by the host protocol, and returns a handle that identifies
+ * the scheduled execution.
+ *
+ * @param {K} taskId - Task identifier to invoke.
+ * @param {TaskPayload<K>} args - Serialized task arguments passed to the
+ * worker.
+ * @param {{ async: boolean; requestId?: string; executionId: string; source: TaskInvocationSource; }} options
+ * Invocation metadata used by the host protocol.
+ * @returns {TaskExecutionHandle<Extract<K, string>>} Handle that identifies
+ * the dispatched task execution.
+ * @throws {Error} Throws when task arguments cannot be structured-cloned.
+ */
 function postTaskInvocation<K extends TaskInvocationKey>(
 	taskId: K,
 	args: TaskPayload<K>,
@@ -133,6 +188,17 @@ function postTaskInvocation<K extends TaskInvocationKey>(
  *
  * This path uses Lithia's warm task workers to reduce latency for request-time
  * task execution while still keeping the work outside the app worker.
+ *
+ * Task semantics are described in
+ * [Async Tasks](https://lithiajs.org/docs/latest/async-tasks).
+ *
+ * @param {K} taskId - Task identifier to execute.
+ * @param {...TaskPayload<K>} args - Arguments forwarded to the task worker.
+ * @returns {Promise<Awaited<TaskReturn<K>>>} Resolves with the task result
+ * returned by the worker.
+ * @throws {Error} Throws when called outside a Lithia-managed worker, when the
+ * worker closes before replying, when arguments cannot be cloned, or when the
+ * task worker reports a failure.
  */
 export async function executeTask<K extends TaskInvocationKey>(
 	taskId: K,
@@ -190,6 +256,13 @@ export async function executeTask<K extends TaskInvocationKey>(
  *
  * This path is fire-and-forget and returns a handle that can be logged or
  * correlated later.
+ *
+ * @param {K} taskId - Task identifier to dispatch.
+ * @param {...TaskPayload<K>} args - Arguments forwarded to the task worker.
+ * @returns {TaskExecutionHandle<Extract<K, string>>} Handle that identifies
+ * the dispatched task execution.
+ * @throws {Error} Throws when called outside a Lithia-managed worker or when
+ * arguments cannot be cloned for worker dispatch.
  */
 export function dispatchTask<K extends TaskInvocationKey>(
 	taskId: K,
@@ -212,6 +285,10 @@ export function dispatchTask<K extends TaskInvocationKey>(
  * Legacy alias for `executeTask()`.
  *
  * Prefer `executeTask()` in new code.
+ *
+ * @param {K} taskId - Task identifier to execute.
+ * @param {...TaskPayload<K>} args - Arguments forwarded to the task worker.
+ * @returns {Promise<Awaited<TaskReturn<K>>>} Resolves with the task result.
  */
 export async function runTask<K extends TaskInvocationKey>(
 	taskId: K,
@@ -224,6 +301,11 @@ export async function runTask<K extends TaskInvocationKey>(
  * Legacy alias for `dispatchTask()`.
  *
  * Prefer `dispatchTask()` in new code.
+ *
+ * @param {K} taskId - Task identifier to dispatch.
+ * @param {...TaskPayload<K>} args - Arguments forwarded to the task worker.
+ * @returns {TaskExecutionHandle<Extract<K, string>>} Handle that identifies
+ * the dispatched task execution.
  */
 export function runTaskAsync<K extends TaskInvocationKey>(
 	taskId: K,
@@ -234,6 +316,14 @@ export function runTaskAsync<K extends TaskInvocationKey>(
 
 /**
  * Returns the resolved Lithia configuration for the current app lifecycle.
+ *
+ * This exposes the same fully resolved config object used by the active app
+ * worker, including defaults and any loaded user configuration.
+ *
+ * @returns {LithiaOptions} Resolved Lithia configuration for the active
+ * execution context.
+ * @throws {NotInLithiaContextError} Throws when called outside a managed
+ * Lithia execution context.
  */
 export function useLithiaConfig(): LithiaOptions {
 	return getLithiaContext().config;

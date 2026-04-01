@@ -7,7 +7,14 @@ import type { AppToHostEvent } from "./protocol";
  * Worker construction options passed to the app worker entrypoint.
  */
 type CreateWorkerOptions = {
+	/**
+	 * Structured-cloneable payload delivered to the app worker through
+	 * `workerData`.
+	 */
 	workerData: Record<string, unknown>;
+	/**
+	 * Environment variables exposed to the app worker process.
+	 */
 	env: Record<string, string>;
 };
 
@@ -23,26 +30,49 @@ export class AppSupervisor {
 	private _isReady = false;
 	private _isRunning = false;
 
+	/**
+	 * Creates a supervisor for the app worker lifecycle.
+	 *
+	 * @param {() => CreateWorkerOptions} createOptions - Factory that returns
+	 * the current worker payload and environment for each spawn.
+	 * @param {(event: AppToHostEvent) => Promise<void>} onInvoke - Callback that
+	 * handles invocation messages forwarded from the app worker to the host.
+	 * @param {string} workerBaseDir - Base directory containing the published
+	 * worker entrypoints.
+	 */
 	constructor(
 		private readonly createOptions: () => CreateWorkerOptions,
 		private readonly onInvoke: (event: AppToHostEvent) => Promise<void>,
 		private readonly workerBaseDir: string,
 	) {}
 
+	/**
+	 * Returns the currently supervised app worker instance.
+	 */
 	public get worker(): Worker | null {
 		return this._worker;
 	}
 
+	/**
+	 * Returns whether the current worker has reported readiness.
+	 */
 	public get isReady(): boolean {
 		return this._isReady;
 	}
 
+	/**
+	 * Returns whether the supervisor currently considers the worker running.
+	 */
 	public get isRunning(): boolean {
 		return this._isRunning;
 	}
 
 	/**
 	 * Starts the app worker and waits for it to report readiness.
+	 *
+	 * @returns {Promise<void>} Resolves after the worker emits a `ready` event.
+	 * @throws {Error} Throws when worker startup fails or the worker exits before
+	 * becoming ready.
 	 */
 	public async start(): Promise<void> {
 		await this.spawnWorker();
@@ -50,6 +80,13 @@ export class AppSupervisor {
 
 	/**
 	 * Replaces the current worker with a fresh one.
+	 *
+	 * If a worker is already running, it is terminated before the replacement
+	 * worker is spawned.
+	 *
+	 * @returns {Promise<void>} Resolves after the replacement worker reports
+	 * readiness.
+	 * @throws {Error} Throws when the replacement worker fails during startup.
 	 */
 	public async swap(): Promise<void> {
 		if (this._worker && this._isRunning) {
@@ -60,6 +97,9 @@ export class AppSupervisor {
 
 	/**
 	 * Terminates the current worker and resets supervisor state.
+	 *
+	 * @returns {Promise<void>} Resolves after the current worker has been
+	 * terminated, or immediately when no worker is present.
 	 */
 	public async dispose(): Promise<void> {
 		if (!this._worker) return;
@@ -72,6 +112,15 @@ export class AppSupervisor {
 
 	/**
 	 * Spawns the app worker and waits for either `ready` or a startup failure.
+	 *
+	 * The supervisor listens for worker lifecycle events, updates readiness and
+	 * running state, forwards invocation messages to the host callback, and
+	 * rejects startup when the worker reports an error or exits before becoming
+	 * ready.
+	 *
+	 * @returns {Promise<void>} Resolves after the worker becomes ready.
+	 * @throws {Error} Throws when worker construction, startup, or early exit
+	 * fails.
 	 */
 	private async spawnWorker(): Promise<void> {
 		logger.debug("Spawning background worker...");

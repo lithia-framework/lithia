@@ -1,4 +1,0 @@
-interface:
-  display_name: "Write API Reference"
-  short_description: "Draft and revise API reference docs"
-  default_prompt: "Use $write-api-reference to draft or improve API reference documentation."

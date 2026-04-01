@@ -2,6 +2,31 @@ import type { LithiaOptions } from "../../config";
 import type { LithiaRequest } from "./request";
 import type { LithiaResponse } from "./response";
 
+/**
+ * Applies the configured CORS policy to the current HTTP request.
+ *
+ * The policy is request-driven: it only runs when CORS origins are configured
+ * and the incoming request includes an `Origin` header. For allowed origins, it
+ * writes the relevant CORS response headers and, for preflight `OPTIONS`
+ * requests, terminates the response with `204 No Content`.
+ *
+ * When the request does not match an allowed origin or does not require CORS
+ * handling, the function leaves the response untouched and returns `false`.
+ *
+ * Related docs:
+ * - https://lithiajs.org/docs/latest/routes
+ * - https://lithiajs.org/docs/latest/project-structure
+ *
+ * @param {LithiaOptions} config - Fully resolved runtime configuration that
+ * provides the HTTP CORS policy.
+ * @param {LithiaRequest} req - Current request wrapper used to inspect origin
+ * and method information.
+ * @param {LithiaResponse} res - Current response wrapper mutated with CORS
+ * headers and, for preflight requests, the terminal `204` response.
+ * @returns {boolean} `true` when the function fully handled a preflight request
+ * and ended the response, or `false` when normal route processing should
+ * continue.
+ */
 export function applyCorsPolicy(
 	config: LithiaOptions,
 	req: LithiaRequest,

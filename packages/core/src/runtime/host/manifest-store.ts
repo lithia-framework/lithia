@@ -8,6 +8,9 @@ import { ManifestVersionMismatchError } from "../../errors/internal/index";
 import { version as currentSchema } from "../../meta";
 import { fileExists } from "../../shared/filesystem";
 
+/**
+ * Minimal manifest shape required for schema validation.
+ */
 type VersionedManifest = { version: string };
 
 /**
@@ -18,22 +21,42 @@ export class ManifestStore {
 	private _events: Event[] = [];
 	private _tasks: TaskCore[] = [];
 
+	/**
+	 * Creates a manifest store backed by the current resolved host config.
+	 *
+	 * @param {() => LithiaOptions} getConfig - Accessor that returns the current
+	 * resolved host config, including `outDir`.
+	 */
 	constructor(private readonly getConfig: () => LithiaOptions) {}
 
+	/**
+	 * Returns the cached route manifest entries.
+	 */
 	public get routes(): Route[] {
 		return this._routes;
 	}
 
+	/**
+	 * Returns the cached event manifest entries.
+	 */
 	public get events(): Event[] {
 		return this._events;
 	}
 
+	/**
+	 * Returns the cached async task manifest entries.
+	 */
 	public get tasks(): TaskCore[] {
 		return this._tasks;
 	}
 
 	/**
 	 * Loads the routes manifest into memory.
+	 *
+	 * Missing manifest files leave the current cache unchanged.
+	 *
+	 * @returns {Promise<void>} Resolves after the route cache has been refreshed
+	 * when a manifest exists.
 	 */
 	public async loadRoutes(): Promise<void> {
 		const manifest = await this.loadManifest<RoutesManifest>("routes.json");
@@ -42,6 +65,11 @@ export class ManifestStore {
 
 	/**
 	 * Loads the events manifest into memory.
+	 *
+	 * Missing manifest files leave the current cache unchanged.
+	 *
+	 * @returns {Promise<void>} Resolves after the event cache has been refreshed
+	 * when a manifest exists.
 	 */
 	public async loadEvents(): Promise<void> {
 		const manifest = await this.loadManifest<EventsManifest>("events.json");
@@ -50,6 +78,11 @@ export class ManifestStore {
 
 	/**
 	 * Loads the async tasks manifest into memory.
+	 *
+	 * Missing manifest files leave the current cache unchanged.
+	 *
+	 * @returns {Promise<void>} Resolves after the task cache has been refreshed
+	 * when a manifest exists.
 	 */
 	public async loadTasks(): Promise<void> {
 		const manifest = await this.loadManifest<TasksManifest>("tasks.json");
@@ -58,6 +91,9 @@ export class ManifestStore {
 
 	/**
 	 * Loads all runtime manifests in parallel.
+	 *
+	 * @returns {Promise<void>} Resolves after route, event, and task manifests
+	 * have been refreshed.
 	 */
 	public async loadAll(): Promise<void> {
 		await Promise.all([this.loadRoutes(), this.loadEvents(), this.loadTasks()]);
@@ -65,6 +101,14 @@ export class ManifestStore {
 
 	/**
 	 * Reads, parses, and validates a versioned manifest from the build output.
+	 *
+	 * @param {string} fileName - Manifest file name inside the configured output
+	 * directory.
+	 * @returns {Promise<T | null>} Parsed manifest object, or `null` when the
+	 * file does not exist.
+	 * @throws {Error} Throws when the manifest cannot be read or parsed.
+	 * @throws {ManifestVersionMismatchError} Throws when the manifest schema
+	 * version does not match the current runtime schema.
 	 */
 	private async loadManifest<T extends VersionedManifest>(
 		fileName: string,

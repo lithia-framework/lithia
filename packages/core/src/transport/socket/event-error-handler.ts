@@ -5,6 +5,26 @@ import { LithiaClientError } from "../../errors/base";
 import { produceDigest } from "../../shared/digest";
 import type { Environment } from "../../types";
 
+/**
+ * Converts an uncaught socket event failure into the standard Lithia error
+ * event payload.
+ *
+ * Client-facing framework errors preserve their declared status code and
+ * message. Unknown failures are wrapped as internal server errors, and
+ * production mode hides 5xx details behind a generic message before emitting
+ * the error to the active socket.
+ *
+ * Related docs:
+ * - https://lithiajs.org/docs/latest/events
+ *
+ * @param {Environment} environment - Current runtime environment used to decide
+ * whether internal messages should be exposed.
+ * @param {Socket} socket - Active socket that receives the emitted `"error"`
+ * event payload.
+ * @param {string} eventName - Name of the event being processed when the
+ * failure occurred.
+ * @param {any} err - Original thrown value captured from the event pipeline.
+ */
 export function handleEventError(
 	environment: Environment,
 	socket: Socket,

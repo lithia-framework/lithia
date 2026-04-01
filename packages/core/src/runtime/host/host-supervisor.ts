@@ -30,6 +30,9 @@ declare namespace globalThis {
  * Minimal runtime options required to bootstrap the Lithia host.
  */
 export interface LithiaOpts {
+	/**
+	 * Runtime environment mode used to load config, manifests, and workers.
+	 */
 	environment: Environment;
 }
 
@@ -50,6 +53,16 @@ export class HostSupervisor {
 	private _appCount = 0;
 	private _lastPortUsed = 0;
 
+	/**
+	 * Creates the main-process supervisor for a Lithia runtime instance.
+	 *
+	 * The supervisor owns configuration loading, environment snapshots, build
+	 * orchestration, manifest loading, app worker lifecycle, and async task
+	 * execution coordination.
+	 *
+	 * @param {LithiaOpts} opts - Minimal host runtime options.
+	 * @throws {Error} Throws when instantiated outside the Node.js main thread.
+	 */
 	constructor(private readonly opts: LithiaOpts) {
 		if (!isMainThread) {
 			throw new Error(
@@ -87,34 +100,62 @@ export class HostSupervisor {
 		});
 	}
 
+	/**
+	 * Returns the resolved runtime configuration for the current host lifecycle.
+	 *
+	 * In production, the config is read from the global host runtime slot
+	 * exposed through `CFG_GLOBAL_KEY`. In other environments, the in-memory
+	 * loaded config snapshot is returned.
+	 */
 	public get config(): LithiaOptions {
 		return this.environment === "production"
 			? globalThis[CFG_GLOBAL_KEY]
 			: this._config;
 	}
 
+	/**
+	 * Returns the environment mode assigned to this host instance.
+	 */
 	public get environment(): Environment {
 		return this.opts.environment;
 	}
 
+	/**
+	 * Returns whether the supervised app worker has reported readiness.
+	 */
 	public get isAppReady(): boolean {
 		return this._appSupervisor.isReady;
 	}
 
+	/**
+	 * Returns the currently loaded route manifest entries.
+	 */
 	public get routes() {
 		return this._manifestStore.routes;
 	}
 
+	/**
+	 * Returns the currently loaded event manifest entries.
+	 */
 	public get events() {
 		return this._manifestStore.events;
 	}
 
+	/**
+	 * Returns the currently loaded async task manifest entries.
+	 */
 	public get tasks() {
 		return this._manifestStore.tasks;
 	}
 
 	/**
 	 * Loads the user configuration file into the host runtime.
+	 *
+	 * This is skipped in production, where config is expected to be available
+	 * through the global runtime slot.
+	 *
+	 * @returns {Promise<void>} Resolves after the config snapshot has been
+	 * loaded when applicable.
 	 */
 	public async loadConfig(): Promise<void> {
 		if (this.environment === "production") return;
@@ -124,6 +165,13 @@ export class HostSupervisor {
 
 	/**
 	 * Loads and merges configured environment files into the host snapshot.
+	 *
+	 * Files are loaded in config order, and later files override earlier keys.
+	 * Only files that currently exist are considered.
+	 *
+	 * @returns {Promise<Record<string, string>>} Copy of the merged environment
+	 * snapshot.
+	 * @throws {LithiaError} Throws when configuration has not been loaded yet.
 	 */
 	public async loadEnv(): Promise<Record<string, string>> {
 		this.ensureConfigLoaded();
@@ -147,6 +195,9 @@ export class HostSupervisor {
 
 	/**
 	 * Loads the routes manifest from the current build output.
+	 *
+	 * @returns {Promise<void>} Resolves after the route manifest cache has been
+	 * refreshed.
 	 */
 	public async loadRoutes(): Promise<void> {
 		await this._manifestStore.loadRoutes();
@@ -154,6 +205,9 @@ export class HostSupervisor {
 
 	/**
 	 * Loads the events manifest from the current build output.
+	 *
+	 * @returns {Promise<void>} Resolves after the event manifest cache has been
+	 * refreshed.
 	 */
 	public async loadEvents(): Promise<void> {
 		await this._manifestStore.loadEvents();
@@ -161,6 +215,9 @@ export class HostSupervisor {
 
 	/**
 	 * Loads the async tasks manifest from the current build output.
+	 *
+	 * @returns {Promise<void>} Resolves after the task manifest cache has been
+	 * refreshed.
 	 */
 	public async loadTasks(): Promise<void> {
 		await this._manifestStore.loadTasks();
@@ -168,6 +225,9 @@ export class HostSupervisor {
 
 	/**
 	 * Returns a copy of the currently loaded environment snapshot.
+	 *
+	 * @returns {Record<string, string>} Shallow copy of the host environment
+	 * snapshot.
 	 */
 	public getEnvSnapshot(): Record<string, string> {
 		return { ...this._env };
@@ -175,6 +235,9 @@ export class HostSupervisor {
 
 	/**
 	 * Replaces the in-memory resolved config snapshot.
+	 *
+	 * @param {LithiaOptions} config - Config snapshot that should replace the
+	 * current in-memory value.
 	 */
 	public replaceConfig(config: LithiaOptions): void {
 		this._config = config;
@@ -182,6 +245,9 @@ export class HostSupervisor {
 
 	/**
 	 * Replaces the in-memory environment snapshot.
+	 *
+	 * @param {Record<string, string>} env - Environment snapshot that should
+	 * replace the current in-memory value.
 	 */
 	public replaceEnv(env: Record<string, string>): void {
 		this._env = { ...env };
@@ -193,6 +259,11 @@ export class HostSupervisor {
 	 * Returns `true` when the build succeeds. In non-build environments, failures
 	 * are reported and surfaced as `false` so the caller can decide how to
 	 * recover.
+	 *
+	 * @returns {Promise<boolean>} `true` when the build succeeds, otherwise
+	 * `false` outside build mode.
+	 * @throws {unknown} Rethrows build failures when the host runs in `build`
+	 * mode.
 	 */
 	public async build(): Promise<boolean> {
 		this.ensureConfigLoaded();
@@ -218,6 +289,9 @@ export class HostSupervisor {
 
 	/**
 	 * Loads config/env and prints the CLI header for the current run.
+	 *
+	 * @returns {Promise<void>} Resolves after config, env, and header output are
+	 * ready.
 	 */
 	public async setup(): Promise<void> {
 		await this.loadConfig();
@@ -227,6 +301,10 @@ export class HostSupervisor {
 
 	/**
 	 * Starts the app worker using the latest manifests and runtime state.
+	 *
+	 * @returns {Promise<void>} Resolves after manifests are loaded and the app
+	 * worker reports readiness.
+	 * @throws {Error} Throws when worker startup fails.
 	 */
 	public async start(): Promise<void> {
 		if (!this._config) await this.loadConfig();
@@ -237,6 +315,9 @@ export class HostSupervisor {
 
 	/**
 	 * Reloads manifests, resets task workers, and swaps the app worker.
+	 *
+	 * @returns {Promise<void>} Resolves after manifests are refreshed, task
+	 * workers are reset, and the replacement app worker becomes ready.
 	 */
 	public async reload(): Promise<void> {
 		await this._manifestStore.loadAll();
@@ -246,6 +327,9 @@ export class HostSupervisor {
 
 	/**
 	 * Stops task execution and tears down the app worker.
+	 *
+	 * @returns {Promise<void>} Resolves after warm task workers and the app
+	 * worker have been terminated.
 	 */
 	public async stop(): Promise<void> {
 		await this._taskRunner.reset();
@@ -255,6 +339,9 @@ export class HostSupervisor {
 
 	/**
 	 * Replaces the current app worker with a fresh instance.
+	 *
+	 * @returns {Promise<void>} Resolves after the replacement app worker reports
+	 * readiness.
 	 */
 	public async swapApp(): Promise<void> {
 		await this._appSupervisor.swap();
@@ -262,6 +349,8 @@ export class HostSupervisor {
 
 	/**
 	 * Prints the Lithia CLI header and the env files currently in use.
+	 *
+	 * @returns {Promise<void>} Resolves after header output has been printed.
 	 */
 	public async printHeader(): Promise<void> {
 		const files = await this.getAvailableEnvFiles();
@@ -306,11 +395,28 @@ export class HostSupervisor {
 		);
 	}
 
+	/**
+	 * Forwards task invocation messages emitted by the app worker to the async
+	 * task runner.
+	 *
+	 * @param {AppToHostEvent} event - Message emitted by the app worker.
+	 * @returns {Promise<void>} Resolves after invocation messages are handled or
+	 * ignored.
+	 */
 	private async handleAppMessage(event: AppToHostEvent): Promise<void> {
 		if (event.type !== "invoke") return;
 		await this._taskRunner.handleInvocation(event);
 	}
 
+	/**
+	 * Prints a simple labeled tree for CLI inspection of loaded runtime state.
+	 *
+	 * @param {string} label - Section label printed above the tree.
+	 * @param {T[]} items - Items to render.
+	 * @param {(item: T) => string} nameFn - Formatter used for the item label.
+	 * @param {(item: T) => string} symbolFn - Formatter used for the item
+	 * prefix symbol.
+	 */
 	private printTree<T>(
 		label: string,
 		items: T[],
@@ -326,6 +432,11 @@ export class HostSupervisor {
 		});
 	}
 
+	/**
+	 * Returns the configured env files that currently exist on disk.
+	 *
+	 * @returns {Promise<string[]>} Existing env files in configured load order.
+	 */
 	private async getAvailableEnvFiles(): Promise<string[]> {
 		const existing: string[] = [];
 		for (const file of this.config.envFiles) {
@@ -334,6 +445,12 @@ export class HostSupervisor {
 		return existing;
 	}
 
+	/**
+	 * Verifies that a config snapshot is available before host operations that
+	 * depend on it.
+	 *
+	 * @throws {LithiaError} Throws when configuration has not been loaded.
+	 */
 	private ensureConfigLoaded(): void {
 		if (!this.config) throw new LithiaError("Configuration not loaded.");
 	}

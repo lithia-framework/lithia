@@ -11,18 +11,67 @@ import { toOutputFilePath } from "../shared/filesystem";
 import { compileSourceFiles } from "./compiler";
 import { type GeneratorRegistry, generateLithiaTypes } from "./typegen";
 
+/**
+ * Build inputs required to compile source files, generate runtime manifests,
+ * and optionally emit OpenAPI artifacts.
+ */
 export interface BuildConfig {
+	/**
+	 * Source directory scanned for routes, events, tasks, and other buildable
+	 * modules.
+	 */
 	sourceDir: string;
+	/**
+	 * Output directory that receives compiled files and generated artifacts.
+	 */
 	outRoot: string;
+	/**
+	 * Optional OpenAPI generation settings used to emit docs and spec artifacts.
+	 */
 	openapi?: OpenAPIConfig;
 }
 
+/**
+ * Coordinates the Lithia build pipeline from source scanning to generated
+ * runtime artifacts.
+ *
+ * The orchestrator clears the previous output, compiles source files,
+ * generates runtime manifests, emits optional OpenAPI assets, and writes type
+ * metadata for discovered tasks.
+ */
 export class BuildOrchestrator {
+	/**
+	 * Scans the source tree for buildable files.
+	 */
 	public readonly scanner = new FileScanner();
+	/**
+	 * Generates the route manifest consumed at runtime.
+	 */
 	public readonly routeGenerator = new RouteManifestGenerator();
+	/**
+	 * Generates the event manifest consumed at runtime.
+	 */
 	public readonly eventGenerator = new EventManifestGenerator();
+	/**
+	 * Generates the task manifest consumed at runtime.
+	 */
 	public readonly taskGenerator = new TaskManifestGenerator();
 
+	/**
+	 * Runs the full build pipeline for a Lithia application.
+	 *
+	 * The build flow removes the previous output directory, scans source files,
+	 * compiles them into the output tree, generates runtime manifests, emits
+	 * optional OpenAPI artifacts, and writes generated types for discovered
+	 * tasks.
+	 *
+	 * @param {BuildConfig} config - Build inputs that define the source root,
+	 * output root, and optional OpenAPI generation settings.
+	 * @returns {Promise<void>} Resolves after every build artifact has been
+	 * generated.
+	 * @throws {Error} Throws when no source files are found or when any build
+	 * step fails.
+	 */
 	public async build(config: BuildConfig): Promise<void> {
 		await rm(config.outRoot, { recursive: true, force: true });
 
@@ -59,6 +108,21 @@ export class BuildOrchestrator {
 		}
 	}
 
+	/**
+	 * Creates the type generation registry for discovered async tasks.
+	 *
+	 * The registry maps runtime task identifiers back to source file paths so
+	 * generated types reference the original task modules instead of compiled
+	 * output files. Task conventions are described in
+	 * [Async Tasks](https://lithiajs.org/docs/latest/async-tasks).
+	 *
+	 * @param {{ path: string; fullPath: string }[]} allFiles - Source files
+	 * scanned before compilation.
+	 * @param {TaskCore[]} tasks - Runtime task manifest entries generated from
+	 * compiled files.
+	 * @returns {GeneratorRegistry} Type generation metadata keyed by task
+	 * identifier, or an empty registry when no tasks are present.
+	 */
 	private createRegistry(
 		allFiles: { path: string; fullPath: string }[],
 		tasks: TaskCore[],
@@ -85,6 +149,17 @@ export class BuildOrchestrator {
 		};
 	}
 
+	/**
+	 * Converts a task source path into the runtime task identifier format.
+	 *
+	 * The normalization removes the task root, file extension, optional `.cron`
+	 * suffix, and grouping segments, then joins remaining path segments with
+	 * colons.
+	 *
+	 * @param {string} filePath - Task source path relative to the scanned source
+	 * tree.
+	 * @returns {string} Runtime task identifier derived from the file path.
+	 */
 	private resolveTaskIdentifier(filePath: string): string {
 		const normalized = filePath
 			.replace(/\\/g, "/")
@@ -98,6 +173,20 @@ export class BuildOrchestrator {
 			.join(":");
 	}
 
+	/**
+	 * Generates OpenAPI artifacts when the build enables OpenAPI output.
+	 *
+	 * Before generating artifacts, this method validates that reserved docs and
+	 * spec routes do not collide with discovered GET routes.
+	 *
+	 * @param {BuildConfig} config - Build settings containing OpenAPI options.
+	 * @param {Route[]} routes - Discovered route manifest entries used to build
+	 * OpenAPI output.
+	 * @returns {Promise<void>} Resolves after OpenAPI artifacts are generated or
+	 * skipped.
+	 * @throws {Error} Throws when reserved OpenAPI routes are unsafe or when the
+	 * OpenAPI integration cannot be loaded.
+	 */
 	private async generateOpenAPIArtifactsIfEnabled(
 		config: BuildConfig,
 		routes: Route[],
@@ -114,6 +203,19 @@ export class BuildOrchestrator {
 		});
 	}
 
+	/**
+	 * Verifies that reserved OpenAPI docs and spec paths do not conflict with
+	 * discovered GET routes.
+	 *
+	 * Lithia serves generated docs and spec assets from reserved routes when
+	 * OpenAPI is enabled, so user-defined GET routes cannot reuse those paths.
+	 *
+	 * @param {Route[]} routes - Discovered route entries to validate.
+	 * @param {OpenAPIConfig} config - OpenAPI settings that define reserved
+	 * paths.
+	 * @throws {Error} Throws when `docsPath` and `specPath` match or when a GET
+	 * route conflicts with either reserved path.
+	 */
 	private assertOpenAPIPathsAreSafe(
 		routes: Route[],
 		config: OpenAPIConfig,
@@ -139,6 +241,19 @@ export class BuildOrchestrator {
 		}
 	}
 
+	/**
+	 * Loads the optional `@lithia-js/openapi` integration from the current
+	 * project.
+	 *
+	 * Resolution happens from the consumer project so the build uses the
+	 * project's installed package instead of assuming the integration is
+	 * available in the core package environment.
+	 *
+	 * @returns {Promise<{ generateOpenAPIArtifacts: (options: { outDir: string; routes: Route[]; config: OpenAPIConfig; }) => Promise<void>; }>}
+	 * Module interface used to emit OpenAPI build artifacts.
+	 * @throws {Error} Throws when OpenAPI is enabled but the integration package
+	 * is missing or fails to load.
+	 */
 	private async loadOpenAPIIntegration(): Promise<{
 		generateOpenAPIArtifacts: (options: {
 			outDir: string;
@@ -161,6 +276,16 @@ export class BuildOrchestrator {
 	}
 }
 
+/**
+ * Normalizes reserved route paths used by generated OpenAPI assets.
+ *
+ * The normalization guarantees a leading slash and removes a trailing slash
+ * from non-root paths so route conflict checks compare canonical values.
+ *
+ * @param {string} pathname - Reserved path configured for OpenAPI docs or
+ * specs.
+ * @returns {string} Canonical absolute path used for route comparisons.
+ */
 function normalizeReservedPath(pathname: string): string {
 	if (!pathname) return "/";
 

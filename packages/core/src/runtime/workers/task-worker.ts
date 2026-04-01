@@ -6,6 +6,10 @@ import type { TaskErrorPayload } from "../host/protocol";
 
 /**
  * Messages emitted by a task worker back to the host.
+ *
+ * Dedicated workers omit `executionId` because they handle exactly one
+ * invocation. Warm pooled workers include it so the host can correlate the
+ * response with the currently awaited execution.
  */
 type TaskWorkerMessage =
 	| {
@@ -21,6 +25,9 @@ type TaskWorkerMessage =
 
 /**
  * Invocation payload sent to a pooled warm task worker.
+ *
+ * The host posts this message into a long-lived pooled worker whenever an
+ * awaited task needs execution.
  */
 type PooledTaskInvocationMessage = {
 	type: "invoke";
@@ -31,6 +38,9 @@ type PooledTaskInvocationMessage = {
 
 /**
  * Ensures the task worker only runs inside a Lithia-managed worker context.
+ *
+ * @throws {Error} Thrown when the module is executed on the main thread or in a
+ * worker that was not created by Lithia's host runtime.
  */
 function validateExecutionContext(): void {
 	if (isMainThread) {
@@ -48,6 +58,10 @@ function validateExecutionContext(): void {
 
 /**
  * Converts an unknown thrown value into a serializable task error payload.
+ *
+ * @param {unknown} error - Original thrown value.
+ * @returns {TaskErrorPayload} Serializable error payload safe to send across
+ * the worker boundary.
  */
 function serializeTaskError(error: unknown): TaskErrorPayload {
 	if (error instanceof Error) {
@@ -70,6 +84,13 @@ function serializeTaskError(error: unknown): TaskErrorPayload {
 
 /**
  * Executes a dedicated one-shot task worker.
+ *
+ * Dedicated workers read the task manifest entry and serialized arguments from
+ * `workerData`, run exactly one invocation, post the terminal result back to
+ * the host, and then schedule process exit.
+ *
+ * @returns {Promise<void>} Resolves after the result has been posted to the
+ * parent port.
  */
 async function run() {
 	const { task, args } = workerData;
@@ -102,6 +123,17 @@ async function run() {
 
 /**
  * Executes a single task invocation inside a warm pooled worker.
+ *
+ * Warm pooled workers stay alive across invocations, so this helper only
+ * handles one invocation and reports its outcome back to the host without
+ * exiting the process.
+ *
+ * @param {TaskCore} task - Task manifest entry describing the module to load.
+ * @param {unknown[]} args - Serialized arguments forwarded to the task.
+ * @param {string} [executionId] - Correlation identifier for awaited tasks.
+ * @returns {Promise<void>} Resolves after the result payload has been posted.
+ * @throws {unknown} Re-throws the original task error after posting the
+ * serialized error payload so the pooled loop can decide whether to continue.
  */
 async function executeTask(
 	task: TaskCore,
@@ -135,6 +167,9 @@ async function executeTask(
 /**
  * Starts the pooled worker loop and waits for invocation messages from the
  * host.
+ *
+ * The loop keeps the worker alive indefinitely and delegates each `"invoke"`
+ * message to `executeTask()`.
  */
 function runPooled() {
 	validateExecutionContext();

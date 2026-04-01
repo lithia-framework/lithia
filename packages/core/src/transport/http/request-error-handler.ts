@@ -6,6 +6,26 @@ import type { Environment } from "../../types";
 import type { LithiaRequest } from "./request";
 import type { LithiaResponse } from "./response";
 
+/**
+ * Converts an uncaught HTTP request error into a structured JSON response.
+ *
+ * Client-facing framework errors preserve their declared status code and
+ * message. Unknown errors are wrapped as internal server errors, and production
+ * mode hides 5xx messages behind a generic `"Internal Server Error"` payload.
+ *
+ * The handler is a no-op when the response has already been finalized.
+ *
+ * Related docs:
+ * - https://lithiajs.org/docs/latest/routes
+ *
+ * @param {Environment} environment - Current runtime environment used to decide
+ * whether internal error messages should be exposed.
+ * @param {LithiaRequest} req - Current request wrapper used to include request
+ * metadata in the error payload.
+ * @param {LithiaResponse} res - Current response wrapper used to send the error
+ * response.
+ * @param {any} err - Original thrown value captured from the request pipeline.
+ */
 export function handleRequestError(
 	environment: Environment,
 	req: LithiaRequest,

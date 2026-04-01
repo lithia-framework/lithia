@@ -1,17 +1,61 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+/**
+ * Describes one generated type entry that should be exposed through Lithia's
+ * module augmentation output.
+ */
 export interface TypeDefinition {
+	/**
+	 * Stable runtime identifier used as the generated interface key.
+	 */
 	identifier: string;
+	/**
+	 * Absolute or project-resolved source module path imported by the generated
+	 * declaration file.
+	 */
 	filePath: string;
+	/**
+	 * Named export imported from the target module. Defaults to `default` when
+	 * omitted.
+	 */
 	exportName?: string;
 }
 
+/**
+ * Groups generated type definitions by augmentation category.
+ *
+ * Each category becomes a dedicated interface in the generated
+ * `@lithia-js/core` module augmentation.
+ */
 export interface GeneratorRegistry {
+	/**
+	 * Async task definitions exposed through generated task type mappings.
+	 */
 	tasks?: TypeDefinition[];
+	/**
+	 * Plugin definitions exposed through generated plugin type mappings.
+	 */
 	plugins?: TypeDefinition[];
 }
 
+/**
+ * Writes Lithia's generated declaration file for runtime-discovered modules.
+ *
+ * The generated file lives at `.lithia/lithia.d.ts` under the project root and
+ * augments `@lithia-js/core` with category-specific interfaces such as
+ * `LithiaTasks`. Each registry entry becomes an import plus a typed interface
+ * member keyed by the runtime identifier.
+ *
+ * @param {string} projectRoot - Project root that receives the `.lithia`
+ * declaration output directory.
+ * @param {GeneratorRegistry} registry - Type definition groups to expose
+ * through module augmentation.
+ * @returns {Promise<void>} Resolves after the declaration file has been
+ * written.
+ * @throws {Error} Throws when the output directory cannot be created or the
+ * declaration file cannot be written.
+ */
 export async function generateLithiaTypes(
 	projectRoot: string,
 	registry: GeneratorRegistry,
@@ -56,12 +100,34 @@ export async function generateLithiaTypes(
 	await fs.writeFile(lithiaTypesPath, content, "utf-8");
 }
 
+/**
+ * Converts an identifier into a PascalCase suffix suitable for generated type
+ * aliases.
+ *
+ * Non-alphanumeric separators are normalized before capitalization so runtime
+ * identifiers such as `notifications:welcome-email` become stable alias names.
+ *
+ * @param {string} str - Runtime identifier or category suffix to normalize.
+ * @returns {string} PascalCase string used in generated import aliases.
+ */
 function toPascalCase(str: string) {
 	return str
 		.replace(/[^a-zA-Z0-9]/g, "-")
 		.replace(/(^\w|-\w)/g, (match) => match.replace("-", "").toUpperCase());
 }
 
+/**
+ * Computes the module specifier used by the generated declaration file.
+ *
+ * The resulting path is relative to the `.lithia` output directory, always
+ * uses forward slashes, always starts with `.` or `..`, and omits supported
+ * source file extensions so TypeScript can resolve the module.
+ *
+ * @param {string} from - Directory containing the generated declaration file.
+ * @param {string} to - Target source module path referenced by the generated
+ * import.
+ * @returns {string} Relative module specifier used in generated imports.
+ */
 function relativeImportPath(from: string, to: string) {
 	let rel = path.relative(from, to).replace(/\\/g, "/");
 	if (!rel.startsWith(".")) rel = `./${rel}`;

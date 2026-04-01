@@ -4,16 +4,27 @@ import { type Cookies, parse as parseCookie } from "cookie";
 import { BadRequestError } from "../../errors/app/index";
 
 /**
- * Generic route params object.
+ * Route params object populated by the route matcher.
+ *
+ * Keys correspond to dynamic segments extracted from the matched route pattern.
+ * The values are assigned by the HTTP transport before the handler runs and
+ * remain mutable for the lifetime of the current request context.
  */
 export type Params = Record<string, any>;
+
 /**
- * Generic query object parsed from the request URL.
+ * Query object parsed from the incoming request URL.
+ *
+ * Each value is currently stored as the last string value observed for a given
+ * query key during URL parsing.
  */
 export type Query = Record<string, any>;
 
 /**
  * Uploaded multipart file returned by `req.files()`.
+ *
+ * Each file entry contains the metadata reported by Busboy plus the fully
+ * buffered file contents collected while the multipart stream is parsed.
  */
 export interface UploadedFile extends FileInfo {
 	fieldname: string;
@@ -25,6 +36,15 @@ export interface UploadedFile extends FileInfo {
  *
  * Provides helpers for reading params, query, body, cookies, and multipart
  * uploads from route handlers and middleware.
+ *
+ * The wrapper parses URL-derived data eagerly in the constructor and reads the
+ * request stream lazily only when `body()` or `files()` is called. Parsed
+ * payloads are cached so route handlers and middleware can safely reuse the
+ * same request wrapper without reparsing the stream.
+ *
+ * Related docs:
+ * - https://lithiajs.org/docs/latest/routes
+ * - https://lithiajs.org/docs/latest/project-structure
  */
 export class LithiaRequest {
 	public readonly headers: Readonly<IncomingHttpHeaders>;
@@ -38,6 +58,18 @@ export class LithiaRequest {
 	private _filesCache: UploadedFile[] | null = null;
 	private _cookies: Cookies | null = null;
 
+	/**
+	 * Creates a request wrapper for the current HTTP transaction.
+	 *
+	 * The constructor captures headers, reconstructs a best-effort absolute URL,
+	 * normalizes the HTTP method to uppercase, and initializes parsed query and
+	 * route-param containers for later middleware and handler use.
+	 *
+	 * @param {IncomingMessage} req - Raw Node.js request object received by the
+	 * HTTP server.
+	 * @param {{ maxBodySize?: number }} opts - Per-request parsing options used
+	 * when consuming the request body stream.
+	 */
 	constructor(
 		private readonly req: IncomingMessage,
 		private readonly opts: { maxBodySize?: number },
@@ -56,6 +88,13 @@ export class LithiaRequest {
 
 	/**
 	 * Returns the best-effort client IP address for the current request.
+	 *
+	 * The lookup prefers proxy-forwarded headers before falling back to the raw
+	 * socket address, which makes the result suitable for deployments behind
+	 * reverse proxies that preserve `x-forwarded-for` or `x-real-ip`.
+	 *
+	 * @returns {string} The resolved client IP address, or `"unknown"` when no
+	 * address can be derived.
 	 */
 	public ip(): string {
 		return (
@@ -68,6 +107,9 @@ export class LithiaRequest {
 
 	/**
 	 * Returns the current request user-agent string.
+	 *
+	 * @returns {string} The raw `user-agent` header value, or an empty string
+	 * when the header is missing.
 	 */
 	public userAgent(): string {
 		return (this.headers["user-agent"] as string) || "";
@@ -75,6 +117,11 @@ export class LithiaRequest {
 
 	/**
 	 * Returns whether the current request is using HTTPS.
+	 *
+	 * The check prefers `x-forwarded-proto` for proxy-aware deployments and then
+	 * falls back to the encrypted state of the underlying socket.
+	 *
+	 * @returns {boolean} `true` when the request should be treated as HTTPS.
 	 */
 	public isSecure(): boolean {
 		return (
@@ -85,6 +132,9 @@ export class LithiaRequest {
 
 	/**
 	 * Returns the request host header.
+	 *
+	 * @returns {string} The current host header value, or `"unknown"` when it is
+	 * not available.
 	 */
 	public host(): string {
 		return (this.headers.host as string) || "unknown";
@@ -92,6 +142,11 @@ export class LithiaRequest {
 
 	/**
 	 * Returns the absolute request URL reconstructed from the current request.
+	 *
+	 * This helper rebuilds the URL from the current security state, host header,
+	 * and parsed pathname. It does not append the original query string.
+	 *
+	 * @returns {string} Absolute URL for the current request pathname.
 	 */
 	public url(): string {
 		return `${this.isSecure() ? "https" : "http"}://${this.host()}${this.pathname}`;
@@ -101,7 +156,17 @@ export class LithiaRequest {
 	 * Parses and returns the request body.
 	 *
 	 * JSON and plain text bodies are supported automatically. Multipart requests
-	 * populate both `body()` and `files()`.
+	 * populate both `body()` and `files()` through a shared parsing pass. The
+	 * parsed value is cached after the first read so later consumers do not touch
+	 * the underlying stream again.
+	 *
+	 * Requests whose method is not one of `POST`, `PUT`, `PATCH`, or `DELETE`
+	 * resolve to an empty object without reading the stream.
+	 *
+	 * @returns {Promise<T>} Parsed request body, multipart field map, raw text, or
+	 * an empty object for methods that do not consume a body by default.
+	 * @throws {BadRequestError} Thrown when the declared or streamed body size
+	 * exceeds `maxBodySize`, or when JSON parsing fails.
 	 */
 	public async body<T>(): Promise<T> {
 		const methodsWithBody = ["POST", "PUT", "PATCH", "DELETE"];
@@ -165,6 +230,13 @@ export class LithiaRequest {
 
 	/**
 	 * Returns uploaded files for multipart/form-data requests.
+	 *
+	 * `files()` shares the same multipart parsing pass used by `body()`. The
+	 * first call buffers every uploaded file into memory and caches both the
+	 * parsed field object and file array for later access.
+	 *
+	 * @returns {Promise<UploadedFile[]>} Buffered multipart files, or an empty
+	 * array when the request is not multipart.
 	 */
 	public async files(): Promise<UploadedFile[]> {
 		const contentType = (this.headers["content-type"] || "") as string;
@@ -178,6 +250,12 @@ export class LithiaRequest {
 
 	/**
 	 * Overrides the cached body value for the current request context.
+	 *
+	 * This mutates only the wrapper cache and the internal storage map. It does
+	 * not modify the underlying Node.js request stream.
+	 *
+	 * @param {unknown} value - Replacement body value to expose through `body()`
+	 * and internal request storage.
 	 */
 	public setBody(value: unknown): void {
 		this._bodyCache = value;
@@ -186,6 +264,11 @@ export class LithiaRequest {
 
 	/**
 	 * Returns all parsed cookies from the request.
+	 *
+	 * Cookies are parsed lazily on first access and cached for the remainder of
+	 * the request lifecycle.
+	 *
+	 * @returns {Cookies} Parsed cookie map for the current request.
 	 */
 	public cookies(): Cookies {
 		if (this._cookies === null) {
@@ -197,6 +280,9 @@ export class LithiaRequest {
 
 	/**
 	 * Returns a single cookie value by name.
+	 *
+	 * @param {string} name - Cookie name to read from the parsed cookie map.
+	 * @returns {string | undefined} The cookie value when present.
 	 */
 	public cookie(name: string): string | undefined {
 		return this.cookies()[name];
@@ -204,6 +290,13 @@ export class LithiaRequest {
 
 	/**
 	 * Returns a value stored in the per-request internal storage map.
+	 *
+	 * This storage is local to the current request wrapper and can be used by
+	 * middleware and handlers to exchange derived values without mutating the
+	 * typed request surface.
+	 *
+	 * @param {string} key - Storage key associated with the requested value.
+	 * @returns {T | undefined} Stored value for the key, if one exists.
 	 */
 	public get<T>(key: string): T | undefined {
 		return this.storage.get(key) as T | undefined;
@@ -211,11 +304,25 @@ export class LithiaRequest {
 
 	/**
 	 * Stores a value in the per-request internal storage map.
+	 *
+	 * @param {string} key - Storage key to create or overwrite.
+	 * @param {unknown} value - Arbitrary value to retain for the lifetime of the
+	 * current request wrapper.
 	 */
 	public set(key: string, value: unknown): void {
 		this.storage.set(key, value);
 	}
 
+	/**
+	 * Parses a multipart/form-data request into cached fields and file buffers.
+	 *
+	 * The request stream is piped into Busboy exactly once. Field values are
+	 * collected into a plain object, file contents are buffered fully in memory,
+	 * and both results are stored in the request cache and internal storage map.
+	 *
+	 * @returns {Promise<void>} Resolves after Busboy finishes consuming the
+	 * multipart stream and caches the parsed payload.
+	 */
 	private async parseMultipart(): Promise<void> {
 		if (this._bodyCache !== null && this._filesCache !== null) return;
 
@@ -254,6 +361,16 @@ export class LithiaRequest {
 	}
 }
 
+/**
+ * Converts URL search parameters into the mutable query object exposed by the
+ * request wrapper.
+ *
+ * When the same key appears multiple times, the last encountered value wins.
+ *
+ * @param {URLSearchParams} searchParams - Parsed search parameters from the
+ * request URL.
+ * @returns {Query} Plain object representation of the query string.
+ */
 function parseQueryToObject(searchParams: URLSearchParams): Query {
 	const query: Query = {};
 	for (const [key, value] of searchParams.entries()) {

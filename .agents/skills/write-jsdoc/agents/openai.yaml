@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write JSDoc"
+  short_description: "Draft or improve JSDoc comments for Lithia.js APIs."
+  default_prompt: "Use $write-jsdoc to draft or improve JSDoc comments for Lithia.js APIs."
