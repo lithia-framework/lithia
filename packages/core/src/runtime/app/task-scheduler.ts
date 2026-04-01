@@ -1,4 +1,3 @@
-import { logger } from "@lithia-js/utils";
 import cron from "node-cron";
 import type { TaskCore } from "../../discovery/tasks";
 
@@ -20,7 +19,6 @@ export class TaskScheduler {
 			}
 
 			const job = cron.schedule(task.schedule, () => {
-				logger.debug(`[task:${task.id}] Triggered by CRON schedule.`);
 				onTrigger(task);
 			});
 

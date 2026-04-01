@@ -17,6 +17,7 @@ export interface TaskCore {
 	trigger: TaskTrigger;
 	filePath: string;
 	schedule?: string;
+	retries?: number;
 }
 
 export interface TasksManifest {
@@ -26,6 +27,7 @@ export interface TasksManifest {
 
 type CronTaskModule = {
 	schedule?: string;
+	retries?: number;
 };
 
 export class TaskConvention {
@@ -87,6 +89,7 @@ export class TaskProcessor {
 			trigger: extracted.trigger,
 			filePath: file.fullPath,
 			schedule: undefined,
+			retries: undefined,
 		};
 	}
 }
@@ -128,7 +131,7 @@ export class TaskManifestGenerator {
 			tasks.map(async (task) => {
 				if (task.trigger !== "CRON") return task;
 
-				const schedule = await this.readCronSchedule(task.filePath);
+				const { schedule, retries } = await this.readCronConfig(task.filePath);
 				if (!cron.validate(schedule)) {
 					throw new Error(
 						`Invalid cron schedule '${schedule}' for task '${task.id}'.`,
@@ -138,12 +141,15 @@ export class TaskManifestGenerator {
 				return {
 					...task,
 					schedule,
+					retries,
 				};
 			}),
 		);
 	}
 
-	private async readCronSchedule(filePath: string): Promise<string> {
+	private async readCronConfig(
+		filePath: string,
+	): Promise<{ schedule: string; retries: number }> {
 		const fileUrl = new URL(pathToFileURL(filePath).href);
 		fileUrl.searchParams.set("t", `${Date.now()}`);
 		const mod = (await import(fileUrl.href)) as CronTaskModule;
@@ -154,6 +160,18 @@ export class TaskManifestGenerator {
 			);
 		}
 
-		return mod.schedule;
+		if (
+			mod.retries !== undefined &&
+			(!Number.isInteger(mod.retries) || mod.retries < 0)
+		) {
+			throw new Error(
+				`CRON task '${filePath}' must export 'retries' as a non-negative integer.`,
+			);
+		}
+
+		return {
+			schedule: mod.schedule,
+			retries: mod.retries ?? 0,
+		};
 	}
 }

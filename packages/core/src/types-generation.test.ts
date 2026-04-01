@@ -38,7 +38,7 @@ describe("TypesGenerator", () => {
 			'import { default as tasks_UserCreate } from "../src/tasks/user/create";',
 		);
 
-		expect(content).toContain('declare module "@lithia-js/core" {');
+		expect(content).toContain('declare module "../hooks/lithia-hooks" {');
 		expect(content).toContain("interface LithiaTasks {");
 		expect(content).toContain('    "user:create": typeof tasks_UserCreate;');
 	});

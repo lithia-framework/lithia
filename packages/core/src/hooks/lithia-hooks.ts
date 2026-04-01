@@ -3,6 +3,10 @@ import { parentPort } from "node:worker_threads";
 import type { LithiaOptions } from "../config";
 import { getLithiaContext } from "../context/lithia-context";
 import { DependencyNotInitializedError } from "../errors/internal/index";
+import type {
+	TaskErrorPayload,
+	TaskInvocationSource,
+} from "../runtime/host/protocol";
 import type { InjectionKey } from "../runtime/app/app-runtime";
 
 declare module "../hooks/lithia-hooks" {
@@ -47,6 +51,61 @@ type TaskReturn<K extends TaskInvocationKey> = K extends keyof LithiaTasks
 	? KnownTaskReturn<LithiaTasks[K]>
 	: unknown;
 
+export type TaskExecutionHandle<K extends string = string> = {
+	taskId: K;
+	executionId: string;
+	source: TaskInvocationSource;
+};
+
+function ensureCloneableTaskArgs(taskId: string, args: unknown[]): void {
+	try {
+		structuredClone(args);
+	} catch (error) {
+		throw new Error(
+			`[task:${taskId}] Task arguments could not be cloned for worker dispatch.`,
+			{ cause: error as Error },
+		);
+	}
+}
+
+function createTaskError(payload: TaskErrorPayload): Error {
+	const error = new Error(payload.message, { cause: payload.cause });
+	error.name = payload.name;
+	if (payload.stack) {
+		error.stack = payload.stack;
+	}
+	return error;
+}
+
+function postTaskInvocation<K extends TaskInvocationKey>(
+	taskId: K,
+	args: TaskPayload<K>,
+	options: {
+		async: boolean;
+		requestId?: string;
+		executionId: string;
+		source: TaskInvocationSource;
+	},
+): TaskExecutionHandle<Extract<K, string>> {
+	ensureCloneableTaskArgs(String(taskId), args as unknown[]);
+	parentPort?.postMessage({
+		type: "invoke",
+		taskId,
+		async: options.async,
+		requestId: options.requestId,
+		executionId: options.executionId,
+		args,
+		source: options.source,
+		attempt: 0,
+	});
+
+	return {
+		taskId: String(taskId) as Extract<K, string>,
+		executionId: options.executionId,
+		source: options.source,
+	};
+}
+
 export async function runTask<K extends TaskInvocationKey>(
 	taskId: K,
 	...args: TaskPayload<K>
@@ -58,6 +117,7 @@ export async function runTask<K extends TaskInvocationKey>(
 	}
 
 	const requestId = randomUUID();
+	const executionId = randomUUID();
 
 	return new Promise<Awaited<TaskReturn<K>>>((resolve, reject) => {
 		const handler = (msg: any) => {
@@ -66,7 +126,7 @@ export async function runTask<K extends TaskInvocationKey>(
 				if (msg.type === "invoke_success") {
 					resolve(msg.result);
 				} else {
-					reject(new Error(msg.error));
+					reject(createTaskError(msg.error));
 				}
 			}
 		};
@@ -88,12 +148,11 @@ export async function runTask<K extends TaskInvocationKey>(
 		parentPort?.on("message", handler);
 		parentPort?.on("close", closeHandler);
 
-		parentPort?.postMessage({
-			type: "invoke",
-			requestId,
-			taskId,
+		postTaskInvocation(taskId, args, {
 			async: false,
-			args,
+			requestId,
+			executionId,
+			source: "ON_DEMAND",
 		});
 	});
 }
@@ -101,18 +160,17 @@ export async function runTask<K extends TaskInvocationKey>(
 export function runTaskAsync<K extends TaskInvocationKey>(
 	taskId: K,
 	...args: TaskPayload<K>
-): void {
+): TaskExecutionHandle<Extract<K, string>> {
 	if (!parentPort) {
 		throw new Error(
 			"Async task invocations can only be used within a Lithia managed instance.",
 		);
 	}
 
-	parentPort?.postMessage({
-		type: "invoke",
-		taskId,
+	return postTaskInvocation(taskId, args, {
 		async: true,
-		args,
+		executionId: randomUUID(),
+		source: "ON_DEMAND",
 	});
 }
 

@@ -1,4 +1,5 @@
-import { isMainThread, workerData } from "node:worker_threads";
+import { randomUUID } from "node:crypto";
+import { isMainThread, parentPort, workerData } from "node:worker_threads";
 import { logger } from "@lithia-js/utils";
 import type { LithiaOptions } from "../../config";
 import {
@@ -8,7 +9,6 @@ import {
 import type { Event } from "../../discovery/events";
 import type { Route } from "../../discovery/routes";
 import type { TaskCore } from "../../discovery/tasks";
-import { runTaskAsync } from "../../hooks/lithia-hooks";
 import type { RouteMiddleware } from "../../transport/http/request-pipeline";
 import { LithiaServer } from "../../transport/server";
 import type { EventMiddleware } from "../../transport/socket/event-pipeline";
@@ -107,7 +107,15 @@ export class LithiaApp {
 		try {
 			await this._server.listen();
 			this.taskScheduler.start((task) => {
-				runTaskAsync(task.id);
+				parentPort?.postMessage({
+					type: "invoke",
+					taskId: task.id,
+					async: true,
+					executionId: randomUUID(),
+					args: [],
+					source: "CRON",
+					attempt: 0,
+				});
 			});
 			this.executeOnce(() =>
 				logger.ready(`Lithia is ready on port ${this.config.http.port}`),

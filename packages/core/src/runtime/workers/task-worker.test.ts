@@ -43,7 +43,10 @@ describe("Task Worker Entrypoint", () => {
 
 			expect(loadModule).toHaveBeenCalledWith("/path/to/task.js");
 			expect(mockDefault).toHaveBeenCalledWith(1, 2, 3);
-			expect(mockPostMessage).toHaveBeenCalledWith("success-result");
+			expect(mockPostMessage).toHaveBeenCalledWith({
+				type: "success",
+				result: "success-result",
+			});
 
 			await vi.waitFor(() => {
 				expect(mockExit).toHaveBeenCalledWith(0);

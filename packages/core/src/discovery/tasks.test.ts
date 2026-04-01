@@ -41,6 +41,7 @@ describe("tasks discovery", () => {
 			trigger: "CRON",
 			filePath: "/abs/dist/app/tasks/user/create.cron.js",
 			schedule: undefined,
+			retries: undefined,
 		});
 	});
 
@@ -55,6 +56,7 @@ describe("tasks discovery", () => {
 			await writeFile(
 				taskFile,
 				`export const schedule = "*/5 * * * *";
+export const retries = 2;
 export default async function task() {}
 `,
 				"utf-8",
@@ -74,6 +76,7 @@ export default async function task() {}
 					trigger: "CRON",
 					filePath: taskFile,
 					schedule: "*/5 * * * *",
+					retries: 2,
 				},
 			]);
 
@@ -81,6 +84,7 @@ export default async function task() {}
 				await readFile(path.join(outRoot, "tasks.json"), "utf-8"),
 			);
 			expect(writtenManifest.tasks[0].schedule).toBe("*/5 * * * *");
+			expect(writtenManifest.tasks[0].retries).toBe(2);
 		} finally {
 			await rm(root, { recursive: true, force: true });
 		}

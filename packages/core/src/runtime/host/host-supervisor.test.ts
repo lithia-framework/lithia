@@ -83,6 +83,7 @@ describe("HostSupervisor", () => {
 		logging: {
 			requests: true,
 			events: true,
+			tasks: true,
 		},
 		asyncTasks: {
 			timeoutMs: 30000,

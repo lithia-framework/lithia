@@ -125,6 +125,12 @@ export interface LithiaOptions {
 		 * @default true
 		 */
 		events: boolean;
+
+		/**
+		 * Log async task execution lifecycle
+		 * @default true
+		 */
+		tasks: boolean;
 	};
 
 	asyncTasks: {
@@ -161,6 +167,7 @@ export const DEFAULT_CONFIG: LithiaConfig = {
 	logging: {
 		requests: true,
 		events: true,
+		tasks: true,
 	},
 
 	asyncTasks: {

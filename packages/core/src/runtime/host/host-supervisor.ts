@@ -191,10 +191,12 @@ export class HostSupervisor {
 
 	public async reload(): Promise<void> {
 		await this._manifestStore.loadAll();
+		await this._taskRunner.reset();
 		await this.swapApp();
 	}
 
 	public async stop(): Promise<void> {
+		await this._taskRunner.reset();
 		await this._appSupervisor.dispose();
 		logger.debug("Lithia instance stopped.");
 	}
