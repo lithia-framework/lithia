@@ -5,6 +5,10 @@ import { LithiaApp } from "../app/app-runtime";
 
 let isInitialized = false;
 
+/**
+ * Boots the app worker exactly once and reports readiness or startup failure
+ * back to the host.
+ */
 async function bootstrap(): Promise<void> {
 	if (isInitialized) return;
 	isInitialized = true;
@@ -48,6 +52,9 @@ async function bootstrap(): Promise<void> {
 		return;
 	}
 
+	/**
+	 * Handles process-level shutdown for the app worker.
+	 */
 	const shutdown = async (): Promise<void> => {
 		try {
 			await app.stop();

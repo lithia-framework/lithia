@@ -3,11 +3,21 @@ import { Worker } from "node:worker_threads";
 import { logger } from "@lithia-js/utils";
 import type { AppToHostEvent } from "./protocol";
 
+/**
+ * Worker construction options passed to the app worker entrypoint.
+ */
 type CreateWorkerOptions = {
 	workerData: Record<string, unknown>;
 	env: Record<string, string>;
 };
 
+/**
+ * Supervises the lifecycle of the Lithia app worker.
+ *
+ * This class is responsible for spawning the worker, waiting until it becomes
+ * ready, forwarding task invocation messages back to the host, and disposing
+ * the worker during reload or shutdown.
+ */
 export class AppSupervisor {
 	private _worker: Worker | null = null;
 	private _isReady = false;
@@ -31,10 +41,16 @@ export class AppSupervisor {
 		return this._isRunning;
 	}
 
+	/**
+	 * Starts the app worker and waits for it to report readiness.
+	 */
 	public async start(): Promise<void> {
 		await this.spawnWorker();
 	}
 
+	/**
+	 * Replaces the current worker with a fresh one.
+	 */
 	public async swap(): Promise<void> {
 		if (this._worker && this._isRunning) {
 			await this.dispose();
@@ -42,6 +58,9 @@ export class AppSupervisor {
 		await this.spawnWorker();
 	}
 
+	/**
+	 * Terminates the current worker and resets supervisor state.
+	 */
 	public async dispose(): Promise<void> {
 		if (!this._worker) return;
 		const worker = this._worker;
@@ -51,6 +70,9 @@ export class AppSupervisor {
 		await worker.terminate();
 	}
 
+	/**
+	 * Spawns the app worker and waits for either `ready` or a startup failure.
+	 */
 	private async spawnWorker(): Promise<void> {
 		logger.debug("Spawning background worker...");
 		const options = this.createOptions();

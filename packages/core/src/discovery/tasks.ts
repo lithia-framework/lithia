@@ -108,7 +108,9 @@ export class TaskManifestGenerator {
 
 		if (taskFiles.length === 0) return null;
 
-		const tasks = await this.attachCronSchedules(this.processor.process(taskFiles));
+		const tasks = await this.attachCronSchedules(
+			this.processor.process(taskFiles),
+		);
 		const manifest: TasksManifest = { version, tasks };
 		const manifestPath = path.join(outRoot, "tasks.json");
 

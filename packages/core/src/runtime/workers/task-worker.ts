@@ -4,6 +4,9 @@ import type { TaskCore } from "../../discovery/tasks";
 import { loadModule } from "../../shared/module-loader";
 import type { TaskErrorPayload } from "../host/protocol";
 
+/**
+ * Messages emitted by a task worker back to the host.
+ */
 type TaskWorkerMessage =
 	| {
 			type: "success";
@@ -16,6 +19,9 @@ type TaskWorkerMessage =
 			error: TaskErrorPayload;
 	  };
 
+/**
+ * Invocation payload sent to a pooled warm task worker.
+ */
 type PooledTaskInvocationMessage = {
 	type: "invoke";
 	executionId: string;
@@ -23,6 +29,9 @@ type PooledTaskInvocationMessage = {
 	args: unknown[];
 };
 
+/**
+ * Ensures the task worker only runs inside a Lithia-managed worker context.
+ */
 function validateExecutionContext(): void {
 	if (isMainThread) {
 		throw new Error(
@@ -37,13 +46,19 @@ function validateExecutionContext(): void {
 	}
 }
 
+/**
+ * Converts an unknown thrown value into a serializable task error payload.
+ */
 function serializeTaskError(error: unknown): TaskErrorPayload {
 	if (error instanceof Error) {
 		return {
 			name: error.name,
 			message: error.message,
 			stack: error.stack,
-			cause: "cause" in error ? (error as Error & { cause?: unknown }).cause : undefined,
+			cause:
+				"cause" in error
+					? (error as Error & { cause?: unknown }).cause
+					: undefined,
 		};
 	}
 
@@ -53,6 +68,9 @@ function serializeTaskError(error: unknown): TaskErrorPayload {
 	};
 }
 
+/**
+ * Executes a dedicated one-shot task worker.
+ */
 async function run() {
 	const { task, args } = workerData;
 
@@ -82,6 +100,9 @@ async function run() {
 	}
 }
 
+/**
+ * Executes a single task invocation inside a warm pooled worker.
+ */
 async function executeTask(
 	task: TaskCore,
 	args: unknown[],
@@ -111,6 +132,10 @@ async function executeTask(
 	}
 }
 
+/**
+ * Starts the pooled worker loop and waits for invocation messages from the
+ * host.
+ */
 function runPooled() {
 	validateExecutionContext();
 

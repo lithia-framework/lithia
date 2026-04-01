@@ -3,14 +3,23 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { toJSONSchema, type ZodType } from "zod";
 
+/**
+ * Declares an OpenAPI security requirement object for a route operation.
+ */
 export type OpenAPISecurityRequirement = Record<string, string[]>;
 
+/**
+ * Describes a documented response in the generated OpenAPI document.
+ */
 export interface OpenAPIResponseMetadata {
 	description: string;
 	schema?: ZodType;
 	contentType?: string;
 }
 
+/**
+ * Explicit OpenAPI metadata attached to an HTTP route module.
+ */
 export interface OpenAPIRouteMetadata {
 	summary?: string;
 	description?: string;
@@ -22,16 +31,25 @@ export interface OpenAPIRouteMetadata {
 	security?: OpenAPISecurityRequirement[];
 }
 
+/**
+ * Route module metadata exported as `export const metadata`.
+ */
 export interface RouteMetadata {
 	openapi?: OpenAPIRouteMetadata;
 }
 
+/**
+ * Minimal route manifest entry required to generate an OpenAPI document.
+ */
 export interface OpenAPIRouteEntry {
 	path: string;
 	method?: string;
 	filePath: string;
 }
 
+/**
+ * Configuration options used while generating OpenAPI and Scalar artifacts.
+ */
 export interface OpenAPIConfigOptions {
 	title?: string;
 	version?: string;
@@ -40,6 +58,9 @@ export interface OpenAPIConfigOptions {
 	specPath?: string;
 }
 
+/**
+ * Options accepted by the OpenAPI artifact generator.
+ */
 export interface GenerateOpenAPIArtifactsOptions {
 	outDir: string;
 	routes: readonly OpenAPIRouteEntry[];
@@ -64,6 +85,10 @@ const DOCS_DIR = "_lithia";
 const DOCS_HTML_FILE = "scalar.html";
 const DOCS_SPEC_FILE = "openapi.json";
 
+/**
+ * Generates the OpenAPI JSON document and the Scalar HTML entrypoint for a
+ * compiled Lithia app.
+ */
 export async function generateOpenAPIArtifacts(
 	options: GenerateOpenAPIArtifactsOptions,
 ): Promise<void> {
@@ -86,6 +111,9 @@ export async function generateOpenAPIArtifacts(
 	);
 }
 
+/**
+ * Builds an OpenAPI 3.0 document from compiled Lithia route modules.
+ */
 export async function buildOpenAPIDocument(
 	options: GenerateOpenAPIArtifactsOptions,
 ): Promise<OpenAPIDocument> {

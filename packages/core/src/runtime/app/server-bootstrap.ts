@@ -2,12 +2,23 @@ import path from "node:path";
 import { fileExists } from "../../shared/filesystem";
 import { loadModule } from "../../shared/module-loader";
 
-export type LithiaServerCleanup =
-	| void
-	| (() => void | Promise<void>);
+/**
+ * Optional cleanup returned by `app/server.ts`.
+ */
+export type LithiaServerCleanup = void | (() => void | Promise<void>);
 
+/**
+ * Bootstrap contract for `src/app/server.ts`.
+ *
+ * The function runs before the app starts accepting traffic and may return an
+ * optional cleanup callback that runs during shutdown and reload.
+ */
 export type LithiaServerBootstrap = () => Promise<LithiaServerCleanup>;
 
+/**
+ * Resolves the compiled `app/server` bootstrap file inside the output
+ * directory.
+ */
 export async function resolveServerBootstrapPath(
 	outDir: string,
 	cwd = process.cwd(),
@@ -26,6 +37,9 @@ export async function resolveServerBootstrapPath(
 	return null;
 }
 
+/**
+ * Loads the compiled `app/server` bootstrap module.
+ */
 export async function loadServerBootstrap(
 	filePath: string,
 ): Promise<LithiaServerBootstrap> {
@@ -33,6 +47,9 @@ export async function loadServerBootstrap(
 	return mod.default;
 }
 
+/**
+ * Normalizes the bootstrap return value into an async cleanup callback.
+ */
 export function normalizeServerBootstrapCleanup(
 	value: LithiaServerCleanup,
 ): (() => Promise<void>) | null {

@@ -6,7 +6,7 @@ import type { ZodType } from "zod";
 export type OpenAPISecurityRequirement = Record<string, string[]>;
 
 /**
- * Describes a documented response for an OpenAPI operation.
+ * Describes a response exposed in the generated OpenAPI document.
  */
 export interface OpenAPIResponseMetadata {
 	/**
@@ -25,6 +25,9 @@ export interface OpenAPIResponseMetadata {
 
 /**
  * Explicit OpenAPI metadata attached to an HTTP route module.
+ *
+ * Export this inside `export const metadata = { openapi: ... }` to enrich the
+ * generated OpenAPI document for a route.
  */
 export interface OpenAPIRouteMetadata {
 	/**
@@ -62,7 +65,7 @@ export interface OpenAPIRouteMetadata {
 }
 
 /**
- * Route module metadata exported as `export const metadata`.
+ * Route module metadata exported from a route file as `export const metadata`.
  */
 export interface RouteMetadata {
 	openapi?: OpenAPIRouteMetadata;

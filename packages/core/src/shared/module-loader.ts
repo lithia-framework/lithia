@@ -7,11 +7,18 @@ import {
 	NoDefaultExportError,
 } from "../errors/internal/index";
 
+/**
+ * Runtime contract for modules loaded by Lithia discovery/runtime helpers.
+ */
 export type LithiaModule = {
 	default: (...args: any[]) => Promise<any>;
 	[key: string]: unknown;
 };
 
+/**
+ * Loads a compiled module and validates that it exposes an async default
+ * export.
+ */
 export async function loadModule<T extends LithiaModule>(
 	filePath: string,
 ): Promise<T> {

@@ -12,14 +12,27 @@ import { RouteMatcher } from "./route-matcher";
 import type { RouteMetadata } from "./route-metadata";
 import { serveStaticAsset } from "./static-assets";
 
+/**
+ * Continuation used by route middleware to hand control to the next step in
+ * the pipeline.
+ */
 export type NextRoute = () => Promise<void> | void;
 
+/**
+ * Middleware executed before a route handler.
+ *
+ * Route middleware can inspect or mutate the request/response and may stop the
+ * pipeline by not calling `next()`.
+ */
 export type RouteMiddleware = (
 	req: LithiaRequest,
 	res: LithiaResponse,
 	next: NextRoute,
 ) => Promise<void>;
 
+/**
+ * Error middleware shape reserved for route-level error handling.
+ */
 export type RouteErrorMiddleware = (
 	err: Error,
 	req: LithiaRequest,
@@ -27,11 +40,17 @@ export type RouteErrorMiddleware = (
 	next: NextRoute,
 ) => Promise<void>;
 
+/**
+ * Route module default export signature.
+ */
 export type RouteHandler = (
 	req: LithiaRequest,
 	res: LithiaResponse,
 ) => Promise<void>;
 
+/**
+ * Full module contract for a file-based route.
+ */
 export type RouteModule = {
 	default: RouteHandler;
 	middlewares?: RouteMiddleware[];

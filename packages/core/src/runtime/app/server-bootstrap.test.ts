@@ -64,8 +64,8 @@ describe("server bootstrap", () => {
 		await normalized?.();
 		expect(cleanup).toHaveBeenCalledOnce();
 
-		expect(() =>
-			normalizeServerBootstrapCleanup("invalid" as never),
-		).toThrow("must return either nothing or a cleanup function");
+		expect(() => normalizeServerBootstrapCleanup("invalid" as never)).toThrow(
+			"must return either nothing or a cleanup function",
+		);
 	});
 });

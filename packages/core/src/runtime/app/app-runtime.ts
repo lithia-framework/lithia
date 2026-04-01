@@ -23,8 +23,17 @@ import {
 } from "./server-bootstrap";
 import { TaskScheduler } from "./task-scheduler";
 
+/**
+ * Token used to register or resolve a dependency from the app container.
+ */
 export type InjectionKey<T> = symbol | string | { new (...args: any[]): T };
 
+/**
+ * Runtime representation of a Lithia application inside the app worker.
+ *
+ * `LithiaApp` owns the dependency container, global middleware registries,
+ * startup bootstrap, HTTP/socket server, and CRON task scheduling.
+ */
 export class LithiaApp {
 	private readonly _environment: Environment;
 	private readonly _config: LithiaOptions;
@@ -88,10 +97,19 @@ export class LithiaApp {
 		return this._isFirstApp;
 	}
 
+	/**
+	 * Runs work inside an immutable snapshot of the app dependency container.
+	 */
 	public runWithContext<T>(fn: () => Promise<T>): Promise<T> {
 		return this.runWithContainer(this.dependencies.snapshot(), fn);
 	}
 
+	/**
+	 * Runs work inside the mutable app dependency container.
+	 *
+	 * This is primarily used during app bootstrap, when new dependencies may be
+	 * registered with `provide()`.
+	 */
 	public runWithMutableContext<T>(fn: () => Promise<T>): Promise<T> {
 		return this.runWithContainer(this.dependencies.mutable(), fn);
 	}
@@ -108,10 +126,16 @@ export class LithiaApp {
 		return runInLithiaContext(context, fn);
 	}
 
+	/**
+	 * Registers a dependency in the app container.
+	 */
 	public provide<T>(key: InjectionKey<T>, value: T): void {
 		this.dependencies.set(key, value);
 	}
 
+	/**
+	 * Registers a global middleware for routes or events.
+	 */
 	public use<K extends "route" | "event">(
 		context: K,
 		middleware: K extends "route" ? RouteMiddleware : EventMiddleware,
@@ -119,6 +143,15 @@ export class LithiaApp {
 		this.middlewares.use(context, middleware);
 	}
 
+	/**
+	 * Starts the app runtime.
+	 *
+	 * The startup sequence is:
+	 * 1. run optional `app/server.ts`
+	 * 2. start the HTTP/socket server
+	 * 3. register CRON-backed tasks
+	 * 4. announce readiness
+	 */
 	public async start(): Promise<void> {
 		this.executeOnce(() => logger.info("Starting Lithia server..."));
 
@@ -145,6 +178,9 @@ export class LithiaApp {
 		}
 	}
 
+	/**
+	 * Stops the app runtime and runs all registered cleanup hooks.
+	 */
 	public async stop(): Promise<void> {
 		await this.runServerBootstrapCleanup();
 		this.taskScheduler.stop();
@@ -174,12 +210,18 @@ export class LithiaApp {
 		}
 	}
 
+	/**
+	 * Restricts one-time logs to the first app instance for a given lifecycle.
+	 */
 	private executeOnce(fn: () => void): void {
 		if (this.isFirstApp) {
 			fn();
 		}
 	}
 
+	/**
+	 * Ensures the app runtime only executes inside a Lithia-managed worker.
+	 */
 	private validateExecutionContext(): void {
 		if (isMainThread) {
 			throw new Error(

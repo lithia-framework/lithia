@@ -15,11 +15,24 @@ declare module "../hooks/lithia-hooks" {
 
 type TaskInvocationKey = keyof LithiaTasks | (string & {});
 
+/**
+ * Stores a value in the current app dependency container.
+ *
+ * Values registered with `provide()` can later be retrieved with
+ * `useDependency()` or `useOptionalDependency()` from routes, events, tasks,
+ * and `app/server.ts`.
+ */
 export function provide<T>(key: InjectionKey<T>, value: T): void {
 	const { container } = getLithiaContext();
 	container.set(key, value);
 }
 
+/**
+ * Resolves a dependency from the current Lithia context.
+ *
+ * Throws when the dependency has not been registered for the current app
+ * lifecycle.
+ */
 export function useDependency<T>(key: InjectionKey<T>): T {
 	const { container } = getLithiaContext();
 
@@ -31,6 +44,12 @@ export function useDependency<T>(key: InjectionKey<T>): T {
 	return container.get(key) as T;
 }
 
+/**
+ * Resolves a dependency from the current Lithia context when available.
+ *
+ * Returns `undefined` instead of throwing when the dependency has not been
+ * registered.
+ */
 export function useOptionalDependency<T>(key: InjectionKey<T>): T | undefined {
 	const { container } = getLithiaContext();
 	return container.get(key) as T | undefined;
@@ -51,6 +70,9 @@ type TaskReturn<K extends TaskInvocationKey> = K extends keyof LithiaTasks
 	? KnownTaskReturn<LithiaTasks[K]>
 	: unknown;
 
+/**
+ * Returned by `dispatchTask()` to identify an async task execution.
+ */
 export type TaskExecutionHandle<K extends string = string> = {
 	taskId: K;
 	executionId: string;
@@ -106,6 +128,12 @@ function postTaskInvocation<K extends TaskInvocationKey>(
 	};
 }
 
+/**
+ * Executes an async task and waits for its result.
+ *
+ * This path uses Lithia's warm task workers to reduce latency for request-time
+ * task execution while still keeping the work outside the app worker.
+ */
 export async function executeTask<K extends TaskInvocationKey>(
 	taskId: K,
 	...args: TaskPayload<K>
@@ -157,6 +185,12 @@ export async function executeTask<K extends TaskInvocationKey>(
 	});
 }
 
+/**
+ * Dispatches an async task without awaiting its result.
+ *
+ * This path is fire-and-forget and returns a handle that can be logged or
+ * correlated later.
+ */
 export function dispatchTask<K extends TaskInvocationKey>(
 	taskId: K,
 	...args: TaskPayload<K>
@@ -174,6 +208,11 @@ export function dispatchTask<K extends TaskInvocationKey>(
 	});
 }
 
+/**
+ * Legacy alias for `executeTask()`.
+ *
+ * Prefer `executeTask()` in new code.
+ */
 export async function runTask<K extends TaskInvocationKey>(
 	taskId: K,
 	...args: TaskPayload<K>
@@ -181,6 +220,11 @@ export async function runTask<K extends TaskInvocationKey>(
 	return executeTask(taskId, ...args);
 }
 
+/**
+ * Legacy alias for `dispatchTask()`.
+ *
+ * Prefer `dispatchTask()` in new code.
+ */
 export function runTaskAsync<K extends TaskInvocationKey>(
 	taskId: K,
 	...args: TaskPayload<K>
@@ -188,6 +232,9 @@ export function runTaskAsync<K extends TaskInvocationKey>(
 	return dispatchTask(taskId, ...args);
 }
 
+/**
+ * Returns the resolved Lithia configuration for the current app lifecycle.
+ */
 export function useLithiaConfig(): LithiaOptions {
 	return getLithiaContext().config;
 }

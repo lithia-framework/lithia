@@ -1,8 +1,3 @@
-/**
- * @fileoverview Better-Auth Integration Middleware for Lithia.js.
- * Provides session validation and context-based session access via hooks.
- */
-
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
 	LithiaError,
@@ -13,32 +8,30 @@ import { fromNodeHeaders } from "better-auth/node";
 import type { Auth } from "better-auth/types";
 
 /**
- * Options to configure the behavior of the authentication middleware.
+ * Options used to configure the authentication middleware behavior.
  */
 interface AuthMiddlewareOptions {
 	error: {
-		/** Whether to throw an UnauthorizedError if the session is missing. */
+		/**
+		 * Whether to throw an UnauthorizedError when the session is missing.
+		 */
 		throw: boolean;
-		/** Custom error message for the unauthorized response. */
+		/**
+		 * Custom error message used when authentication fails.
+		 */
 		message: string;
 	};
 }
 
 /**
- * The structure of the authentication data stored in AsyncLocalStorage.
+ * Authentication context stored for the current request lifecycle.
  */
 export type AuthContext<T extends Auth = Auth> = {
 	session: Awaited<ReturnType<T["api"]["getSession"]>>;
 };
 
-/**
- * Global key for the Auth context to ensure singleton behavior.
- */
 const AUTH_CONTEXT_KEY = Symbol.for("lithia.auth_context.v1");
 
-/**
- * Retrieves the global AsyncLocalStorage instance for authentication.
- */
 function getGlobalAuthStore(): AsyncLocalStorage<AuthContext> {
 	const globalAny = globalThis as any;
 	if (!globalAny[AUTH_CONTEXT_KEY]) {
@@ -50,11 +43,11 @@ function getGlobalAuthStore(): AsyncLocalStorage<AuthContext> {
 const authContextStore = getGlobalAuthStore();
 
 /**
- * Middleware to authenticate requests using Better-Auth.
- * It injects the session into the execution context for subsequent handlers.
- * * @param auth The Better-Auth instance.
- * @param options Configuration for error handling.
- * @returns A standard Lithia RouteMiddleware.
+ * Creates a Lithia route middleware that resolves the current Better Auth
+ * session and stores it in request-local context.
+ *
+ * When `options.error.throw` is enabled, missing sessions are converted into an
+ * `UnauthorizedError`.
  */
 export function authenticated(
 	auth: Auth,
@@ -66,17 +59,14 @@ export function authenticated(
 	},
 ): RouteMiddleware {
 	return async (req, _, next) => {
-		// 1. Resolve session from incoming Node.js headers
 		const session = await auth.api.getSession({
 			headers: fromNodeHeaders(req.headers),
 		});
 
-		// 2. Handle missing sessions
 		if (!session && options.error.throw) {
 			throw new UnauthorizedError(options.error.message);
 		}
 
-		// 3. Run the rest of the request within the Auth context
 		await authContextStore.run({ session }, async () => {
 			await next();
 		});
@@ -92,9 +82,9 @@ class NotInAuthContext extends LithiaError {
 }
 
 /**
- * Internal helper to access the raw authentication context.
- * * @template T The Auth instance type.
- * @throws {NotInAuthContext} If called outside an authenticated route.
+ * Returns the raw Better Auth context for the current request.
+ *
+ * Throws when called outside a route protected by `authenticated()`.
  */
 export function getAuthContext<T extends Auth = Auth>(): AuthContext<T> {
 	const context = authContextStore.getStore() as AuthContext<T> | undefined;
@@ -105,13 +95,10 @@ export function getAuthContext<T extends Auth = Auth>(): AuthContext<T> {
 }
 
 /**
- * Hook to retrieve the current user session.
- * Must be used in a route protected by the 'authenticated' middleware.
- * * @template T The Auth instance type.
- * @returns The active user session data.
- * @example
- * const session = useSession();
- * console.log(session.user.email);
+ * Returns the current Better Auth session from request-local context.
+ *
+ * This hook must be used inside a route protected by the `authenticated()`
+ * middleware.
  */
 export function useSession<T extends Auth = Auth>(): AuthContext<T>["session"] {
 	const context = getAuthContext<T>();

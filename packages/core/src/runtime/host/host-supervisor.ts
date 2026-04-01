@@ -26,10 +26,19 @@ declare namespace globalThis {
 	var __lithia_host_config_v1: LithiaOptions;
 }
 
+/**
+ * Minimal runtime options required to bootstrap the Lithia host.
+ */
 export interface LithiaOpts {
 	environment: Environment;
 }
 
+/**
+ * Main-process orchestrator for the Lithia runtime.
+ *
+ * The host is responsible for loading configuration and manifests, building the
+ * app, spawning the app worker, and coordinating async task execution.
+ */
 export class HostSupervisor {
 	private _config!: LithiaOptions;
 	private _env: Record<string, string> = {};
@@ -104,12 +113,18 @@ export class HostSupervisor {
 		return this._manifestStore.tasks;
 	}
 
+	/**
+	 * Loads the user configuration file into the host runtime.
+	 */
 	public async loadConfig(): Promise<void> {
 		if (this.environment === "production") return;
 		this._config = await loadConfig();
 		this._lastPortUsed = this._config.http.port;
 	}
 
+	/**
+	 * Loads and merges configured environment files into the host snapshot.
+	 */
 	public async loadEnv(): Promise<Record<string, string>> {
 		this.ensureConfigLoaded();
 		const cwd = process.cwd();
@@ -130,30 +145,55 @@ export class HostSupervisor {
 		return { ...this._env };
 	}
 
+	/**
+	 * Loads the routes manifest from the current build output.
+	 */
 	public async loadRoutes(): Promise<void> {
 		await this._manifestStore.loadRoutes();
 	}
 
+	/**
+	 * Loads the events manifest from the current build output.
+	 */
 	public async loadEvents(): Promise<void> {
 		await this._manifestStore.loadEvents();
 	}
 
+	/**
+	 * Loads the async tasks manifest from the current build output.
+	 */
 	public async loadTasks(): Promise<void> {
 		await this._manifestStore.loadTasks();
 	}
 
+	/**
+	 * Returns a copy of the currently loaded environment snapshot.
+	 */
 	public getEnvSnapshot(): Record<string, string> {
 		return { ...this._env };
 	}
 
+	/**
+	 * Replaces the in-memory resolved config snapshot.
+	 */
 	public replaceConfig(config: LithiaOptions): void {
 		this._config = config;
 	}
 
+	/**
+	 * Replaces the in-memory environment snapshot.
+	 */
 	public replaceEnv(env: Record<string, string>): void {
 		this._env = { ...env };
 	}
 
+	/**
+	 * Builds the application output and manifests.
+	 *
+	 * Returns `true` when the build succeeds. In non-build environments, failures
+	 * are reported and surfaced as `false` so the caller can decide how to
+	 * recover.
+	 */
 	public async build(): Promise<boolean> {
 		this.ensureConfigLoaded();
 
@@ -176,12 +216,18 @@ export class HostSupervisor {
 		}
 	}
 
+	/**
+	 * Loads config/env and prints the CLI header for the current run.
+	 */
 	public async setup(): Promise<void> {
 		await this.loadConfig();
 		await this.loadEnv();
 		await this.printHeader();
 	}
 
+	/**
+	 * Starts the app worker using the latest manifests and runtime state.
+	 */
 	public async start(): Promise<void> {
 		if (!this._config) await this.loadConfig();
 		await this._manifestStore.loadAll();
@@ -189,22 +235,34 @@ export class HostSupervisor {
 		logger.debug(`Instance started in ${this.environment} mode.`);
 	}
 
+	/**
+	 * Reloads manifests, resets task workers, and swaps the app worker.
+	 */
 	public async reload(): Promise<void> {
 		await this._manifestStore.loadAll();
 		await this._taskRunner.reset();
 		await this.swapApp();
 	}
 
+	/**
+	 * Stops task execution and tears down the app worker.
+	 */
 	public async stop(): Promise<void> {
 		await this._taskRunner.reset();
 		await this._appSupervisor.dispose();
 		logger.debug("Lithia instance stopped.");
 	}
 
+	/**
+	 * Replaces the current app worker with a fresh instance.
+	 */
 	public async swapApp(): Promise<void> {
 		await this._appSupervisor.swap();
 	}
 
+	/**
+	 * Prints the Lithia CLI header and the env files currently in use.
+	 */
 	public async printHeader(): Promise<void> {
 		const files = await this.getAvailableEnvFiles();
 		logger.event(green(`Lithia.js ${version}`));
@@ -212,6 +270,9 @@ export class HostSupervisor {
 		console.log();
 	}
 
+	/**
+	 * Prints the loaded routes in a CLI-friendly tree format.
+	 */
 	public printRouteTree(): void {
 		this.printTree(
 			"Routes",
@@ -221,6 +282,9 @@ export class HostSupervisor {
 		);
 	}
 
+	/**
+	 * Prints the loaded events in a CLI-friendly tree format.
+	 */
 	public printEventTree(): void {
 		this.printTree(
 			"Events",
@@ -230,6 +294,9 @@ export class HostSupervisor {
 		);
 	}
 
+	/**
+	 * Prints the loaded async tasks in a CLI-friendly tree format.
+	 */
 	public printTaskTree(): void {
 		this.printTree(
 			"Async Tasks",

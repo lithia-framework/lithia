@@ -4,6 +4,9 @@ import { join } from "node:path";
 import { logger } from "@lithia-js/utils";
 import { serialize as serializeCookie } from "cookie";
 
+/**
+ * Options used when setting cookies on a response.
+ */
 export interface CookieOptions {
 	domain?: string;
 	expires?: Date;
@@ -20,6 +23,12 @@ interface PendingCookie {
 	options?: CookieOptions;
 }
 
+/**
+ * Lithia wrapper around Node's `ServerResponse`.
+ *
+ * Provides helpers for status management, JSON/text responses, redirects,
+ * cookies, and file responses.
+ */
 export class LithiaResponse {
 	public _ended = false;
 
@@ -30,10 +39,16 @@ export class LithiaResponse {
 		this.on = this.res.on.bind(this.res);
 	}
 
+	/**
+	 * Returns the current HTTP status code.
+	 */
 	public get statusCode(): number {
 		return this.res.statusCode;
 	}
 
+	/**
+	 * Sets the HTTP status code for the response.
+	 */
 	public status(status: number): this {
 		this.ensureActive();
 		if (status < 100 || status > 599) {
@@ -43,10 +58,16 @@ export class LithiaResponse {
 		return this;
 	}
 
+	/**
+	 * Returns the currently assigned response headers.
+	 */
 	public headers(): Readonly<OutgoingHttpHeaders> {
 		return this.res.getHeaders();
 	}
 
+	/**
+	 * Sets multiple response headers at once.
+	 */
 	public setHeaders(headers: OutgoingHttpHeaders): this {
 		this.ensureActive();
 		Object.entries(headers).forEach(([key, value]) => {
@@ -55,18 +76,27 @@ export class LithiaResponse {
 		return this;
 	}
 
+	/**
+	 * Sets a single response header.
+	 */
 	public setHeader(name: string, value: string | number | string[]): this {
 		this.ensureActive();
 		this.res.setHeader(name, value as any);
 		return this;
 	}
 
+	/**
+	 * Removes a response header.
+	 */
 	public removeHeader(name: string): this {
 		this.ensureActive();
 		this.res.removeHeader(name);
 		return this;
 	}
 
+	/**
+	 * Queues a cookie to be written when the response is sent.
+	 */
 	public cookie(
 		name: string,
 		value: string,
@@ -77,10 +107,16 @@ export class LithiaResponse {
 		return this;
 	}
 
+	/**
+	 * Clears a cookie by expiring it immediately.
+	 */
 	public clearCookie(name: string, options: CookieOptions = {}): this {
 		return this.cookie(name, "", { ...options, expires: new Date(0) });
 	}
 
+	/**
+	 * Sends a response body using a best-effort content type.
+	 */
 	public send(data?: unknown): void {
 		this.applyPendingCookies();
 		this.ensureActive();
@@ -110,6 +146,9 @@ export class LithiaResponse {
 		}
 	}
 
+	/**
+	 * Sends a JSON response.
+	 */
 	public json(obj: object): void {
 		this.applyPendingCookies();
 		this.ensureActive();
@@ -127,10 +166,16 @@ export class LithiaResponse {
 		}
 	}
 
+	/**
+	 * Sends a redirect response.
+	 */
 	public redirect(url: string, status = 302): void {
 		this.status(status).setHeader("Location", url).end();
 	}
 
+	/**
+	 * Ends the response without sending additional data.
+	 */
 	public end(): void {
 		this.applyPendingCookies();
 		this.ensureActive();
@@ -138,6 +183,9 @@ export class LithiaResponse {
 		this._ended = true;
 	}
 
+	/**
+	 * Streams a file to the client.
+	 */
 	public sendFile(filePath: string, opts: { root?: string } = {}): void {
 		this.ensureActive();
 		try {

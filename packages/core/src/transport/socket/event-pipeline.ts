@@ -5,15 +5,28 @@ import { loadModule } from "../../shared/module-loader";
 import { executePipeline } from "../../shared/pipeline";
 import { handleEventError } from "./event-error-handler";
 
+/**
+ * Continuation used by event middleware to hand control to the next step in
+ * the event pipeline.
+ */
 export type NextEvent = () => Promise<void> | void;
 
+/**
+ * Middleware executed before a socket event handler.
+ */
 export type EventMiddleware = (
 	socket: Socket,
 	next: NextEvent,
 ) => Promise<void>;
 
+/**
+ * Event module default export signature.
+ */
 export type EventHandler = (socket: Socket, data?: any) => Promise<void>;
 
+/**
+ * Full module contract for a file-based event handler.
+ */
 export type EventModule = {
 	default: EventHandler;
 	middlewares?: EventMiddleware[];

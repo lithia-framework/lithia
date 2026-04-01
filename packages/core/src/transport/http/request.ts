@@ -1,22 +1,31 @@
-/**
- * @fileoverview Request abstraction for the Lithia Framework.
- * Wraps Node.js's native IncomingMessage to provide high-level APIs for
- * body parsing, file uploads, cookie management, and metadata extraction.
- */
-
 import type { IncomingHttpHeaders, IncomingMessage } from "node:http";
 import busboy, { type FileInfo } from "busboy";
 import { type Cookies, parse as parseCookie } from "cookie";
 import { BadRequestError } from "../../errors/app/index";
 
+/**
+ * Generic route params object.
+ */
 export type Params = Record<string, any>;
+/**
+ * Generic query object parsed from the request URL.
+ */
 export type Query = Record<string, any>;
 
+/**
+ * Uploaded multipart file returned by `req.files()`.
+ */
 export interface UploadedFile extends FileInfo {
 	fieldname: string;
 	buffer: Buffer;
 }
 
+/**
+ * Lithia wrapper around Node's `IncomingMessage`.
+ *
+ * Provides helpers for reading params, query, body, cookies, and multipart
+ * uploads from route handlers and middleware.
+ */
 export class LithiaRequest {
 	public readonly headers: Readonly<IncomingHttpHeaders>;
 	public readonly method: Readonly<string>;
@@ -45,6 +54,9 @@ export class LithiaRequest {
 		this.params = {};
 	}
 
+	/**
+	 * Returns the best-effort client IP address for the current request.
+	 */
 	public ip(): string {
 		return (
 			(this.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
@@ -54,10 +66,16 @@ export class LithiaRequest {
 		);
 	}
 
+	/**
+	 * Returns the current request user-agent string.
+	 */
 	public userAgent(): string {
 		return (this.headers["user-agent"] as string) || "";
 	}
 
+	/**
+	 * Returns whether the current request is using HTTPS.
+	 */
 	public isSecure(): boolean {
 		return (
 			(this.headers["x-forwarded-proto"] as string) === "https" ||
@@ -65,14 +83,26 @@ export class LithiaRequest {
 		);
 	}
 
+	/**
+	 * Returns the request host header.
+	 */
 	public host(): string {
 		return (this.headers.host as string) || "unknown";
 	}
 
+	/**
+	 * Returns the absolute request URL reconstructed from the current request.
+	 */
 	public url(): string {
 		return `${this.isSecure() ? "https" : "http"}://${this.host()}${this.pathname}`;
 	}
 
+	/**
+	 * Parses and returns the request body.
+	 *
+	 * JSON and plain text bodies are supported automatically. Multipart requests
+	 * populate both `body()` and `files()`.
+	 */
 	public async body<T>(): Promise<T> {
 		const methodsWithBody = ["POST", "PUT", "PATCH", "DELETE"];
 		if (!methodsWithBody.includes(this.method)) {
@@ -133,6 +163,9 @@ export class LithiaRequest {
 		return body;
 	}
 
+	/**
+	 * Returns uploaded files for multipart/form-data requests.
+	 */
 	public async files(): Promise<UploadedFile[]> {
 		const contentType = (this.headers["content-type"] || "") as string;
 		if (!contentType.includes("multipart/form-data")) return [];
@@ -143,11 +176,17 @@ export class LithiaRequest {
 		return this._filesCache || [];
 	}
 
+	/**
+	 * Overrides the cached body value for the current request context.
+	 */
 	public setBody(value: unknown): void {
 		this._bodyCache = value;
 		this.storage.set("body", value);
 	}
 
+	/**
+	 * Returns all parsed cookies from the request.
+	 */
 	public cookies(): Cookies {
 		if (this._cookies === null) {
 			const cookieHeader = this.headers.cookie;
@@ -156,14 +195,23 @@ export class LithiaRequest {
 		return this._cookies;
 	}
 
+	/**
+	 * Returns a single cookie value by name.
+	 */
 	public cookie(name: string): string | undefined {
 		return this.cookies()[name];
 	}
 
+	/**
+	 * Returns a value stored in the per-request internal storage map.
+	 */
 	public get<T>(key: string): T | undefined {
 		return this.storage.get(key) as T | undefined;
 	}
 
+	/**
+	 * Stores a value in the per-request internal storage map.
+	 */
 	public set(key: string, value: unknown): void {
 		this.storage.set(key, value);
 	}

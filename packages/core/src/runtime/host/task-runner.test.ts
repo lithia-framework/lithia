@@ -15,10 +15,7 @@ vi.mock("@lithia-js/utils", () => ({
 class MockWorker {
 	public static instances: MockWorker[] = [];
 
-	private readonly listeners = new Map<
-		string,
-		Set<(...args: any[]) => void>
-	>();
+	private readonly listeners = new Map<string, Set<(...args: any[]) => void>>();
 
 	constructor(
 		public readonly _filename: string,
@@ -100,7 +97,7 @@ describe("AsyncTaskRunner", () => {
 				logging: {
 					tasks: true,
 				},
-			}),
+			} as any),
 			getEnvironment: () => "development",
 			getTasks: () => [
 				{

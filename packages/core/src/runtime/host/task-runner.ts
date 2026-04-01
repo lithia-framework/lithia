@@ -11,6 +11,9 @@ import type {
 	TaskErrorPayload,
 } from "./protocol";
 
+/**
+ * App-to-host task invocation event.
+ */
 export type TaskInvokeEvent = AppInvokeAsyncEvent | AppInvokeSyncEvent;
 
 type IsolatedTaskWorkerMessage =
@@ -49,6 +52,16 @@ type TaskRunnerOptions = {
 	workerBaseDir: string;
 };
 
+/**
+ * Executes async tasks on behalf of the app worker.
+ *
+ * The runner supports two execution modes:
+ * - dedicated workers for fire-and-forget dispatches
+ * - warm pooled workers for awaited task execution
+ *
+ * It also enforces concurrency limits, keeps an in-memory invocation queue,
+ * and handles CRON retries when configured.
+ */
 export class AsyncTaskRunner {
 	private runningTasks = 0;
 	private readonly invocationQueue: Array<() => void> = [];
@@ -56,6 +69,9 @@ export class AsyncTaskRunner {
 
 	constructor(private readonly options: TaskRunnerOptions) {}
 
+	/**
+	 * Handles a task invocation coming from the app worker.
+	 */
 	public async handleInvocation(event: TaskInvokeEvent): Promise<void> {
 		const limit = this.options.getConfig().asyncTasks.concurrencyLimit;
 
@@ -110,6 +126,9 @@ export class AsyncTaskRunner {
 		this.executeWithWarmWorker(event, taskMeta, startedAt);
 	}
 
+	/**
+	 * Terminates all warm workers and clears the reusable pool.
+	 */
 	public async reset(): Promise<void> {
 		const workers = this.syncWorkers.splice(0);
 		await Promise.allSettled(workers.map((slot) => slot.worker.terminate()));
@@ -231,6 +250,9 @@ export class AsyncTaskRunner {
 		});
 	}
 
+	/**
+	 * Attaches lifecycle handlers to a dedicated task worker.
+	 */
 	private attachDedicatedWorkerLifecycle(
 		worker: Worker,
 		event: AppInvokeAsyncEvent,
@@ -277,11 +299,7 @@ export class AsyncTaskRunner {
 
 			if (message.type === "error") {
 				if (
-					this.scheduleRetryIfEligible(
-						event,
-						taskMeta,
-						message.error.message,
-					)
+					this.scheduleRetryIfEligible(event, taskMeta, message.error.message)
 				) {
 					finalize();
 					return;
@@ -353,6 +371,9 @@ export class AsyncTaskRunner {
 		});
 	}
 
+	/**
+	 * Creates a new dedicated worker for a fire-and-forget task execution.
+	 */
 	private createDedicatedWorker(taskMeta: TaskCore, args: unknown[]): Worker {
 		return new Worker(
 			path.join(this.options.workerBaseDir, "workers", "task-worker.mjs"),
@@ -369,6 +390,9 @@ export class AsyncTaskRunner {
 		);
 	}
 
+	/**
+	 * Returns an idle warm worker or creates a new one when needed.
+	 */
 	private acquireSyncWorker(): SyncWorkerSlot {
 		const idleWorker = this.syncWorkers.find((slot) => !slot.busy);
 		if (idleWorker) return idleWorker;
@@ -393,6 +417,9 @@ export class AsyncTaskRunner {
 		return slot;
 	}
 
+	/**
+	 * Removes a warm worker slot from the internal pool.
+	 */
 	private removeSyncWorker(slot: SyncWorkerSlot): void {
 		const index = this.syncWorkers.indexOf(slot);
 		if (index >= 0) {
@@ -400,6 +427,9 @@ export class AsyncTaskRunner {
 		}
 	}
 
+	/**
+	 * Sends a successful awaited-task result back to the app worker.
+	 */
 	private postSyncSuccess(event: AppInvokeSyncEvent, result: unknown): void {
 		this.options.getAppWorker()?.postMessage({
 			type: "invoke_success",
@@ -409,6 +439,9 @@ export class AsyncTaskRunner {
 		});
 	}
 
+	/**
+	 * Sends an awaited-task failure back to the app worker.
+	 */
 	private postSyncError(
 		event: AppInvokeSyncEvent,
 		error: TaskErrorPayload,
@@ -421,6 +454,9 @@ export class AsyncTaskRunner {
 		});
 	}
 
+	/**
+	 * Logs the final outcome of a task execution when task logging is enabled.
+	 */
 	private logTaskResult(
 		event: TaskInvokeEvent,
 		taskId: string,
@@ -430,8 +466,7 @@ export class AsyncTaskRunner {
 	): void {
 		if (!this.options.getConfig().logging.tasks) return;
 
-		const statusLabel =
-			status === "success" ? green("success") : red("error");
+		const statusLabel = status === "success" ? green("success") : red("error");
 		const baseMessage =
 			status === "success"
 				? `[task] ${taskId} ${statusLabel} - ${elapsed.toFixed(2)}ms`
@@ -445,6 +480,9 @@ export class AsyncTaskRunner {
 		logger.info(baseMessage);
 	}
 
+	/**
+	 * Enqueues a retry for eligible CRON tasks.
+	 */
 	private scheduleRetryIfEligible(
 		event: TaskInvokeEvent,
 		taskMeta: TaskCore,
@@ -472,6 +510,9 @@ export class AsyncTaskRunner {
 		return true;
 	}
 
+	/**
+	 * Creates a serializable task error payload.
+	 */
 	private createErrorPayload(
 		name: string,
 		message: string,
@@ -484,6 +525,9 @@ export class AsyncTaskRunner {
 		};
 	}
 
+	/**
+	 * Marks a task execution as complete and drains the next queued invocation.
+	 */
 	private finalizeInvocation(): void {
 		this.runningTasks--;
 		const next = this.invocationQueue.shift();

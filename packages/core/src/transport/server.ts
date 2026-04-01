@@ -21,6 +21,9 @@ import { LithiaResponse } from "./http/response";
 import { LithiaEventProcessor } from "./socket/event-pipeline";
 import { LithiaSocketTransport } from "./socket/socket-server";
 
+/**
+ * Runtime HTTP server options used by Lithia.
+ */
 export interface LithiaServerOpts {
 	port: number;
 	host: string;
@@ -31,6 +34,10 @@ export interface LithiaServerOpts {
 	};
 }
 
+/**
+ * Owns the HTTP/HTTPS server, request pipeline, and Socket.IO transport for a
+ * running Lithia app.
+ */
 export class LithiaServer {
 	private readonly _httpServer: HttpServer | HttpsServer;
 	private readonly requestProcessor: LithiaRequestProcessor;
@@ -61,6 +68,9 @@ export class LithiaServer {
 		return this.socketTransport.server;
 	}
 
+	/**
+	 * Starts listening on the configured host and port.
+	 */
 	public async listen(): Promise<void> {
 		const { port, host } = this.app.config.http;
 
@@ -85,6 +95,10 @@ export class LithiaServer {
 		});
 	}
 
+	/**
+	 * Closes the Socket.IO transport, stops accepting HTTP traffic, and destroys
+	 * any remaining active connections.
+	 */
 	public async close(): Promise<void> {
 		await this.socketTransport.close().catch((error) => {
 			logger.error("Failed to close Socket.IO transport cleanly:", error);
@@ -112,6 +126,9 @@ export class LithiaServer {
 		this._activeRequests.clear();
 	}
 
+	/**
+	 * Creates the underlying HTTP or HTTPS server instance.
+	 */
 	private createServer(): HttpServer | HttpsServer {
 		const handler = this.handleRequest();
 		const sslConfig = this.app.config.http.ssl;
@@ -128,6 +145,10 @@ export class LithiaServer {
 		return server;
 	}
 
+	/**
+	 * Creates the low-level Node request handler and bridges it into Lithia's
+	 * request context and request pipeline.
+	 */
 	private handleRequest() {
 		return (req: IncomingMessage, res: ServerResponse) => {
 			try {

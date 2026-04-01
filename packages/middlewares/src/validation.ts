@@ -1,8 +1,3 @@
-/**
- * @fileoverview Zod Validation Middleware for Lithia.js.
- * Validates and transforms request parameters, query strings, and body data.
- */
-
 import {
 	BadRequestError,
 	type Params,
@@ -12,53 +7,51 @@ import {
 import { ZodError, type ZodType } from "zod";
 
 /**
- * Definition of Zod schemas for different parts of the HTTP request.
+ * Zod schemas used to validate different parts of an HTTP request.
  */
 export interface ValidationSchemas {
-	/** Schema for the JSON or Form data payload. */
+	/**
+	 * Schema used to validate the JSON or form-data body.
+	 */
 	body?: ZodType;
-	/** Schema for URL search parameters (e.g., ?id=123). */
+	/**
+	 * Schema used to validate the parsed query string.
+	 */
 	query?: ZodType;
-	/** Schema for dynamic route segments (e.g., /users/:id). */
+	/**
+	 * Schema used to validate dynamic route params.
+	 */
 	params?: ZodType;
 }
 
 /**
- * Creates a middleware that validates the incoming request against provided Zod schemas.
- * If validation passes, the request properties are updated with the parsed (and potentially transformed) data.
- * * @param schemas The Zod schemas to validate against.
- * @returns A Lithia RouteMiddleware.
- * @throws {BadRequestError} If validation fails, containing the Zod issues.
+ * Creates a route middleware that validates request params, query, and/or body
+ * using Zod.
+ *
+ * When validation succeeds, Lithia replaces the request values with the parsed
+ * output from Zod so downstream code receives the transformed data.
  */
 export function validate(schemas: ValidationSchemas): RouteMiddleware {
 	return async (req, _res, next) => {
 		try {
-			// 1. Validate Route Parameters
 			if (schemas.params) {
 				req.params = (await schemas.params.parseAsync(req.params)) as Params;
 			}
 
-			// 2. Validate Query String
 			if (schemas.query) {
 				req.query = (await schemas.query.parseAsync(req.query)) as Query;
 			}
 
-			// 3. Validate Request Body
 			if (schemas.body) {
 				const rawBody = await req.body();
 				const validatedBody = await schemas.body.parseAsync(rawBody);
 
-				// Using setBody ensures the internal state of LithiaRequest is updated
 				req.setBody(validatedBody);
 			}
 
 			await next();
 		} catch (err) {
 			if (err instanceof ZodError) {
-				/**
-				 * We map ZodError to Lithia's BadRequestError.
-				 * The 'err.issues' provides the client with specific field errors.
-				 */
 				throw new BadRequestError("Validation failed", err.issues);
 			}
 

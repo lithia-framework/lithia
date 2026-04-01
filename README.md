@@ -3,7 +3,7 @@
     <img alt="Lithia logo" src="https://raw.githubusercontent.com/lithia-framework/lithia/canary/.github/assets/logo.svg" height="128">
   </a>
   <h1>Lithia</h1>
-  <p><strong>The high-performance Node.js framework powered by Rust.</strong></p>
+  <p><strong>The file-based Node.js backend framework with worker-powered runtime isolation.</strong></p>
 
   <p>Build APIs with magic, speed, and Type Safety by default.</p>
 
@@ -20,7 +20,8 @@ Build your first Lithia app in seconds:
 ```bash
 npx create-lithia@latest my-app
 cd my-app
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ## 🪄 Magic in Action
@@ -28,8 +29,8 @@ npm run dev
 Lithia uses a clean, file-based routing convention. No boilerplate, just focus on your logic.
 
 ```typescript
-// routes/hello/route.get.ts
-import { type RouteHandler } from "@lithia-js/core";
+// src/app/routes/hello/route.get.ts
+import type { RouteHandler } from "@lithia-js/core";
 
 const Hello: RouteHandler = async (_, res) => {
   return res.json({ message: `Hello, World!` });
@@ -42,8 +43,9 @@ export default Hello;
 ## ✨ Features
 
 * **Intuitive Routing**: Method-based file naming (`.get.ts`, `.post.ts`) for automatic route registration.
-* **Native Performance**: Core engine written in Rust for lightning-fast request handling.
-* **Full-stack Ready**: Native support for WebSockets, Auth, and Drizzle ORM.
+* **Worker-Powered Runtime**: HTTP, events, bootstrap, and async task execution run with explicit runtime boundaries.
+* **Async Tasks**: Native `executeTask()` and `dispatchTask()` APIs for isolated background execution.
+* **Full-stack Ready**: Native support for WebSockets, Better Auth, OpenAPI/Scalar, and Drizzle-friendly templates.
 * **Modern Stack**: Ships with Biome and TypeScript pre-configured for the best DX.
 
 ## 📖 Documentation
@@ -55,14 +57,14 @@ Everything you need to know is at [lithiajs.com/docs](https://lithiajs.com/docs)
 ## 🤝 Community & Support
 
 * **Discussions**: [GitHub Discussions](https://github.com/lithia-framework/lithia/discussions)
-* **Contribution**: We love PRs! See [CONTRIBUTING.md](https://www.google.com/search?q=CONTRIBUTING.md)
+* **Contribution**: We love PRs! See [CONTRIBUTING.md](https://github.com/lithia-framework/lithia/blob/main/CONTRIBUTING.md)
 * **Sponsor**: Support the magic on [OpenCollective](https://opencollective.com/lithiajs)
 
 ---
 
 ## License
 
-Lithia is [MIT licensed](https://www.google.com/search?q=LICENSE). Built with ❤️ by Lucas Arch and the community.
+Lithia is [MIT licensed](https://github.com/lithia-framework/lithia/blob/main/LICENSE). Built with ❤️ by Lucas Arch and the community.
 
 ---
 

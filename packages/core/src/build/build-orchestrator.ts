@@ -6,10 +6,7 @@ import type { OpenAPIConfig } from "../config";
 import { EventManifestGenerator } from "../discovery/events";
 import { type Route, RouteManifestGenerator } from "../discovery/routes";
 import { FileScanner } from "../discovery/scanner";
-import {
-	type TaskCore,
-	TaskManifestGenerator,
-} from "../discovery/tasks";
+import { type TaskCore, TaskManifestGenerator } from "../discovery/tasks";
 import { toOutputFilePath } from "../shared/filesystem";
 import { compileSourceFiles } from "./compiler";
 import { type GeneratorRegistry, generateLithiaTypes } from "./typegen";
