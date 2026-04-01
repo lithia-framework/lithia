@@ -27,6 +27,13 @@ declare const __CONFIG__: LithiaConfig;
 
 /**
  * Bootstraps the production environment and manages the host lifecycle.
+ *
+ * The generated entrypoint publishes the injected config into the global
+ * config slot expected by the runtime, creates a production host supervisor,
+ * starts it, and registers signal handlers that stop the host before exiting.
+ *
+ * @returns {Promise<void>} Resolves after the host has been started or startup
+ * failure handling has completed.
  */
 async function bootstrap(): Promise<void> {
 	// Initialize the global configuration context
@@ -45,6 +52,9 @@ async function bootstrap(): Promise<void> {
 	/**
 	 * Orchestrates a graceful shutdown by stopping the host
 	 * and releasing process resources.
+	 *
+	 * @returns {Promise<void>} Resolves only long enough to await `lithia.stop()`
+	 * before forcing process exit.
 	 */
 	const shutdown = async (): Promise<void> => {
 		try {

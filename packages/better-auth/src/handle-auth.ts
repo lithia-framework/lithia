@@ -7,6 +7,19 @@ import type { Auth } from "better-auth/types";
  *
  * Use this inside a catch-all auth route such as
  * `src/app/routes/api/auth/[...all]/route.ts`.
+ *
+ * The returned handler accepts only `GET` and `POST`, translates the current
+ * Lithia request into a Fetch `Request`, forwards it to `auth.handler()`, and
+ * then maps the Better Auth response back into the active Lithia response.
+ *
+ * A `404` returned by Better Auth is converted into Lithia's
+ * `RouteNotFoundError` so the normal request error pipeline can decide how to
+ * expose that miss.
+ *
+ * @param {Auth} auth - Better Auth instance whose `handler()` should receive
+ * the proxied auth requests.
+ * @returns {RouteHandler} Lithia route handler that bridges the auth endpoint
+ * into Better Auth.
  */
 export function BetterAuth(auth: Auth): RouteHandler {
 	return async (req, res) => {

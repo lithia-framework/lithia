@@ -1,11 +1,5 @@
 #! /usr/bin/env node
 
-/**
- * @fileoverview Scaffolding CLI for Lithia.js.
- * Handles interactive project creation, template cloning,
- * dependency management, and Git initialization.
- */
-
 import { execSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -17,6 +11,11 @@ import { blue, green, red, yellow } from "./picocolors";
 
 // --- UI Helpers ---
 
+/**
+ * Small terminal UI helpers used by the scaffolding CLI.
+ *
+ * Each helper writes a color-coded status line directly to stdout or stderr.
+ */
 const ui = {
 	success: (msg: string) => console.log(green(`✔ ${msg}`)),
 	info: (msg: string) => console.log(blue(`ℹ ${msg}`)),
@@ -26,6 +25,9 @@ const ui = {
 
 /**
  * Checks if a system command (like git or pnpm) is available in the PATH.
+ *
+ * @param {string} cmd - Command name to probe via `--version`.
+ * @returns {boolean} `true` when the command can be executed successfully.
  */
 function isCommandAvailable(cmd: string): boolean {
 	try {
@@ -39,6 +41,11 @@ function isCommandAvailable(cmd: string): boolean {
 /**
  * Safely executes operations within a temporary directory.
  * Automatically cleans up the directory after completion.
+ *
+ * @param {(tmpDir: string) => Promise<void>} fn - Async callback that receives
+ * the created temporary directory path.
+ * @returns {Promise<void>} Resolves after the callback completes and the
+ * temporary directory has been removed.
  */
 async function withTmpDir(fn: (tmpDir: string) => Promise<void>) {
 	const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "lithia-"));
@@ -51,12 +58,27 @@ async function withTmpDir(fn: (tmpDir: string) => Promise<void>) {
 
 // --- CLI Command Definition ---
 
+/**
+ * CLI command that scaffolds a new Lithia project from a template repository.
+ *
+ * The command collects interactive answers, clones the framework repository
+ * into a temporary directory, copies the selected template, rewrites
+ * `package.json`, and can optionally initialize Git and install dependencies.
+ */
 const main = defineCommand({
 	meta: {
 		name: "create-lithia",
 		description: "Initialize a new Lithia.js project",
 		version,
 	},
+	/**
+	 * Runs the interactive project scaffolding flow.
+	 *
+	 * @param {{ rawArgs: string[] }} ctx - Citty command context containing raw
+	 * positional arguments used to infer the project name.
+	 * @returns {Promise<void>} Resolves after the project has been scaffolded or
+	 * the process has exited due to cancellation or a hard failure.
+	 */
 	async run(ctx) {
 		const REPO_URL = "https://github.com/lithia-framework/lithia.git";
 		const TEMPLATES = [

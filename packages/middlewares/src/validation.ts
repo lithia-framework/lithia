@@ -8,6 +8,10 @@ import { ZodError, type ZodType } from "zod";
 
 /**
  * Zod schemas used to validate different parts of an HTTP request.
+ *
+ * Each schema is optional. When provided, its parsed output replaces the
+ * corresponding value on the active request object before the route handler
+ * continues.
  */
 export interface ValidationSchemas {
 	/**
@@ -30,6 +34,23 @@ export interface ValidationSchemas {
  *
  * When validation succeeds, Lithia replaces the request values with the parsed
  * output from Zod so downstream code receives the transformed data.
+ *
+ * Validation runs in a fixed order: `params`, then `query`, then `body`. Body
+ * validation reads the current request body through `req.body()` and writes the
+ * parsed result back through `req.setBody()`.
+ *
+ * Zod validation failures are normalized into `BadRequestError` so the HTTP
+ * request error pipeline can expose them as client errors.
+ *
+ * Related docs:
+ * - https://lithiajs.org/docs/latest/routes
+ * - https://lithiajs.org/docs/latest/openapi
+ *
+ * @param {ValidationSchemas} schemas - Optional Zod schemas for the request
+ * params, querystring, and body.
+ * @returns {RouteMiddleware} Route middleware that validates and normalizes the
+ * current request input before the next middleware or handler runs.
+ * @throws {BadRequestError} Thrown when any provided schema fails validation.
  */
 export function validate(schemas: ValidationSchemas): RouteMiddleware {
 	return async (req, _res, next) => {

@@ -1,9 +1,3 @@
-/**
- * @fileoverview Development command for the Lithia CLI.
- * Provides Hot Module Replacement (HMR) capabilities via file system watchers,
- * automatic configuration reloading, and environment synchronization.
- */
-
 import { join } from "node:path";
 import { HostSupervisor } from "@lithia-js/core/_";
 import { logger } from "@lithia-js/utils";
@@ -11,12 +5,26 @@ import chokidar from "chokidar";
 import { defineCommand } from "citty";
 import { type DevChangeBatch, DevLifecycleScheduler } from "./dev-scheduler";
 
+/**
+ * CLI command that runs the Lithia development server with incremental rebuild
+ * and reload behavior.
+ *
+ * The command boots a development host supervisor, starts filesystem watchers
+ * for source, config, and environment files, and serializes reload work
+ * through `DevLifecycleScheduler` so overlapping file changes do not race.
+ */
 const dev = defineCommand({
 	meta: {
 		name: "dev",
 		description: "Start the development server with hot-reload capabilities",
 	},
 
+	/**
+	 * Runs the development server lifecycle for the current project.
+	 *
+	 * @returns {Promise<void>} Resolves after watchers and shutdown handlers have
+	 * been registered.
+	 */
 	async run() {
 		const cwd = process.cwd();
 		const lithia = new HostSupervisor({ environment: "development" });
@@ -105,6 +113,23 @@ const dev = defineCommand({
 
 export default dev;
 
+/**
+ * Processes a coalesced development change batch against the host supervisor.
+ *
+ * Config changes reload config and env first, rebuild the project, and roll
+ * back to the previous config/env snapshot when the rebuild fails. Source-only
+ * changes rebuild the project before reloading, while env-only changes reload
+ * the host only when usable build artifacts are already available.
+ *
+ * @param {HostSupervisor} lithia - Development host supervisor that owns build
+ * and reload behavior.
+ * @param {DevChangeBatch} batch - Coalesced set of pending source/config/env
+ * changes.
+ * @param {{ hasReloadableArtifacts: boolean }} state - Mutable lifecycle state
+ * used to remember whether reloadable build artifacts currently exist.
+ * @returns {Promise<void>} Resolves after the requested dev lifecycle work
+ * completes.
+ */
 export async function processDevBatch(
 	lithia: HostSupervisor,
 	batch: DevChangeBatch,

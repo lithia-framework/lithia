@@ -1,8 +1,3 @@
-/**
- * @fileoverview Logger utility for Lithia.js.
- * Provides consistent, color-coded terminal output for different log levels.
- */
-
 import {
 	bold,
 	gray,
@@ -16,6 +11,8 @@ import {
 
 /**
  * Available log levels for the Lithia framework.
+ *
+ * These levels correspond to the semantic output styles exposed by `Logger`.
  */
 export type LogLevel =
 	| "info"
@@ -30,6 +27,10 @@ export type LogLevel =
 /**
  * Formats metadata for logging.
  * Objects are stringified, while other types are converted to strings.
+ *
+ * @param {any} meta - Metadata value associated with the log message.
+ * @returns {string} Formatted metadata suffix, or an empty string when no
+ * metadata is provided.
  */
 function formatMeta(meta: any): string {
 	if (meta === undefined) return "";
@@ -44,6 +45,9 @@ function formatMeta(meta: any): string {
 
 /**
  * Standardized logging class for CLI and Framework internals.
+ *
+ * The logger centralizes output formatting, symbol selection, and debug gating
+ * for framework and CLI messages written to the terminal.
  */
 export class Logger {
 	private readonly isDebugEnabled =
@@ -51,6 +55,9 @@ export class Logger {
 
 	/**
 	 * Logs a general information message.
+	 *
+	 * @param {any} msg - Primary log message.
+	 * @param {any} [meta] - Optional metadata appended to the message.
 	 */
 	info = (msg: any, meta?: any) => {
 		this.print("", msg, meta);
@@ -58,6 +65,9 @@ export class Logger {
 
 	/**
 	 * Logs a warning message.
+	 *
+	 * @param {any} msg - Primary log message.
+	 * @param {any} [meta] - Optional metadata appended to the message.
 	 */
 	warn = (msg: any, meta?: any) => {
 		this.print(yellow(bold("⚠")), msg, meta, "warn");
@@ -65,6 +75,9 @@ export class Logger {
 
 	/**
 	 * Logs an error message.
+	 *
+	 * @param {any} msg - Primary log message.
+	 * @param {any} [meta] - Optional metadata appended to the message.
 	 */
 	error = (msg: any, meta?: any) => {
 		this.print(red(bold("○")), msg, meta, "error");
@@ -72,6 +85,9 @@ export class Logger {
 
 	/**
 	 * Logs a successful operation.
+	 *
+	 * @param {any} msg - Primary log message.
+	 * @param {any} [meta] - Optional metadata appended to the message.
 	 */
 	success = (msg: any, meta?: any) => {
 		this.print(green(bold("✓")), msg, meta);
@@ -79,6 +95,9 @@ export class Logger {
 
 	/**
 	 * Logs a framework event (e.g., build started, file changed).
+	 *
+	 * @param {any} msg - Primary log message.
+	 * @param {any} [meta] - Optional metadata appended to the message.
 	 */
 	event = (msg: any, meta?: any) => {
 		this.print(magenta(bold("▲")), msg, meta);
@@ -86,6 +105,9 @@ export class Logger {
 
 	/**
 	 * Logs a system ready message.
+	 *
+	 * @param {any} msg - Primary log message.
+	 * @param {any} [meta] - Optional metadata appended to the message.
 	 */
 	ready = (msg: any, meta?: any) => {
 		this.print(green(bold("○")), msg, meta);
@@ -93,6 +115,9 @@ export class Logger {
 
 	/**
 	 * Logs a message indicating the system is waiting for an action.
+	 *
+	 * @param {any} msg - Primary log message.
+	 * @param {any} [meta] - Optional metadata appended to the message.
 	 */
 	wait = (msg: any, meta?: any) => {
 		this.print(white(bold("…")), msg, meta);
@@ -101,6 +126,9 @@ export class Logger {
 	/**
 	 * Logs internal debug information.
 	 * Only visible if DEBUG=1 or LITHIA_DEBUG=1 environment variables are set.
+	 *
+	 * @param {any} msg - Primary log message.
+	 * @param {any} [meta] - Optional metadata appended to the message.
 	 */
 	debug = (msg: any, meta?: any) => {
 		if (!this.isDebugEnabled) return;
@@ -109,6 +137,12 @@ export class Logger {
 
 	/**
 	 * Internal print orchestrator to maintain consistent formatting.
+	 *
+	 * @param {string} symbol - Colored symbol prefix for the log line.
+	 * @param {any} msg - Primary log message.
+	 * @param {any} [meta] - Optional metadata appended to the message.
+	 * @param {"log" | "warn" | "error"} [type="log"] - Console method category
+	 * used to emit the line.
 	 */
 	private print(
 		symbol: string,
@@ -125,4 +159,7 @@ export class Logger {
 	}
 }
 
+/**
+ * Shared default logger instance used across Lithia packages.
+ */
 export const logger = new Logger();

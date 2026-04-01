@@ -9,6 +9,9 @@ import type { Auth } from "better-auth/types";
 
 /**
  * Options used to configure the authentication middleware behavior.
+ *
+ * These options control whether missing sessions are tolerated or turned into
+ * immediate authorization failures.
  */
 interface AuthMiddlewareOptions {
 	error: {
@@ -25,6 +28,9 @@ interface AuthMiddlewareOptions {
 
 /**
  * Authentication context stored for the current request lifecycle.
+ *
+ * The context is created by `authenticated()` and later consumed by
+ * `getAuthContext()` and `useSession()`.
  */
 export type AuthContext<T extends Auth = Auth> = {
 	session: Awaited<ReturnType<T["api"]["getSession"]>>;
@@ -48,6 +54,17 @@ const authContextStore = getGlobalAuthStore();
  *
  * When `options.error.throw` is enabled, missing sessions are converted into an
  * `UnauthorizedError`.
+ *
+ * The middleware reads the current request headers, asks Better Auth to resolve
+ * the session, and then runs the remainder of the route pipeline inside an
+ * `AsyncLocalStorage` scope that exposes the resolved auth context.
+ *
+ * @param {Auth} auth - Better Auth instance used to resolve the current
+ * request session.
+ * @param {AuthMiddlewareOptions} [options] - Controls how missing sessions are
+ * handled.
+ * @returns {RouteMiddleware} Route middleware that populates auth context for
+ * the remainder of the current request pipeline.
  */
 export function authenticated(
 	auth: Auth,
@@ -85,6 +102,10 @@ class NotInAuthContext extends LithiaError {
  * Returns the raw Better Auth context for the current request.
  *
  * Throws when called outside a route protected by `authenticated()`.
+ *
+ * @returns {AuthContext<T>} Request-local Better Auth context.
+ * @throws {NotInAuthContext} Thrown when no auth context has been established
+ * for the current request.
  */
 export function getAuthContext<T extends Auth = Auth>(): AuthContext<T> {
 	const context = authContextStore.getStore() as AuthContext<T> | undefined;
@@ -99,6 +120,12 @@ export function getAuthContext<T extends Auth = Auth>(): AuthContext<T> {
  *
  * This hook must be used inside a route protected by the `authenticated()`
  * middleware.
+ *
+ * @returns {AuthContext<T>["session"]} Session resolved for the current
+ * request, which may be `null` when middleware was configured not to throw on
+ * missing sessions.
+ * @throws {NotInAuthContext} Thrown when called outside an authenticated route
+ * context.
  */
 export function useSession<T extends Auth = Auth>(): AuthContext<T>["session"] {
 	const context = getAuthContext<T>();

@@ -1,8 +1,3 @@
-/**
- * @fileoverview Build command implementation for the Lithia CLI.
- * Handles project compilation, entry point generation, and environment preparation.
- */
-
 import { chmod, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { HostSupervisor } from "@lithia-js/core/_";
@@ -10,9 +5,12 @@ import { logger } from "@lithia-js/utils";
 import { defineCommand } from "citty";
 
 /**
- * The 'build' command compiles the application for production environments.
- * It initializes the Lithia host, generates the server entry point,
- * and configures file permissions.
+ * CLI command that builds a Lithia application for production execution.
+ *
+ * The command initializes a host supervisor in build mode, compiles the app,
+ * generates the production `server.js` entrypoint from the template file, loads
+ * the generated manifests so the route/event/task trees can be printed, and
+ * marks the entrypoint as executable.
  */
 const build = defineCommand({
 	meta: {
@@ -21,8 +19,14 @@ const build = defineCommand({
 	},
 
 	/**
-	 * Primary execution logic for the build command.
-	 * @throws {Error} If build processes or file operations fail.
+	 * Runs the production build lifecycle for the current project.
+	 *
+	 * The command exits the process with status `1` when the core build step
+	 * fails. Errors that happen later during entrypoint finalization are logged
+	 * but do not currently rethrow.
+	 *
+	 * @returns {Promise<void>} Resolves after the build flow and tree printing
+	 * finish.
 	 */
 	async run() {
 		const lithia = new HostSupervisor({ environment: "build" });

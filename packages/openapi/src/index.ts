@@ -5,11 +5,17 @@ import { toJSONSchema, type ZodType } from "zod";
 
 /**
  * Declares an OpenAPI security requirement object for a route operation.
+ *
+ * Each key names a security scheme and its array value lists the scopes
+ * required for that scheme when the scheme supports scoping.
  */
 export type OpenAPISecurityRequirement = Record<string, string[]>;
 
 /**
  * Describes a documented response in the generated OpenAPI document.
+ *
+ * Each response entry becomes one status-code object inside the generated
+ * operation's `responses` map.
  */
 export interface OpenAPIResponseMetadata {
 	description: string;
@@ -19,6 +25,13 @@ export interface OpenAPIResponseMetadata {
 
 /**
  * Explicit OpenAPI metadata attached to an HTTP route module.
+ *
+ * Export this under `export const metadata = { openapi: ... }` in a route file
+ * to enrich the generated OpenAPI document for that route.
+ *
+ * Related docs:
+ * - https://lithiajs.org/docs/latest/openapi
+ * - https://lithiajs.org/docs/latest/routes
  */
 export interface OpenAPIRouteMetadata {
 	summary?: string;
@@ -33,6 +46,9 @@ export interface OpenAPIRouteMetadata {
 
 /**
  * Route module metadata exported as `export const metadata`.
+ *
+ * This is the top-level metadata envelope inspected by the OpenAPI generator
+ * after importing compiled route modules.
  */
 export interface RouteMetadata {
 	openapi?: OpenAPIRouteMetadata;
@@ -40,6 +56,9 @@ export interface RouteMetadata {
 
 /**
  * Minimal route manifest entry required to generate an OpenAPI document.
+ *
+ * The generator only needs the public path, HTTP method, and compiled file
+ * path for each discovered route.
  */
 export interface OpenAPIRouteEntry {
 	path: string;
@@ -49,6 +68,9 @@ export interface OpenAPIRouteEntry {
 
 /**
  * Configuration options used while generating OpenAPI and Scalar artifacts.
+ *
+ * These values populate the generated OpenAPI `info` object and the public docs
+ * route configuration embedded into the Scalar HTML entrypoint.
  */
 export interface OpenAPIConfigOptions {
 	title?: string;
@@ -60,6 +82,9 @@ export interface OpenAPIConfigOptions {
 
 /**
  * Options accepted by the OpenAPI artifact generator.
+ *
+ * The generator consumes the compiled route manifest set and writes artifacts
+ * into the supplied output directory.
  */
 export interface GenerateOpenAPIArtifactsOptions {
 	outDir: string;
@@ -86,8 +111,20 @@ const DOCS_HTML_FILE = "scalar.html";
 const DOCS_SPEC_FILE = "openapi.json";
 
 /**
- * Generates the OpenAPI JSON document and the Scalar HTML entrypoint for a
- * compiled Lithia app.
+ * Generates the OpenAPI JSON document and Scalar HTML entrypoint for a compiled
+ * Lithia application.
+ *
+ * The function builds the OpenAPI document from compiled route metadata, writes
+ * the JSON spec to `_lithia/openapi.json`, and writes the Scalar bootstrap HTML
+ * to `_lithia/scalar.html` inside the configured output directory.
+ *
+ * Related docs:
+ * - https://lithiajs.org/docs/latest/openapi
+ *
+ * @param {GenerateOpenAPIArtifactsOptions} options - Generator inputs including
+ * output directory, discovered routes, and OpenAPI config metadata.
+ * @returns {Promise<void>} Resolves after both OpenAPI artifacts have been
+ * written.
  */
 export async function generateOpenAPIArtifacts(
 	options: GenerateOpenAPIArtifactsOptions,
@@ -113,6 +150,13 @@ export async function generateOpenAPIArtifacts(
 
 /**
  * Builds an OpenAPI 3.0 document from compiled Lithia route modules.
+ *
+ * Each route module is imported from the compiled build output so the generator
+ * can read `metadata.openapi` without evaluating source files directly.
+ *
+ * @param {GenerateOpenAPIArtifactsOptions} options - Generator inputs including
+ * route manifests and OpenAPI config metadata.
+ * @returns {Promise<OpenAPIDocument>} Generated OpenAPI document.
  */
 export async function buildOpenAPIDocument(
 	options: GenerateOpenAPIArtifactsOptions,
@@ -143,6 +187,14 @@ export async function buildOpenAPIDocument(
 	return document;
 }
 
+/**
+ * Creates an OpenAPI operation object from route-level OpenAPI metadata.
+ *
+ * @param {OpenAPIRouteMetadata} [metadata] - Route-level OpenAPI metadata
+ * exported by the compiled route module.
+ * @returns {Record<string, unknown>} OpenAPI operation object for one route
+ * method.
+ */
 function createOperationObject(metadata?: OpenAPIRouteMetadata) {
 	const operation: Record<string, unknown> = {};
 
@@ -172,6 +224,16 @@ function createOperationObject(metadata?: OpenAPIRouteMetadata) {
 	return operation;
 }
 
+/**
+ * Creates an OpenAPI `responses` object from route response metadata.
+ *
+ * When no explicit responses are declared, the generator falls back to a single
+ * `200 Success` response entry.
+ *
+ * @param {OpenAPIRouteMetadata["responses"]} [responses] - Route response
+ * metadata keyed by status code.
+ * @returns {Record<string, unknown>} OpenAPI responses object.
+ */
 function createResponsesObject(
 	responses?: OpenAPIRouteMetadata["responses"],
 ): Record<string, unknown> {
@@ -202,6 +264,16 @@ function createResponsesObject(
 	);
 }
 
+/**
+ * Converts a Zod object schema into OpenAPI parameter definitions.
+ *
+ * @param {ZodType | undefined} schema - Zod schema that must resolve to an
+ * object schema for the target parameter location.
+ * @param {"path" | "query"} location - OpenAPI parameter location.
+ * @returns {Array<Record<string, unknown>>} OpenAPI parameter definitions.
+ * @throws {Error} Thrown when the supplied schema does not resolve to an object
+ * schema.
+ */
 function schemaToParameters(
 	schema: ZodType | undefined,
 	location: "path" | "query",
@@ -230,6 +302,12 @@ function schemaToParameters(
 	}));
 }
 
+/**
+ * Converts a Zod schema into an OpenAPI-compatible JSON schema.
+ *
+ * @param {ZodType} schema - Zod schema to convert.
+ * @returns {unknown} OpenAPI-compatible schema object.
+ */
 function zodToOpenAPISchema(schema: ZodType): unknown {
 	return toJSONSchema(schema, {
 		target: "openapi-3.0",
@@ -238,6 +316,15 @@ function zodToOpenAPISchema(schema: ZodType): unknown {
 	});
 }
 
+/**
+ * Converts a Lithia route path into its OpenAPI path-template form.
+ *
+ * Dynamic params such as `:id` and catch-all segments are rewritten into the
+ * `{param}` syntax expected by OpenAPI.
+ *
+ * @param {string} routePath - Public Lithia route path.
+ * @returns {string} OpenAPI path-template string.
+ */
 function toOpenAPIPath(routePath: string): string {
 	return routePath
 		.replace(/\*\*:(\w+)/g, "{$1}")
@@ -245,6 +332,12 @@ function toOpenAPIPath(routePath: string): string {
 		.replace(/:([A-Za-z0-9_]+)/g, "{$1}");
 }
 
+/**
+ * Imports a compiled route module with a cache-busting timestamp query.
+ *
+ * @param {string} filePath - Compiled route module path.
+ * @returns {Promise<RouteModuleWithMetadata>} Imported route module.
+ */
 async function importCompiledRoute(
 	filePath: string,
 ): Promise<RouteModuleWithMetadata> {
@@ -254,6 +347,15 @@ async function importCompiledRoute(
 	return import(fileUrl.href) as Promise<RouteModuleWithMetadata>;
 }
 
+/**
+ * Creates the Scalar HTML bootstrap document for the generated API docs UI.
+ *
+ * @param {string} specPath - Public URL used by Scalar to fetch the generated
+ * OpenAPI spec.
+ * @param {OpenAPIConfigOptions} config - OpenAPI config used to derive the
+ * document title.
+ * @returns {string} Complete HTML document served by the docs route.
+ */
 function createScalarHtml(
 	specPath: string,
 	config: OpenAPIConfigOptions,
@@ -279,6 +381,12 @@ function createScalarHtml(
 </html>`;
 }
 
+/**
+ * Escapes HTML-sensitive characters for safe interpolation into generated HTML.
+ *
+ * @param {string} value - Raw string value.
+ * @returns {string} Escaped HTML-safe string.
+ */
 function escapeHtml(value: string): string {
 	return value
 		.replaceAll("&", "&amp;")
