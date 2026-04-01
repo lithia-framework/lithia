@@ -34,11 +34,12 @@
     "test": "turbo test --filter='./packages/*'",
     "format": "biome format --write",
     "lint": "biome check",
+    "version:set": "node ./scripts/set-version.mjs",
     "version:sync": "node ./scripts/sync-versions.mjs",
     "release:check": "node ./scripts/check-release.mjs",
+    "release:tag": "node ./scripts/create-release-tag.mjs",
     "release:publish": "node ./scripts/publish-release.mjs",
     "release:github": "node ./scripts/github-release.mjs",
-    "postversion": "pnpm version:sync",
     "release": "pnpm release:check && pnpm build && pnpm test && pnpm release:publish && pnpm release:github"
   },
   "devDependencies": {

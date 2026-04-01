@@ -27,6 +27,17 @@ export async function getRootManifest() {
 	return readJson(path.join(ROOT_DIR, "package.json"));
 }
 
+export async function updateRootVersion(version) {
+	parseReleaseVersion(version);
+
+	const manifestPath = path.join(ROOT_DIR, "package.json");
+	const rootManifest = await readJson(manifestPath);
+	rootManifest.version = version;
+	await writeJson(manifestPath, rootManifest, 2);
+
+	return rootManifest;
+}
+
 export async function getPublishablePackages() {
 	const entries = await fs.readdir(PACKAGES_DIR, { withFileTypes: true });
 	const manifests = await Promise.all(
@@ -128,7 +139,7 @@ export async function validateReleaseState(expectedVersion) {
 	for (const pkg of packages) {
 		if (pkg.manifest.version !== expectedVersion) {
 			throw new Error(
-				`Package ${pkg.manifest.name} is at ${pkg.manifest.version}, expected ${expectedVersion}. Run pnpm version:sync and commit the result.`,
+				`Package ${pkg.manifest.name} is at ${pkg.manifest.version}, expected ${expectedVersion}. Run pnpm version:set ${expectedVersion} and commit the result.`,
 			);
 		}
 
@@ -142,7 +153,7 @@ export async function validateReleaseState(expectedVersion) {
 				const expectedRange = `workspace:${expectedVersion}`;
 				if (deps[dependencyName] !== expectedRange) {
 					throw new Error(
-						`${pkg.manifest.name} has ${dependencyName} pinned to ${deps[dependencyName]} in ${section}. Expected ${expectedRange}. Run pnpm version:sync and commit the result.`,
+						`${pkg.manifest.name} has ${dependencyName} pinned to ${deps[dependencyName]} in ${section}. Expected ${expectedRange}. Run pnpm version:set ${expectedVersion} and commit the result.`,
 					);
 				}
 			}
@@ -155,4 +166,3 @@ export async function validateReleaseState(expectedVersion) {
 		release: parseReleaseVersion(expectedVersion),
 	};
 }
-
