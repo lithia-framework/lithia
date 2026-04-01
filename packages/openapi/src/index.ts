@@ -367,6 +367,7 @@ async function importCompiledRoute(
  */
 function createScalarHtml(config: OpenAPIConfigOptions): string {
 	const title = config.title || "Lithia API";
+	const specPath = config.specPath || "/openapi.json";
 	const scalarConfig = createScalarConfig(config);
 
 	return `<!doctype html>
@@ -378,11 +379,12 @@ function createScalarHtml(config: OpenAPIConfigOptions): string {
     <link rel="icon" href="data:," />
   </head>
   <body>
-    <div id="api-reference"></div>
+    <script
+      id="api-reference"
+      data-url="${escapeHtml(specPath)}"
+      data-configuration='${escapeHtml(JSON.stringify(scalarConfig))}'
+    ></script>
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
-    <script>
-      Scalar.createApiReference("#api-reference", ${safeJsonForScript(scalarConfig)})
-    </script>
   </body>
 </html>`;
 }
@@ -443,14 +445,4 @@ function escapeHtml(value: string): string {
 		.replaceAll(">", "&gt;")
 		.replaceAll('"', "&quot;")
 		.replaceAll("'", "&#39;");
-}
-
-/**
- * Serializes a JSON value for safe inline use inside a `<script>` tag.
- *
- * @param {unknown} value - JSON-serializable value.
- * @returns {string} Serialized string with closing-script escapes applied.
- */
-function safeJsonForScript(value: unknown): string {
-	return JSON.stringify(value).replaceAll("</script>", "<\\/script>");
 }
