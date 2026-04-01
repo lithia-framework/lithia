@@ -13,9 +13,5 @@
 		"editor.suggest.insertMode": "replace",
 		"editor.defaultFormatter": "biomejs.biome"
 	},
-	"[rust]": {
-		"editor.defaultFormatter": "rust-lang.rust-analyzer",
-	},
 	"git.ignoreLimitWarning": true,
-	"postman.settings.dotenv-detection-notification-visibility": false
 }
