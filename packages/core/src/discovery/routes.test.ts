@@ -1,6 +1,10 @@
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
 	RouteConvention,
+	RouteManifestGenerator,
 	RoutePathTransformer,
 	RouteProcessor,
 } from "./routes";
@@ -40,5 +44,29 @@ describe("routes discovery", () => {
 			filePath: "/abs/dist/app/routes/users/[id]/route.get.js",
 			regex: "^\\/users\\/([^\\/]+)$",
 		});
+	});
+
+	it("ignores route-like directories nested under other app roots", async () => {
+		const root = await mkdtemp(path.join(os.tmpdir(), "lithia-route-scope-"));
+
+		try {
+			const outRoot = path.join(root, "dist");
+			const generator = new RouteManifestGenerator();
+			const manifest = await generator.generateManifest(outRoot, [
+				{
+					path: "app/tasks/admin/routes/route.get.js",
+					fullPath: "/abs/dist/app/tasks/admin/routes/route.get.js",
+				},
+			]);
+
+			expect(manifest.routes).toEqual([]);
+
+			const writtenManifest = JSON.parse(
+				await readFile(path.join(outRoot, "routes.json"), "utf-8"),
+			);
+			expect(writtenManifest.routes).toEqual([]);
+		} finally {
+			await rm(root, { recursive: true, force: true });
+		}
 	});
 });

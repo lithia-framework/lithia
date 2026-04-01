@@ -3,6 +3,9 @@ import path from "node:path";
 import { version } from "../meta";
 import type { FileInfo } from "./scanner";
 
+const isDirectAppChildPath = (filePath: string, rootDir: string): boolean =>
+	filePath.split(path.sep).join("/").startsWith(`app/${rootDir}/`);
+
 /**
  * HTTP methods recognized from `route.<method>.ts` filename suffixes.
  */
@@ -279,12 +282,9 @@ export class RouteManifestGenerator {
 		outRoot: string,
 		scannedFiles: FileInfo[],
 	): Promise<RoutesManifest> {
-		const routeFiles = scannedFiles.filter((file) => {
-			const normalized = file.path.split(path.sep).join("/");
-			return (
-				normalized.includes("routes/") || normalized.includes("app/routes/")
-			);
-		});
+		const routeFiles = scannedFiles.filter((file) =>
+			isDirectAppChildPath(file.path, "routes"),
+		);
 
 		const routes = routeFiles.map((file) =>
 			this.processor.processRouteFile(file),

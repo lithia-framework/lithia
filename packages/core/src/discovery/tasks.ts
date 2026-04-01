@@ -6,6 +6,9 @@ import { version } from "../meta";
 import { fileHasMeaningfulModuleContent } from "../shared/filesystem";
 import type { FileInfo } from "./scanner";
 
+const isDirectAppChildPath = (filePath: string, rootDir: string): boolean =>
+	filePath.split(path.sep).join("/").startsWith(`app/${rootDir}/`);
+
 /**
  * Execution model assigned to a discovered Lithia task.
  */
@@ -218,10 +221,9 @@ export class TaskManifestGenerator {
 		outRoot: string,
 		scannedFiles: FileInfo[],
 	): Promise<TasksManifest | null> {
-		const taskFiles = scannedFiles.filter((file) => {
-			const normalized = file.path.split(path.sep).join("/");
-			return normalized.includes("tasks/") || normalized.includes("app/tasks/");
-		});
+		const taskFiles = scannedFiles.filter((file) =>
+			isDirectAppChildPath(file.path, "tasks"),
+		);
 
 		if (taskFiles.length === 0) return null;
 

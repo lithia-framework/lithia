@@ -3,6 +3,9 @@ import path from "node:path";
 import { version } from "../meta";
 import type { FileInfo } from "./scanner";
 
+const isDirectAppChildPath = (filePath: string, rootDir: string): boolean =>
+	filePath.split(path.sep).join("/").startsWith(`app/${rootDir}/`);
+
 /**
  * Prefixes a path with a base segment while preserving a single slash between
  * both parts.
@@ -190,12 +193,9 @@ export class EventManifestGenerator {
 		outRoot: string,
 		scannedFiles: FileInfo[],
 	): Promise<EventsManifest | null> {
-		const eventFiles = scannedFiles.filter((file) => {
-			const normalized = file.path.split(path.sep).join("/");
-			return (
-				normalized.includes("events/") || normalized.includes("app/events/")
-			);
-		});
+		const eventFiles = scannedFiles.filter((file) =>
+			isDirectAppChildPath(file.path, "events"),
+		);
 
 		if (eventFiles.length === 0) return null;
 

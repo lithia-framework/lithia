@@ -119,4 +119,32 @@ export default async function task() {}
 			await rm(root, { recursive: true, force: true });
 		}
 	});
+
+	it("ignores task-like directories nested under other app roots", async () => {
+		const root = await mkdtemp(path.join(os.tmpdir(), "lithia-task-scope-"));
+
+		try {
+			const outRoot = path.join(root, "dist");
+			const nestedTaskFile = path.join(root, "app/routes/admin/tasks/sync.mjs");
+			await mkdir(path.dirname(nestedTaskFile), { recursive: true });
+			await writeFile(
+				nestedTaskFile,
+				`export default async function task() {}
+`,
+				"utf-8",
+			);
+
+			const generator = new TaskManifestGenerator();
+			const manifest = await generator.generateManifest(outRoot, [
+				{
+					path: "app/routes/admin/tasks/sync.mjs",
+					fullPath: nestedTaskFile,
+				},
+			]);
+
+			expect(manifest).toBeNull();
+		} finally {
+			await rm(root, { recursive: true, force: true });
+		}
+	});
 });
