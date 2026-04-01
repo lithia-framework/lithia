@@ -1,58 +1,18 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import type {
+	OpenAPIRouteMetadata,
+	RouteMetadata,
+} from "@lithia-js/core";
 import { toJSONSchema, type ZodType } from "zod";
 
-/**
- * Declares an OpenAPI security requirement object for a route operation.
- *
- * Each key names a security scheme and its array value lists the scopes
- * required for that scheme when the scheme supports scoping.
- */
-export type OpenAPISecurityRequirement = Record<string, string[]>;
-
-/**
- * Describes a documented response in the generated OpenAPI document.
- *
- * Each response entry becomes one status-code object inside the generated
- * operation's `responses` map.
- */
-export interface OpenAPIResponseMetadata {
-	description: string;
-	schema?: ZodType;
-	contentType?: string;
-}
-
-/**
- * Explicit OpenAPI metadata attached to an HTTP route module.
- *
- * Export this under `export const metadata = { openapi: ... }` in a route file
- * to enrich the generated OpenAPI document for that route.
- *
- * Related docs:
- * - https://lithiajs.org/docs/latest/openapi
- * - https://lithiajs.org/docs/latest/routes
- */
-export interface OpenAPIRouteMetadata {
-	summary?: string;
-	description?: string;
-	tags?: string[];
-	params?: ZodType;
-	query?: ZodType;
-	body?: ZodType;
-	responses?: Record<number | `${number}`, OpenAPIResponseMetadata>;
-	security?: OpenAPISecurityRequirement[];
-}
-
-/**
- * Route module metadata exported as `export const metadata`.
- *
- * This is the top-level metadata envelope inspected by the OpenAPI generator
- * after importing compiled route modules.
- */
-export interface RouteMetadata {
-	openapi?: OpenAPIRouteMetadata;
-}
+export type {
+	OpenAPIResponseMetadata,
+	OpenAPIRouteMetadata,
+	OpenAPISecurityRequirement,
+	RouteMetadata,
+} from "@lithia-js/core";
 
 /**
  * Minimal route manifest entry required to generate an OpenAPI document.
@@ -101,6 +61,10 @@ type ScalarConfig = {
 		title?: string;
 		default?: boolean;
 	}>;
+	servers?: Array<{
+		url: string;
+		description?: string;
+	}>;
 };
 
 type OpenAPIDocument = {
@@ -116,6 +80,9 @@ type OpenAPIDocument = {
 type RouteModuleWithMetadata = {
 	metadata?: RouteMetadata;
 };
+
+type OpenAPIResponsesMap = NonNullable<OpenAPIRouteMetadata["responses"]>;
+type OpenAPIResponseEntry = OpenAPIResponsesMap[number | `${number}`];
 
 /**
  * Additional OpenAPI source rendered by Scalar.
@@ -164,11 +131,7 @@ export async function generateOpenAPIArtifacts(
 		JSON.stringify(document, null, 2),
 		"utf-8",
 	);
-	await writeFile(
-		path.join(docsDir, DOCS_HTML_FILE),
-		scalarHtml,
-		"utf-8",
-	);
+	await writeFile(path.join(docsDir, DOCS_HTML_FILE), scalarHtml, "utf-8");
 }
 
 /**
@@ -269,7 +232,11 @@ function createResponsesObject(
 	}
 
 	return Object.fromEntries(
-		Object.entries(responses).map(([status, response]) => [
+		(
+			Object.entries(responses) as Array<
+				[string, OpenAPIResponseEntry]
+			>
+		).map(([status, response]) => [
 			status,
 			{
 				description: response.description,
