@@ -8,3 +8,4 @@ workspace.
 - `3-async-tasks`: on-demand async task dispatch from an HTTP route
 - `4-async-tasks-cron`: CRON-triggered async task execution
 - `5-custom-startup`: app-level bootstrap with `src/app/server.ts` + `provide()`
+- `6-events`: Socket.IO event handlers with `connection`, `disconnect`, and `chat:ping`
