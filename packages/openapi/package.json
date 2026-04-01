@@ -1,6 +1,6 @@
 {
 	"name": "@lithia-js/openapi",
-	"version": "1.0.0-canary.29",
+	"version": "1.0.0-canary.30",
 	"description": "OpenAPI and Scalar integration for Lithia.js.",
 	"keywords": [
 		"lithia",
@@ -47,10 +47,10 @@
 		"zod": "^4.2.1"
 	},
 	"peerDependencies": {
-		"@lithia-js/core": "workspace:1.0.0-canary.29"
+		"@lithia-js/core": "workspace:1.0.0-canary.30"
 	},
 	"devDependencies": {
-		"@lithia-js/core": "workspace:1.0.0-canary.29"
+		"@lithia-js/core": "workspace:1.0.0-canary.30"
 	},
 	"publishConfig": {
 		"registry": "https://registry.npmjs.org/",
