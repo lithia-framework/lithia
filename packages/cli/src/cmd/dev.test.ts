@@ -14,8 +14,6 @@ vi.mock("citty", () => ({
 	defineCommand: (value: unknown) => value,
 }));
 
-import { processDevBatch } from "./dev";
-
 vi.mock("@lithia-js/utils", () => ({
 	logger: {
 		info: vi.fn(),
@@ -24,6 +22,8 @@ vi.mock("@lithia-js/utils", () => ({
 		error: vi.fn(),
 	},
 }));
+
+import { processDevBatch } from "./dev";
 
 describe("processDevBatch", () => {
 	it("keeps existing reloadable artifacts when a source rebuild fails", async () => {
