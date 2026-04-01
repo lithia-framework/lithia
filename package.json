@@ -30,7 +30,7 @@
     "turborepo"
   ],
   "scripts": {
-    "build": "turbo build",
+    "build": "turbo build --filter='./packages/*'",
     "test": "turbo test",
     "format": "biome format --write",
     "lint": "biome check",
