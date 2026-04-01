@@ -13,12 +13,6 @@
       "#lithia/*": ["./.lithia/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    ".lithia/**/*"
-  ],
-  "exclude": [
-    "node_modules", 
-    "dist"
-  ]
+  "include": ["**/*"],
+  "exclude": ["node_modules", "dist"]
 }
