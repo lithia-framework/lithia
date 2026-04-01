@@ -93,6 +93,16 @@ export interface GenerateOpenAPIArtifactsOptions {
 	config: OpenAPIConfigOptions;
 }
 
+type ScalarConfig = {
+	theme: "purple";
+	sources: Array<{
+		url?: string;
+		content?: string;
+		title?: string;
+		default?: boolean;
+	}>;
+};
+
 type OpenAPIDocument = {
 	openapi: "3.0.3";
 	info: {
@@ -369,6 +379,26 @@ function createScalarHtml(config: OpenAPIConfigOptions): string {
 	const title = config.title || "Lithia API";
 	const specPath = config.specPath || "/openapi.json";
 	const scalarConfig = createScalarConfig(config);
+	const hasMultipleSources = (scalarConfig.sources?.length || 0) > 1;
+
+	if (hasMultipleSources) {
+		return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(title)} Docs</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <div id="api-reference"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script>
+      Scalar.createApiReference("#api-reference", ${safeJsonForScript(scalarConfig)})
+    </script>
+  </body>
+</html>`;
+	}
 
 	return `<!doctype html>
 <html lang="en">
@@ -398,9 +428,9 @@ function createScalarHtml(config: OpenAPIConfigOptions): string {
  * additional configured sources are appended after it.
  *
  * @param {OpenAPIConfigOptions} config - OpenAPI and Scalar config values.
- * @returns {Record<string, unknown>} Scalar configuration object.
+ * @returns {ScalarConfig} Scalar configuration object.
  */
-function createScalarConfig(config: OpenAPIConfigOptions): Record<string, unknown> {
+function createScalarConfig(config: OpenAPIConfigOptions): ScalarConfig {
 	const generatedSpecPath = config.specPath || "/openapi.json";
 	const configuredSources = config.sources || [];
 	const customDefaultConfigured = configuredSources.some(
@@ -445,4 +475,14 @@ function escapeHtml(value: string): string {
 		.replaceAll(">", "&gt;")
 		.replaceAll('"', "&quot;")
 		.replaceAll("'", "&#39;");
+}
+
+/**
+ * Serializes a JSON value for safe inline use inside a `<script>` tag.
+ *
+ * @param {unknown} value - JSON-serializable value.
+ * @returns {string} Serialized string with closing-script escapes applied.
+ */
+function safeJsonForScript(value: unknown): string {
+	return JSON.stringify(value).replaceAll("</script>", "<\\/script>");
 }

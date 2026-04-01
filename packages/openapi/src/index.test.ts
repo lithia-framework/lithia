@@ -79,7 +79,7 @@ export default async function handler() {}
 			`data-configuration='${`{"theme":"purple","sources":[{"url":"/openapi.json","title":"Example API","default":true}]`.replaceAll('"', "&quot;")}`,
 		);
 		expect(html).toContain("cdn.jsdelivr.net/npm/@scalar/api-reference");
-		expect(html).toContain('<script');
+		expect(html).not.toContain('Scalar.createApiReference("#api-reference",');
 	});
 
 	it("refreshes the generated spec when a compiled route changes", async () => {
@@ -238,8 +238,10 @@ export default async function handler() {}
 			"utf-8",
 		);
 
+		expect(html).toContain('<div id="api-reference"></div>');
+		expect(html).toContain('Scalar.createApiReference("#api-reference",');
 		expect(html).toContain(
-			`&quot;sources&quot;:[{&quot;url&quot;:&quot;/api/open-api&quot;,&quot;title&quot;:&quot;Main API&quot;,&quot;default&quot;:true},{&quot;url&quot;:&quot;/api/auth/open-api/generate-schema&quot;,&quot;title&quot;:&quot;Auth&quot;}]`,
+			'"sources":[{"url":"/api/open-api","title":"Main API","default":true},{"url":"/api/auth/open-api/generate-schema","title":"Auth"}]',
 		);
 	});
 
@@ -285,8 +287,9 @@ export default async function handler() {}
 			"utf-8",
 		);
 
+		expect(html).toContain('Scalar.createApiReference("#api-reference",');
 		expect(html).toContain(
-			`&quot;sources&quot;:[{&quot;url&quot;:&quot;/openapi.json&quot;,&quot;title&quot;:&quot;Main API&quot;},{&quot;url&quot;:&quot;/api/auth/open-api/generate-schema&quot;,&quot;title&quot;:&quot;Auth&quot;,&quot;default&quot;:true}]`,
+			'"sources":[{"url":"/openapi.json","title":"Main API"},{"url":"/api/auth/open-api/generate-schema","title":"Auth","default":true}]',
 		);
 	});
 });
