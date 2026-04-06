@@ -42,7 +42,7 @@
 	"dependencies": {
 		"@lithia-js/core": "workspace:1.0.0-canary.30",
 		"@lithia-js/utils": "workspace:1.0.0-canary.30",
-		"citty": "^0.2.0",
+		"citty": "^0.2.2",
 		"chokidar": "^5.0.0"
 	},
 	"publishConfig": {
