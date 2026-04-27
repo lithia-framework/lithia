@@ -52,7 +52,7 @@
 	},
 	"dependencies": {
 		"@lithia-js/utils": "workspace:1.0.0-canary.30",
-		"@swc/core": "^1.15.11",
+		"@swc/core": "^1.15.32",
 		"busboy": "^1.6.0",
 		"c12": "^3.3.3",
 		"cookie": "^1.1.1",
