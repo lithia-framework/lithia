@@ -17,7 +17,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.13",
+    "@biomejs/biome": "^2.4.13",
     "@lithia-js/cli": "workspace:*",
     "@types/node": "^25.1.0",
     "typescript": "^5.9.3"
