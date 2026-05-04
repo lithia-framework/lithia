@@ -43,7 +43,7 @@
     "release": "pnpm release:check && pnpm build && pnpm test && pnpm release:publish && pnpm release:github"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.13",
+    "@biomejs/biome": "2.4.14",
     "@types/node": "^25.1.0",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
