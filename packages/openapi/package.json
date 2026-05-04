@@ -44,7 +44,7 @@
 		"test": "vitest --run"
 	},
 	"dependencies": {
-		"zod": "^4.2.1"
+		"zod": "^4.4.3"
 	},
 	"peerDependencies": {
 		"@lithia-js/core": "workspace:1.0.0-canary.30"
